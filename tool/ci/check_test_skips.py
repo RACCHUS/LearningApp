@@ -57,9 +57,17 @@ SKIP_REGISTRY: list[dict] = [
         "file": "test/services/ai/byok_provider_test.dart",
         "kind": "conditional",
         "reason": "BYOK provider behavior; skipped while the hard-disabled BYOK release latch is off.",
-        "runs_in": "Not run until BYOK is approved for release. Disabled-state safety tests run "
-                   "unconditionally; enabling the latch makes these entries stale and forces review.",
+        "runs_in": "Required Flutter job, dedicated 'BYOK release-candidate tests (latch on, "
+                   "test-only build)' step. Disabled-state safety tests run unconditionally.",
         "expected": 3,
+    },
+    {
+        "file": "test/services/ai/byok_release_candidate_test.dart",
+        "kind": "conditional",
+        "reason": "Own-key provider clients need the BYOK release latch, which is off in normal builds.",
+        "runs_in": "Required Flutter job, dedicated 'BYOK release-candidate tests (latch on, "
+                   "test-only build)' step.",
+        "expected": 10,
     },
 ]
 

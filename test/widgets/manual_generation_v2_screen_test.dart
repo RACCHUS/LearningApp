@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:learning_pwa/providers/byok_session_provider.dart';
 import 'package:learning_pwa/providers/manual_generation_v2_provider.dart';
 import 'package:learning_pwa/screens/lessons/manual_generation_v2_screen.dart';
 import 'package:learning_pwa/services/content_generation/manual_job.dart';
@@ -12,6 +13,8 @@ import 'package:learning_pwa/services/content_generation/manual_job_store.dart';
 import 'package:learning_pwa/services/content_generation/manual_prompt_builder.dart';
 import 'package:learning_pwa/services/content_generation/model_capability_profile.dart';
 import 'package:learning_pwa/services/content_generation/model_capability_store.dart';
+import 'package:learning_pwa/services/ai/byok_provider.dart';
+import 'package:learning_pwa/services/ai/llm_client.dart';
 import 'package:learning_pwa/services/content_generation/reuse_gate.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -39,6 +42,7 @@ void main() {
     WidgetTester tester, {
     required bool enabled,
     List<ReuseSource> sources = const [],
+    List<Override> extra = const [],
   }) async {
     tester.view.physicalSize = const Size(900, 2400);
     tester.view.devicePixelRatio = 1;
@@ -71,6 +75,7 @@ void main() {
             imported.add(json);
             return 'new-lesson';
           }),
+          ...extra,
         ],
         child: MaterialApp.router(routerConfig: router),
       ),
@@ -164,6 +169,124 @@ void main() {
     expect(lesson['title'], 'Percentages');
     expect((lesson['questions'] as List).single['correct_answer'], 1);
     expect(lesson['tags'], contains('unreviewed'));
+  });
+
+  group('own API key (BYOK)', () {
+    const key = ByokConfig(
+      provider: AiProvider.gemini,
+      apiKey: 'test-key',
+      model: 'gemini-flash-latest',
+    );
+
+    Future<ProviderContainer> plan(
+      WidgetTester tester, {
+      required bool available,
+      Future<String> Function(String prompt)? reply,
+    }) async {
+      await pump(
+        tester,
+        enabled: true,
+        extra: [
+          byokAvailableProvider.overrideWithValue(available),
+          byokRetryDelayProvider.overrideWithValue((_) async {}),
+          llmClientFactoryProvider.overrideWithValue(
+            (_) => _FakeClient(reply ?? (_) async => ''),
+          ),
+        ],
+      );
+      await tester.enterText(
+        find.byKey(const Key('manual_v2_ideas')),
+        'Percent change',
+      );
+      await tester.tap(find.byKey(const Key('manual_v2_make_plan')));
+      await tester.pumpAndSettle();
+      return ProviderScope.containerOf(
+        tester.element(find.byType(ManualGenerationV2Screen)),
+      );
+    }
+
+    testWidgets('hidden unless released and switched on', (tester) async {
+      await plan(tester, available: false);
+      expect(find.byKey(const Key('manual_v2_byok_setup')), findsNothing);
+      expect(find.byKey(const Key('manual_v2_ask_ai')), findsNothing);
+      expect(find.byKey(const Key('manual_v2_copy_prompt')), findsOneWidget);
+    });
+
+    testWidgets('offers set-up when no key is in this tab', (tester) async {
+      await plan(tester, available: true);
+      expect(find.byKey(const Key('manual_v2_byok_setup')), findsOneWidget);
+      expect(find.byKey(const Key('manual_v2_ask_ai')), findsNothing);
+    });
+
+    testWidgets('a reply from the key is checked like a pasted one', (
+      tester,
+    ) async {
+      String? sent;
+      final container = await plan(
+        tester,
+        available: true,
+        reply: (prompt) async {
+          sent = prompt;
+          final job = RegExp(r'"job": "(J\w{4})"').firstMatch(prompt)!.group(1);
+          return 'Here you go:\n```json\n${jsonEncode({
+            'schema': 'la-gen/1.1',
+            'job': job,
+            'items': [
+              {
+                'slot': 'S1',
+                'kind': 'explanation',
+                'concept': 'C1',
+                'title': 'Percent change',
+                'text': 'Change divided by the original.',
+              },
+            ],
+          })}\n```';
+        },
+      );
+      container.read(byokSessionProvider.notifier).useConfig(key);
+      await tester.pumpAndSettle();
+      expect(find.text('Ask Gemini for me'), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('manual_v2_ask_ai')));
+      await tester.pumpAndSettle();
+      expect(sent, contains('FILL EXACTLY THESE 3 SLOTS'));
+      expect(find.textContaining('Accepted 1 new item(s)'), findsOneWidget);
+      expect(find.textContaining('1 of 4 items ready'), findsOneWidget);
+    });
+
+    testWidgets('a used-up quota turns Ask off and says so', (tester) async {
+      var calls = 0;
+      final container = await plan(
+        tester,
+        available: true,
+        reply: (_) async {
+          calls++;
+          throw const LlmException(
+            'quota',
+            statusCode: 429,
+            kind: LlmFailureKind.quotaExhausted,
+          );
+        },
+      );
+      container.read(byokSessionProvider.notifier).useConfig(key);
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('manual_v2_ask_ai')));
+      await tester.pumpAndSettle();
+      expect(calls, 1);
+      expect(find.byKey(const Key('manual_v2_ask_ai')), findsNothing);
+      expect(find.byKey(const Key('manual_v2_byok_paused')), findsOneWidget);
+      expect(
+        find.textContaining('Your Gemini quota is used up for now'),
+        findsWidgets,
+      );
+      // Copy and paste still works.
+      expect(find.byKey(const Key('manual_v2_copy_prompt')), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('manual_v2_byok_resume')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('manual_v2_ask_ai')), findsOneWidget);
+    });
   });
 
   testWidgets('invalid plans explain themselves', (tester) async {
@@ -659,4 +782,26 @@ void main() {
     expect(find.textContaining('S2 · Question'), findsNothing);
     expect(find.byKey(const Key('manual_v2_redo')), findsNothing);
   });
+}
+
+class _FakeClient implements LlmClient {
+  _FakeClient(this.reply);
+
+  final Future<String> Function(String prompt) reply;
+
+  @override
+  Future<String> generateText({
+    required String prompt,
+    int maxOutputTokens = 8192,
+  }) => reply(prompt);
+
+  @override
+  Future<List<String>> listModels() async => const [];
+
+  @override
+  Future<String> generateStructuredJson({
+    required String prompt,
+    required Map<String, dynamic> jsonSchema,
+    String? systemPrompt,
+  }) => throw UnimplementedError();
 }

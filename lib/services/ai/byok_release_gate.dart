@@ -1,10 +1,13 @@
 /// MKT-002 / FLAG-015: hard owner-approved safety latch for BYOK.
 ///
 /// This remains OFF even if a remote feature registry accidentally enables
-/// ai.byok. A later independent security review, provider compatibility tests
-/// and owner approval are required before changing it.
+/// ai.byok. Only a build made with `--dart-define=BYOK_RELEASE_APPROVED=true`
+/// turns it on, and that build needs owner approval (AGENTS.md). Every
+/// default and preview build keeps it OFF; CI sets it only in the dedicated
+/// BYOK test step, never in a deployed build. Turning BYOK on for learners
+/// also needs the live `ai.byok` switch; see docs/product/BYOK_ROLLOUT.md.
 abstract final class ByokReleaseGate {
-  static const bool enabled = false;
+  static const bool enabled = bool.fromEnvironment('BYOK_RELEASE_APPROVED');
 
   static const String unavailableMessage =
       'Bring Your Own Key AI is temporarily disabled while credential '

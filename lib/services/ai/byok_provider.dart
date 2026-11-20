@@ -22,12 +22,26 @@ enum AiProvider {
     }
   }
 
+  /// Short name for messages, e.g. "Gemini".
+  String get shortName {
+    switch (this) {
+      case AiProvider.gemini:
+        return 'Gemini';
+      case AiProvider.openrouter:
+        return 'OpenRouter';
+      case AiProvider.openai:
+        return 'OpenAI';
+      case AiProvider.mock:
+        return 'the simulator';
+    }
+  }
+
   String get defaultModel {
     switch (this) {
       case AiProvider.gemini:
-        return 'gemini-1.5-flash';
+        return 'gemini-flash-latest';
       case AiProvider.openrouter:
-        return 'google/gemini-2.0-flash-001';
+        return 'openrouter/auto';
       case AiProvider.openai:
         return 'gpt-4o-mini';
       case AiProvider.mock:

@@ -5,7 +5,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:learning_pwa/models/content_generation/slot_plan.dart';
+import 'package:learning_pwa/providers/byok_session_provider.dart';
 import 'package:learning_pwa/providers/manual_generation_v2_provider.dart';
+import 'package:learning_pwa/services/ai/llm_client.dart';
 import 'package:learning_pwa/services/content_generation/lesson_composer.dart';
 import 'package:learning_pwa/services/content_generation/manual_job.dart';
 import 'package:learning_pwa/services/content_generation/manual_job_store.dart';
@@ -16,14 +18,18 @@ import 'package:learning_pwa/services/content_generation/reuse_gate.dart';
 import 'package:learning_pwa/models/content_generation/content_resolution_decision.dart';
 import 'package:learning_pwa/services/lesson/lesson_import_service.dart';
 import 'package:learning_pwa/services/lesson/lesson_quality_check.dart';
+import 'package:learning_pwa/widgets/ai/byok_settings_dialog.dart';
 import 'package:learning_pwa/widgets/lesson/ai_chat_profile_section.dart';
 
 /// Additive slot-based manual generator (master plan v2.6 §5, PR-C).
 ///
 /// The learner plans a small job, copies a prompt into their own AI chat,
 /// pastes the reply, and repeats for whatever is still missing. Nothing is
-/// sent anywhere by the app, nothing is guessed, and the result imports as
-/// a private, unreviewed lesson through the normal validated importer.
+/// sent anywhere by the app unless the learner sets up their own API key
+/// and taps "Ask … for me" (BYOK, off unless released); that reply goes
+/// through the same checks as a pasted one. Nothing is guessed, and the
+/// result imports as a private, unreviewed lesson through the normal
+/// validated importer.
 class ManualGenerationV2Screen extends ConsumerStatefulWidget {
   const ManualGenerationV2Screen({super.key, this.initialSubject});
 
@@ -410,6 +416,101 @@ class _ManualGenerationV2ScreenState
       'Prompt copied. Paste it into your AI chat.',
       "Couldn't copy automatically. Open \"Show the prompt\" below and "
           'copy it yourself.',
+    );
+  }
+
+  /// Sends the prompt with the learner's own key and checks the reply
+  /// exactly as if it had been pasted. Failures leave copy and paste as
+  /// it was; a used-up quota switches "Ask" off and says so.
+  Future<void> _askAi(ManualJobSession s) async {
+    _armReply(s);
+    final name = ref.read(byokSessionProvider).providerName;
+    try {
+      final reply = await ref
+          .read(byokSessionProvider.notifier)
+          .ask(_prompt(s));
+      if (!mounted) return;
+      _paste.text = reply;
+      _check(s);
+    } on LlmException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(e.kind.message(name))));
+    }
+  }
+
+  void _openByokSettings() => ByokSettingsDialog.show(
+    context,
+    storageService: ref.read(byokStorageProvider),
+    onSaved: ref.read(byokSessionProvider.notifier).useConfig,
+    clientFactory: ref.read(llmClientFactoryProvider),
+    releaseApproved: ref.read(byokReleaseApprovedProvider),
+  );
+
+  Widget _askAiSection(ManualJobSession s, ThemeData theme) {
+    if (!ref.watch(byokAvailableProvider)) return const SizedBox.shrink();
+    final b = ref.watch(byokSessionProvider);
+    if (b.paused) {
+      return Card(
+        key: const Key('manual_v2_byok_paused'),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Semantics(
+                liveRegion: true,
+                child: Text(
+                  LlmFailureKind.quotaExhausted.message(b.providerName),
+                ),
+              ),
+              TextButton(
+                key: const Key('manual_v2_byok_resume'),
+                onPressed: ref.read(byokSessionProvider.notifier).resume,
+                child: const Text('Try my key again'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    if (!b.configured) {
+      return Align(
+        alignment: Alignment.centerLeft,
+        child: TextButton.icon(
+          key: const Key('manual_v2_byok_setup'),
+          onPressed: _openByokSettings,
+          icon: const Icon(Icons.key_outlined),
+          label: const Text('Or use your own API key'),
+        ),
+      );
+    }
+    return Wrap(
+      spacing: 8,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        FilledButton.tonalIcon(
+          key: const Key('manual_v2_ask_ai'),
+          onPressed: b.busy ? null : () => _askAi(s),
+          icon: b.busy
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.auto_awesome),
+          label: Text(
+            b.busy
+                ? 'Asking ${b.providerName}…'
+                : 'Ask ${b.providerName} for me',
+          ),
+        ),
+        TextButton(
+          onPressed: b.busy ? null : _openByokSettings,
+          child: const Text('Key settings'),
+        ),
+      ],
     );
   }
 
@@ -953,6 +1054,7 @@ class _ManualGenerationV2ScreenState
             ),
           ],
         ),
+        _askAiSection(s, theme),
       ] else
         const Text('All planned items are ready.'),
       heading("3. Paste the AI's reply"),

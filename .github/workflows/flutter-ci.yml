@@ -391,6 +391,17 @@ jobs:
           test/services/assessment/reference_practice_json_load_probe_test.dart
           --reporter expanded
 
+      - name: BYOK release-candidate tests (latch on, test-only build)
+        # The own-key clients are hard-off in every deployed build. This step
+        # turns the latch on for these tests only, so BYOK stays ready to
+        # release; it never builds or deploys anything.
+        run: >-
+          flutter test
+          --dart-define=BYOK_RELEASE_APPROVED=true
+          test/services/ai/byok_provider_test.dart
+          test/services/ai/byok_release_candidate_test.dart
+          --reporter expanded
+
       - name: Test the required-gate logic
         run: python3 -m unittest discover -s tool/tests -p 'test_check_required_results.py' -v
 
