@@ -46,6 +46,7 @@ import 'package:learning_pwa/providers/community_qa_provider.dart';
 import 'package:learning_pwa/models/achievement.dart';
 import 'package:learning_pwa/providers/xp_achievements_provider.dart';
 import 'package:learning_pwa/widgets/progress/motivation_xp_rows.dart';
+import 'package:learning_pwa/widgets/ai/local_key_points_action.dart';
 
 class LessonScreen extends ConsumerStatefulWidget {
   final String lessonId;
@@ -370,6 +371,7 @@ class _LessonScreenState extends ConsumerState<LessonScreen> {
                 lessonTitle: lessonData.lesson.title,
                 tags: lessonData.lesson.tags,
               ),
+              LocalKeyPointsAction(lessonId: widget.lessonId),
               IconButton(
                 key: const Key('lesson_in_context_qa_action'),
                 icon: const Icon(Icons.forum_outlined),

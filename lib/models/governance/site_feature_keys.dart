@@ -10,6 +10,7 @@ abstract final class SiteFeatureKeys {
   static const String aiByok = 'ai.byok';
   static const String aiManaged = 'ai.managed';
   static const String aiExternalMcp = 'ai.external_mcp';
+  static const String aiLocalExperimental = 'ai.local_experimental';
   static const String mcpRemote = 'mcp.remote';
   static const String mcpPersonalRead = 'mcp.personal_read';
   static const String mcpWriteReview = 'mcp.write_review';
@@ -49,6 +50,7 @@ abstract final class SiteFeatureKeys {
     aiByok,
     aiManaged,
     aiExternalMcp,
+    aiLocalExperimental,
     mcpRemote,
     mcpPersonalRead,
     mcpWriteReview,
