@@ -14,6 +14,7 @@ abstract final class SiteFeatureKeys {
   static const String mcpPersonalRead = 'mcp.personal_read';
   static const String mcpWriteReview = 'mcp.write_review';
   static const String analyticsProductEvents = 'analytics.product_events';
+  static const String analyticsPromptQuality = 'analytics.prompt_quality';
   static const String supportDonations = 'support.donations';
   static const String marketingSponsorCards = 'marketing.sponsor_cards';
   static const String marketingAffiliateLinks = 'marketing.affiliate_links';
@@ -52,6 +53,7 @@ abstract final class SiteFeatureKeys {
     mcpPersonalRead,
     mcpWriteReview,
     analyticsProductEvents,
+    analyticsPromptQuality,
     supportDonations,
     marketingSponsorCards,
     marketingAffiliateLinks,

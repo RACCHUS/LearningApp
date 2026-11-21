@@ -46,7 +46,7 @@ This log records progress only; it does not change any decision above. Every new
 | Version replacement continuity (P5.2) | Learning contexts move to the replacement lesson (#345). Learner history survives a new version: lineage is recorded when a version is retired, lesson progress and placed resources are copied, late offline events land on the replacement, and device-local progress and resume pointers move too. Local progress on the web is now actually saved (its storage adapter was never registered) | #345, this PR |
 
 **Still open (all retained):**
-- PR-C opt-in prompt-quality telemetry (§5.7.6): unblocked now that basic analytics exists (#331). Build it behind its own extra opt-in; switching it on needs owner privacy review.
+- PR-C opt-in prompt-quality telemetry (§5.7.6, signal 1): **built, switch `analytics.prompt_quality` OFF.** Codes and counts per checked reply (pack, AI label, tier, mode, outcome, error code, slots requested/accepted, end marker), its own opt-in on top of base analytics consent, erased on either withdrawal, 90-day retention, admin report with groups under 5 accounts suppressed. Switching it on needs the owner's privacy review. Signals 2 to 5 (feedback chips, reviews, downstream evidence, golden runs) remain.
 - Misconception tags are authored but not reviewed by a person. Review them before switching suggestions on.
 - P3.3: the help action in readers beyond the Excel pilot needs Bridges (and allowlisted check templates) for those subjects. This is content authoring work.
 - PR-F / P4.1 local AI experiment: not started. BYOK is built and stays hard-disabled until the owner approves release (FLAG-015).
