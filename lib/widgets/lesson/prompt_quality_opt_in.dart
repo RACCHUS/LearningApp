@@ -36,9 +36,10 @@ class _PromptQualityOptInState extends ConsumerState<PromptQualityOptIn> {
   @override
   Widget build(BuildContext context) {
     final status = ref.watch(promptQualityStatusProvider).valueOrNull;
-    if (status == null || !status.enabled || !status.available) {
-      return const SizedBox.shrink();
-    }
+    if (status == null || !status.showControl) return const SizedBox.shrink();
+    // Turning it on needs the switch and base consent; turning it off
+    // (which deletes what was shared) is always allowed.
+    final canTurnOn = status.enabled && status.available;
     return Padding(
       padding: const EdgeInsets.only(top: 8),
       child: Column(
@@ -48,7 +49,9 @@ class _PromptQualityOptInState extends ConsumerState<PromptQualityOptIn> {
             key: const Key('prompt_quality_opt_in'),
             contentPadding: EdgeInsets.zero,
             value: status.consented,
-            onChanged: _saving ? null : _set,
+            onChanged: _saving || (!status.consented && !canTurnOn)
+                ? null
+                : _set,
             title: const Text('Help improve our prompts'),
             subtitle: const Text(
               'Share how each reply checked out: which AI you picked, '

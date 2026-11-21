@@ -3,7 +3,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(22);
+select plan(27);
 
 insert into auth.users (id, email, raw_app_meta_data, is_anonymous) values
   ('c8000000-0000-4000-8000-000000000001', 'pq-yes@example.invalid', '{"product_analytics_eligible":"true"}', false),
@@ -77,6 +77,26 @@ reset role;
 
 select is((select count(*)::int from analytics.prompt_quality_events
            where user_id = 'c8000000-0000-4000-8000-000000000001'), 2, 'two events stored');
+
+-- Privacy review fixes (migration 20261121040000).
+set local role authenticated;
+select set_config('request.jwt.claim.sub', 'c8000000-0000-4000-8000-000000000001', true);
+select is(jsonb_array_length(public.export_my_prompt_quality_events()->'events'), 2,
+  'a learner can export their own rows');
+select ok(public.export_my_prompt_quality_events()::text !~ 'c8000000-0000-4000-8000-000000000001',
+  'the export carries codes and counts, not the account id');
+select is((public.get_prompt_quality_status()->>'stored_events')::int, 2, 'status reports stored rows');
+select set_config('request.jwt.claim.sub', 'c8000000-0000-4000-8000-000000000003', true);
+select is(jsonb_array_length(public.export_my_prompt_quality_events()->'events'), 0,
+  'other accounts see none of them');
+reset role;
+update private.site_feature_controls set enabled = false where feature_key = 'analytics.prompt_quality';
+set local role authenticated;
+select set_config('request.jwt.claim.sub', 'c8000000-0000-4000-8000-000000000001', true);
+select is(public.get_prompt_quality_status()->>'consented', 'true',
+  'with the switch off, the opt-in is still reported so it can be withdrawn');
+reset role;
+update private.site_feature_controls set enabled = true where feature_key = 'analytics.prompt_quality';
 
 -- Withdrawing the base analytics consent erases prompt-quality data too.
 update analytics.product_consents set consented = false

@@ -38,6 +38,13 @@ Our core privacy principles:
 ### 2.3 Information Kept Strictly On-Device
 - **Foundational Literacy Practice**: Tactile Zaner-Bloser handwriting canvas strokes, pre-reader audio settings, and caseworker profile presets are stored locally via `SharedPreferences` / Hive and are not transmitted to backend servers unless cloud synchronization is explicitly enabled.
 
+- **On-device key points (experimental)**: when your browser has a built-in AI model (for example desktop Chrome), you can ask for key points of the section you are reading. The text is processed by your browser on your device; LearningApp sends it nowhere and does not save the result. Only how long it took is kept, on your device.
+
+### 2.4 Optional Analytics You Choose to Turn On
+- **Product analytics (opt-in)**: if you opt in from Settings → Privacy, we record which main screens you open, when the app starts and which lesson you open, linked to your account. Never your answers, anything you type, AI replies or lesson content.
+- **Prompt-quality sharing (separate opt-in)**: if you also turn this on in the lesson generator, each AI reply you check there shares only which AI you picked, whether the reply passed, error codes and counts. Never your prompts, replies, topics or answers.
+- Both are off unless you turn them on, are available only to reviewed adult accounts, are kept for up to 90 days, and can be exported or turned off at any time in Settings → Privacy. Turning either off deletes what it recorded.
+
 ---
 
 ## 3. How We Use Information

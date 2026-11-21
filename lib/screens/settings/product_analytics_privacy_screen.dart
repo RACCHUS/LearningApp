@@ -6,6 +6,7 @@ import 'package:learning_pwa/services/analytics/product_analytics_privacy_servic
 import 'package:learning_pwa/services/analytics/product_event_outbox.dart';
 import 'package:learning_pwa/services/analytics/product_event_rpc_sink.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:learning_pwa/widgets/analytics/prompt_quality_privacy_section.dart';
 
 /// Optional telemetry controls. No event emitter is mounted here. Client
 /// collection remains off until trusted server policy and release gates pass.
@@ -321,6 +322,8 @@ class _ProductAnalyticsPrivacyScreenState
                         child: const Text('Export my product events'),
                       ),
                     ],
+                    const SizedBox(height: 12),
+                    const PromptQualityPrivacySection(),
                     const SizedBox(height: 12),
                     OutlinedButton(
                       onPressed: _busy ? null : _clearDevice,

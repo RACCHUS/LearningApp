@@ -185,7 +185,7 @@ class _LocalKeyPointsActionState extends ConsumerState<LocalKeyPointsAction> {
                 const SizedBox(height: 12),
                 Text(
                   'Took $seconds s on this device'
-                  '${median != null && bench.recentMs.length > 1 ? ' (usually ${(median / 1000).toStringAsFixed(1)} s)' : ''}.',
+                  '${median != null && bench.recentMs.length >= 3 ? ' (usually ${(median / 1000).toStringAsFixed(1)} s)' : ''}.',
                   style: theme.textTheme.bodySmall,
                 ),
               ],
