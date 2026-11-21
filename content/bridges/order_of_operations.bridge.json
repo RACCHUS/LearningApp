@@ -1,0 +1,218 @@
+{
+  "bridge_version": 1,
+  "bridge_id": "bridge-order-of-operations",
+  "content_version": "1.0.0",
+  "title": "Order of operations",
+  "concept_id": "order-of-operations",
+  "primary_objective": {
+    "objective_id": "algebra.order-of-operations.evaluate",
+    "statement": "Work out expressions such as 3 + 4 × 5 or 20 − 12 ÷ 4 by doing brackets, then multiplication and division, then addition and subtraction."
+  },
+  "locale": "en-US",
+  "estimated_minutes": 4,
+  "uses_ai": false,
+  "builds_on": [],
+  "applies_to_tags": [
+    "order-of-operations"
+  ],
+  "sources": [
+    {
+      "source_id": "openstax-college-algebra-1e-1-1",
+      "publisher": "OpenStax, Rice University",
+      "title": "College Algebra",
+      "section": "1.1 Real Numbers: Algebra Essentials",
+      "url": "https://openstax.org/books/college-algebra/pages/1-1-real-numbers-algebra-essentials",
+      "license": "CC BY 4.0",
+      "rights_posture": "link_only"
+    }
+  ],
+  "teach": [
+    {
+      "block_id": "ooo-teach-1",
+      "text": "When an expression mixes operations, everyone agrees on one order so it has one answer: first anything in brackets, then powers, then multiplication and division, then addition and subtraction.",
+      "source_ids": [
+        "openstax-college-algebra-1e-1-1"
+      ]
+    },
+    {
+      "block_id": "ooo-teach-2",
+      "text": "Multiplication and division are done before addition and subtraction even when they come later in the line. In 3 + 4 × 5, do 4 × 5 = 20 first, then 3 + 20 = 23.",
+      "source_ids": [
+        "openstax-college-algebra-1e-1-1"
+      ]
+    },
+    {
+      "block_id": "ooo-teach-3",
+      "text": "Brackets change the order on purpose. In (3 + 4) × 5 the bracket is worked out first: 3 + 4 = 7, then 7 × 5 = 35. Operations of the same level go left to right.",
+      "source_ids": [
+        "openstax-college-algebra-1e-1-1"
+      ]
+    }
+  ],
+  "examples": [
+    {
+      "block_id": "ooo-example-1",
+      "text": "3 + 4 × 5: multiply first, 4 × 5 = 20, then add: 3 + 20 = 23.",
+      "source_ids": [
+        "openstax-college-algebra-1e-1-1"
+      ],
+      "worked": {
+        "template": "add_product",
+        "inputs": {
+          "a": 3,
+          "b": 4,
+          "c": 5
+        },
+        "result": 23
+      }
+    },
+    {
+      "block_id": "ooo-example-2",
+      "text": "(3 + 4) × 5: bracket first, 3 + 4 = 7, then 7 × 5 = 35.",
+      "source_ids": [
+        "openstax-college-algebra-1e-1-1"
+      ],
+      "worked": {
+        "template": "product_of_sum",
+        "inputs": {
+          "a": 3,
+          "b": 4,
+          "c": 5
+        },
+        "result": 35
+      }
+    }
+  ],
+  "alternate_explanations": [
+    {
+      "block_id": "ooo-alt-1",
+      "text": "Think of 4 × 5 as one tight group, like four bags of five apples. In 3 + 4 × 5 you have 3 loose apples plus those bags (20 apples), so 23 apples in all.",
+      "source_ids": [
+        "openstax-college-algebra-1e-1-1"
+      ]
+    }
+  ],
+  "checks": [
+    {
+      "item_id": "ooo-check-1",
+      "kind": "numeric",
+      "prompt": "What is 2 + 6 × 3?",
+      "template": "add_product",
+      "inputs": {
+        "a": 2,
+        "b": 6,
+        "c": 3
+      },
+      "answer": 20,
+      "feedback": "Multiply first: 6 × 3 = 18, then 2 + 18 = 20."
+    },
+    {
+      "item_id": "ooo-check-2",
+      "kind": "choice",
+      "prompt": "What is 5 + 3 × 4?",
+      "template": "add_product",
+      "inputs": {
+        "a": 5,
+        "b": 3,
+        "c": 4
+      },
+      "options": [
+        {
+          "option_id": "a",
+          "text": "17",
+          "value": 17
+        },
+        {
+          "option_id": "b",
+          "text": "32",
+          "value": 32,
+          "misconception_id": "ooo-left-to-right"
+        },
+        {
+          "option_id": "c",
+          "text": "12",
+          "value": 12
+        },
+        {
+          "option_id": "d",
+          "text": "60",
+          "value": 60
+        }
+      ],
+      "correct_option_id": "a",
+      "feedback": "3 × 4 = 12 first, then 5 + 12 = 17. Working left to right (5 + 3 = 8, then 8 × 4) gives 32, which is not the agreed order."
+    },
+    {
+      "item_id": "ooo-check-3",
+      "kind": "choice",
+      "prompt": "What is 20 − 12 ÷ 4?",
+      "template": "subtract_quotient",
+      "inputs": {
+        "a": 20,
+        "b": 12,
+        "c": 4
+      },
+      "options": [
+        {
+          "option_id": "a",
+          "text": "2",
+          "value": 2,
+          "misconception_id": "ooo-left-to-right"
+        },
+        {
+          "option_id": "b",
+          "text": "17",
+          "value": 17
+        },
+        {
+          "option_id": "c",
+          "text": "5",
+          "value": 5
+        },
+        {
+          "option_id": "d",
+          "text": "8",
+          "value": 8
+        }
+      ],
+      "correct_option_id": "b",
+      "feedback": "Divide first: 12 ÷ 4 = 3, then 20 − 3 = 17. Subtracting first gives (20 − 12) ÷ 4 = 2."
+    },
+    {
+      "item_id": "ooo-check-4",
+      "kind": "numeric",
+      "prompt": "What is (1 + 9) × 7?",
+      "template": "product_of_sum",
+      "inputs": {
+        "a": 1,
+        "b": 9,
+        "c": 7
+      },
+      "answer": 70,
+      "feedback": "Bracket first: 1 + 9 = 10, then 10 × 7 = 70."
+    }
+  ],
+  "misconceptions": [
+    {
+      "misconception_id": "ooo-left-to-right",
+      "label": "working strictly from left to right",
+      "contrast": "Reading order is not working order. Multiplication and division come before addition and subtraction, wherever they sit in the line, unless brackets say otherwise: 5 + 3 × 4 is 5 + 12 = 17, not 8 × 4 = 32.",
+      "source_ids": [
+        "openstax-college-algebra-1e-1-1"
+      ]
+    }
+  ],
+  "return_cue": "Back to your lesson: brackets, then powers, then × and ÷, then + and −.",
+  "accessibility": {
+    "plain_language": true,
+    "screen_reader_ready": true,
+    "audio_script_available": true,
+    "needs_images": false
+  },
+  "evidence": {
+    "human_reviewed": false,
+    "citations_checked_at": "2026-11-21",
+    "deterministic_checks": "All worked examples and check answers are recomputed by BridgeCheckEvaluator (add_product, product_of_sum, subtract_quotient) in CI.",
+    "notes": "Draft for owner review. Text is independently written; the CC BY 4.0 source is linked only. No person has reviewed this content yet."
+  }
+}

@@ -1,0 +1,73 @@
+{
+  "companion_version": 1,
+  "companion_id": "companion-order-of-operations-openstax",
+  "bridge_id": "bridge-order-of-operations",
+  "objective_id": "algebra.order-of-operations.evaluate",
+  "uses_ai": false,
+  "resource": {
+    "publisher": "OpenStax, Rice University",
+    "title": "College Algebra",
+    "section": "1.1 Real Numbers: Algebra Essentials",
+    "url": "https://openstax.org/books/college-algebra/pages/1-1-real-numbers-algebra-essentials",
+    "license": "CC BY 4.0",
+    "rights_posture": "link_only",
+    "access": "free_no_login",
+    "last_checked_at": "2026-11-21"
+  },
+  "focus_note": "Read the part on the order of operations. Notice that multiplication and division come before addition and subtraction unless brackets say otherwise.",
+  "checks": [
+    {
+      "item_id": "ooox-check-1",
+      "kind": "numeric",
+      "prompt": "What is 10 + 2 × 6?",
+      "template": "add_product",
+      "inputs": {
+        "a": 10,
+        "b": 2,
+        "c": 6
+      },
+      "answer": 22,
+      "feedback": "2 × 6 = 12 first, then 10 + 12 = 22."
+    },
+    {
+      "item_id": "ooox-check-2",
+      "kind": "choice",
+      "prompt": "What is 18 − 6 ÷ 3?",
+      "template": "subtract_quotient",
+      "inputs": {
+        "a": 18,
+        "b": 6,
+        "c": 3
+      },
+      "options": [
+        {
+          "option_id": "a",
+          "text": "4",
+          "value": 4
+        },
+        {
+          "option_id": "b",
+          "text": "16",
+          "value": 16
+        },
+        {
+          "option_id": "c",
+          "text": "12",
+          "value": 12
+        },
+        {
+          "option_id": "d",
+          "text": "2",
+          "value": 2
+        }
+      ],
+      "correct_option_id": "b",
+      "feedback": "6 ÷ 3 = 2 first, then 18 − 2 = 16. Subtracting first would give 12 ÷ 3 = 4."
+    }
+  ],
+  "evidence": {
+    "human_reviewed": false,
+    "citations_checked_at": "2026-11-21",
+    "notes": "Draft for owner review. Linked only; questions are independently written and recomputed by the shared Bridge evaluator. No person has reviewed this yet."
+  }
+}

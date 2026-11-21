@@ -70,6 +70,22 @@ void main() {
       expect(err(t, {'coefficient': 1, 'exponent': -13}), isNotNull);
     });
 
+    test('order of operations: fixed forms, exact', () {
+      expect(calc(BridgeCheckTemplate.addProduct, {'a': 3, 'b': 4, 'c': 5}), ExactNumber.fromInt(23));
+      expect(calc(BridgeCheckTemplate.productOfSum, {'a': 3, 'b': 4, 'c': 5}), ExactNumber.fromInt(35));
+      expect(calc(BridgeCheckTemplate.subtractQuotient, {'a': 20, 'b': 12, 'c': 4}), ExactNumber.fromInt(17));
+      expect(err(BridgeCheckTemplate.subtractQuotient, {'a': 1, 'b': 1, 'c': 0}), isNotNull);
+    });
+
+    test('fraction arithmetic is exact and refuses bad parts', () {
+      expect(calc(BridgeCheckTemplate.fractionAdd, {'a': 1, 'b': 2, 'c': 1, 'd': 4}), ExactNumber.tryParse('0.75'));
+      expect(calc(BridgeCheckTemplate.fractionMultiply, {'a': 2, 'b': 3, 'c': 3, 'd': 4}), ExactNumber.tryParse('0.5'));
+      expect(calc(BridgeCheckTemplate.fractionDivide, {'a': 3, 'b': 4, 'c': 1, 'd': 2}), ExactNumber.tryParse('1.5'));
+      expect(err(BridgeCheckTemplate.fractionAdd, {'a': 1, 'b': 0, 'c': 1, 'd': 2}), isNotNull);
+      expect(err(BridgeCheckTemplate.fractionMultiply, {'a': '0.5', 'b': 2, 'c': 1, 'd': 2}), isNotNull);
+      expect(err(BridgeCheckTemplate.fractionDivide, {'a': 1, 'b': 2, 'c': 0, 'd': 3}), isNotNull);
+    });
+
     test('square roots are exact or refused, never approximated', () {
       const t = BridgeCheckTemplate.squareRoot;
       expect(calc(t, {'radicand': 144}), ExactNumber.fromInt(12));

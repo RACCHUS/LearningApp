@@ -30,7 +30,25 @@ enum BridgeCheckTemplate {
 
   /// The non-negative square root, only when it is exact (a perfect square
   /// such as 144 or 0.25); anything else is refused, never approximated.
-  squareRoot('square_root', ['radicand']);
+  squareRoot('square_root', ['radicand']),
+
+  /// `a + b × c` (multiplication before addition).
+  addProduct('add_product', ['a', 'b', 'c']),
+
+  /// `(a + b) × c` (brackets first).
+  productOfSum('product_of_sum', ['a', 'b', 'c']),
+
+  /// `a − b ÷ c` (division before subtraction).
+  subtractQuotient('subtract_quotient', ['a', 'b', 'c']),
+
+  /// `a/b + c/d` with whole-number numerators and denominators.
+  fractionAdd('fraction_add', ['a', 'b', 'c', 'd']),
+
+  /// `a/b × c/d`.
+  fractionMultiply('fraction_multiply', ['a', 'b', 'c', 'd']),
+
+  /// `a/b ÷ c/d`.
+  fractionDivide('fraction_divide', ['a', 'b', 'c', 'd']);
 
   const BridgeCheckTemplate(this.wire, this.inputNames);
 
@@ -116,6 +134,34 @@ class BridgeCheckEvaluator {
           return fail('radicand must be a perfect square');
         }
         return BridgeComputation._(ExactNumber(top, bottom), null);
+      case BridgeCheckTemplate.addProduct:
+        return BridgeComputation._(v['a']! + v['b']! * v['c']!, null);
+      case BridgeCheckTemplate.productOfSum:
+        return BridgeComputation._((v['a']! + v['b']!) * v['c']!, null);
+      case BridgeCheckTemplate.subtractQuotient:
+        if (v['c']!.isZero) return fail('c must not be zero');
+        return BridgeComputation._(v['a']! - v['b']! / v['c']!, null);
+      case BridgeCheckTemplate.fractionAdd:
+      case BridgeCheckTemplate.fractionMultiply:
+      case BridgeCheckTemplate.fractionDivide:
+        for (final n in ['a', 'b', 'c', 'd']) {
+          if (v[n]!.denominator != BigInt.one) {
+            return fail('fraction parts must be whole numbers');
+          }
+        }
+        if (v['b']!.isZero || v['d']!.isZero) {
+          return fail('denominators must not be zero');
+        }
+        final left = v['a']! / v['b']!;
+        final right = v['c']! / v['d']!;
+        if (template == BridgeCheckTemplate.fractionAdd) {
+          return BridgeComputation._(left + right, null);
+        }
+        if (template == BridgeCheckTemplate.fractionMultiply) {
+          return BridgeComputation._(left * right, null);
+        }
+        if (right.isZero) return fail('cannot divide by zero');
+        return BridgeComputation._(left / right, null);
     }
   }
 

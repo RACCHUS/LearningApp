@@ -1,0 +1,227 @@
+{
+  "bridge_version": 1,
+  "bridge_id": "bridge-fraction-arithmetic",
+  "content_version": "1.0.0",
+  "title": "Adding, multiplying and dividing fractions",
+  "concept_id": "fraction-arithmetic",
+  "primary_objective": {
+    "objective_id": "numeracy.fractions.operate",
+    "statement": "Add fractions with a common denominator, multiply fractions, and divide by a fraction by multiplying by its reciprocal, the same rules rational expressions use."
+  },
+  "locale": "en-US",
+  "estimated_minutes": 5,
+  "uses_ai": false,
+  "builds_on": [
+    "bridge-fraction-decimal"
+  ],
+  "applies_to_tags": [
+    "rational-expressions",
+    "fractions"
+  ],
+  "sources": [
+    {
+      "source_id": "openstax-college-algebra-1e-1-6",
+      "publisher": "OpenStax, Rice University",
+      "title": "College Algebra",
+      "section": "1.6 Rational Expressions",
+      "url": "https://openstax.org/books/college-algebra/pages/1-6-rational-expressions",
+      "license": "CC BY 4.0",
+      "rights_posture": "link_only"
+    }
+  ],
+  "teach": [
+    {
+      "block_id": "fra-teach-1",
+      "text": "To multiply fractions, multiply the tops together and the bottoms together: 1/2 × 3/4 = 3/8.",
+      "source_ids": [
+        "openstax-college-algebra-1e-1-6"
+      ]
+    },
+    {
+      "block_id": "fra-teach-2",
+      "text": "To divide by a fraction, flip it and multiply: 3/4 ÷ 1/2 is 3/4 × 2/1 = 6/4, which is 1.5.",
+      "source_ids": [
+        "openstax-college-algebra-1e-1-6"
+      ]
+    },
+    {
+      "block_id": "fra-teach-3",
+      "text": "To add, the bottoms must match first. 1/2 + 1/4: rewrite 1/2 as 2/4, then add the tops: 2/4 + 1/4 = 3/4. Never add the bottoms. Rational expressions follow exactly the same rules with letters in place of numbers.",
+      "source_ids": [
+        "openstax-college-algebra-1e-1-6"
+      ]
+    }
+  ],
+  "examples": [
+    {
+      "block_id": "fra-example-1",
+      "text": "1/2 × 3/4 = 3/8, which is 0.375.",
+      "source_ids": [
+        "openstax-college-algebra-1e-1-6"
+      ],
+      "worked": {
+        "template": "fraction_multiply",
+        "inputs": {
+          "a": 1,
+          "b": 2,
+          "c": 3,
+          "d": 4
+        },
+        "result": "0.375"
+      }
+    },
+    {
+      "block_id": "fra-example-2",
+      "text": "1/2 + 1/4 = 2/4 + 1/4 = 3/4, which is 0.75.",
+      "source_ids": [
+        "openstax-college-algebra-1e-1-6"
+      ],
+      "worked": {
+        "template": "fraction_add",
+        "inputs": {
+          "a": 1,
+          "b": 2,
+          "c": 1,
+          "d": 4
+        },
+        "result": "0.75"
+      }
+    }
+  ],
+  "alternate_explanations": [
+    {
+      "block_id": "fra-alt-1",
+      "text": "Picture a pizza cut into quarters. One quarter plus one quarter is two quarters, half the pizza. The slices stay quarters; adding them never turns them into eighths.",
+      "source_ids": [
+        "openstax-college-algebra-1e-1-6"
+      ]
+    }
+  ],
+  "checks": [
+    {
+      "item_id": "fra-check-1",
+      "kind": "choice",
+      "prompt": "What is 1/4 + 1/4?",
+      "template": "fraction_add",
+      "inputs": {
+        "a": 1,
+        "b": 4,
+        "c": 1,
+        "d": 4
+      },
+      "options": [
+        {
+          "option_id": "a",
+          "text": "1/2 (0.5)",
+          "value": "0.5"
+        },
+        {
+          "option_id": "b",
+          "text": "2/8 (0.25)",
+          "value": "0.25",
+          "misconception_id": "fra-adds-bottoms"
+        },
+        {
+          "option_id": "c",
+          "text": "1/8 (0.125)",
+          "value": "0.125"
+        },
+        {
+          "option_id": "d",
+          "text": "2",
+          "value": 2
+        }
+      ],
+      "correct_option_id": "a",
+      "feedback": "The bottoms already match, so add the tops: 2/4, which is 1/2. Adding the bottoms too gives 2/8, half the right answer."
+    },
+    {
+      "item_id": "fra-check-2",
+      "kind": "choice",
+      "prompt": "What is 3/5 + 1/5?",
+      "template": "fraction_add",
+      "inputs": {
+        "a": 3,
+        "b": 5,
+        "c": 1,
+        "d": 5
+      },
+      "options": [
+        {
+          "option_id": "a",
+          "text": "4/10 (0.4)",
+          "value": "0.4",
+          "misconception_id": "fra-adds-bottoms"
+        },
+        {
+          "option_id": "b",
+          "text": "4/5 (0.8)",
+          "value": "0.8"
+        },
+        {
+          "option_id": "c",
+          "text": "3/25 (0.12)",
+          "value": "0.12"
+        },
+        {
+          "option_id": "d",
+          "text": "3/5 (0.6)",
+          "value": "0.6"
+        }
+      ],
+      "correct_option_id": "b",
+      "feedback": "Same bottoms, so add the tops: 4/5, which is 0.8. 4/10 adds the bottoms as well, which is not allowed."
+    },
+    {
+      "item_id": "fra-check-3",
+      "kind": "numeric",
+      "prompt": "What is 3/4 ÷ 1/2? Give your answer as a decimal.",
+      "template": "fraction_divide",
+      "inputs": {
+        "a": 3,
+        "b": 4,
+        "c": 1,
+        "d": 2
+      },
+      "answer": "1.5",
+      "feedback": "Flip 1/2 to 2/1 and multiply: 3/4 × 2 = 6/4 = 1.5."
+    },
+    {
+      "item_id": "fra-check-4",
+      "kind": "numeric",
+      "prompt": "What is 2/3 × 3/4? Give your answer as a decimal.",
+      "template": "fraction_multiply",
+      "inputs": {
+        "a": 2,
+        "b": 3,
+        "c": 3,
+        "d": 4
+      },
+      "answer": "0.5",
+      "feedback": "Tops: 2 × 3 = 6. Bottoms: 3 × 4 = 12. 6/12 = 1/2 = 0.5."
+    }
+  ],
+  "misconceptions": [
+    {
+      "misconception_id": "fra-adds-bottoms",
+      "label": "adding the denominators as well as the numerators",
+      "contrast": "The bottom of a fraction names the size of the pieces, so it stays the same when you add pieces of that size: 1/4 + 1/4 is 2/4, not 2/8. Make the bottoms match, then add only the tops.",
+      "source_ids": [
+        "openstax-college-algebra-1e-1-6"
+      ]
+    }
+  ],
+  "return_cue": "Back to your lesson: multiply straight across, flip and multiply to divide, and match the bottoms before adding.",
+  "accessibility": {
+    "plain_language": true,
+    "screen_reader_ready": true,
+    "audio_script_available": true,
+    "needs_images": false
+  },
+  "evidence": {
+    "human_reviewed": false,
+    "citations_checked_at": "2026-11-21",
+    "deterministic_checks": "All worked examples and check answers are recomputed by BridgeCheckEvaluator (fraction_add, fraction_multiply, fraction_divide) in CI.",
+    "notes": "Draft for owner review. Text is independently written; the CC BY 4.0 source is linked only. No person has reviewed this content yet."
+  }
+}
