@@ -306,7 +306,13 @@ class ManualJobSession {
     required String title,
     LessonObjectiveType? objectiveType,
   }) {
-    final tags = <String>{'ai-generated', 'unreviewed'}.toList();
+    // The prompt-pack tag lets feedback be attributed to the pack version
+    // that produced the lesson (plan v2.6 §5.7.6).
+    final tags = <String>{
+      'ai-generated',
+      'unreviewed',
+      'prompt-pack-${LaGenParser.schemaId.replaceAll('/', '-')}',
+    }.toList();
     return LaGenPersonalAdapter.toPersonalLesson(
       title: title,
       description: 'Private draft made with your own AI chat. Not reviewed.',

@@ -260,6 +260,8 @@ void main() {
       final lesson = s.toPersonalLesson(title: 'My lesson');
       expect(lesson['title'], 'My lesson');
       expect(lesson['tags'], containsAll(['ai-generated', 'unreviewed']));
+      // Feedback is attributed to the prompt-pack version (plan §5.7.6).
+      expect(lesson['tags'], contains('prompt-pack-la-gen-1.1'));
       final q = (lesson['questions'] as List).single as Map;
       expect(q['correct_answer'], 2);
       final preview = LessonImportService.preview(lesson);
