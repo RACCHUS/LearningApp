@@ -17,9 +17,9 @@
 
 > **Lineage and scope:** This is the **complete, standalone v2.6 master specification**, not an addendum. It preserves every substantive v1–v2.5 capability; incorporates useful Argon, Qwen, DeepSeek, Grok and Z.ai findings without adopting proposed feature reductions or paid-review budgets; retains prior design and change histories; and adds a verified **PR-0a answer/scoring-integrity repair** plus **PR-0b manual-creation-format compatibility repair**. Historical text is subordinate to the latest binding decisions and executable contracts. No code, migration, deployment, publication, provider integration or spend is authorized by this document alone.
 
-### Implementation status (updated 2026-11-19)
+### Implementation status (updated 2026-11-21)
 
-This log records progress only; it does not change any decision above. Every new switch is seeded **OFF**. **2026-11-19 activation (owner-approved, after browser verification):** `learning.quick_rescue`, `learning.check_disputes`, `ai.manual_generation_v2` and `content.parametric_practice` are ON (#328). Still OFF: `learning.auto_gap_suggestions` (needs a person's review of the misconception tags), `content.external_companion` (needs re-verification), and `content.public_contribution`, `content.refresh_proposals` and `content.wanted_board` (public user content: owner moderation decision). None has client effect until a reviewed web build sets `SITE_FEATURE_RPC_READY` (audit B.5). "Deployed" means the migration is applied in production; it never means switched on.
+This log records progress only; it does not change any decision above. Every new switch is seeded **OFF**. **2026-11-19 activation (owner-approved, after browser verification):** `learning.quick_rescue`, `learning.check_disputes`, `ai.manual_generation_v2` and `content.parametric_practice` are ON (#328). Since then the owner also switched on `content.external_companion`, `content.public_contribution`, `content.refresh_proposals`, `content.wanted_board` (one-person-team moderation, #334) and `analytics.product_events` (#331). Still OFF: `learning.auto_gap_suggestions` (needs a person's review of the misconception tags), `ai.managed` (ready; needs the owner's `GEMINI_API_KEY`), `ai.byok` and `ai.external_mcp`. Live web builds set `SITE_FEATURE_RPC_READY`. "Deployed" means the migration is applied in production; it never means switched on.
 
 | Plan item | Status | PRs |
 |---|---|---|
@@ -34,14 +34,23 @@ This log records progress only; it does not change any decision above. Every new
 | PR-D disputed checks (`learning.check_disputes`) | Learners send a disputed Bridge check for review; moderators uphold (that check version is hidden and never counts) or dismiss. Deployed 2026-11-19 | #317 |
 | PR-E external companions (`content.external_companion`) | Merged | #238 |
 | PR-H contributions (`content.public_contribution`, `content.refresh_proposals`) | Submit, review, publish and takedown; moderator screen; community browse and reporting; refresh proposals | #239, #250, #251, #252 |
-| PR-H Wanted Board (`content.wanted_board`) | Moderated concept-level requests, suppressed vote counts, contributor links, fulfilment only by a published lesson. **Migration not yet deployed** | #323 |
-| Parametric practice pilot (`content.parametric_practice`) | Two server-generated, server-scored families with key isolation and exposure limits. **Migration not yet deployed** | #324 |
+| PR-H Wanted Board (`content.wanted_board`) | Moderated concept-level requests, suppressed vote counts, contributor links, fulfilment only by a published lesson | #323 |
+| Parametric practice pilot (`content.parametric_practice`) | Two server-generated, server-scored families with key isolation and exposure limits | #324 |
+| Basic product analytics (`analytics.product_events`) | Privacy-noted product events through the outbox | #331 |
+| Guided paste extraction (§5.5) | Paste a whole chat reply; slots are extracted and checked | #333 |
+| PR-G BYOK (P4.3) | Ready to release: error classes, retries, quota pause, key check, CSP, 18+ consent; release latch still OFF | #338 |
+| Managed free-tier AI (`ai.managed`, §5.4) | Free Gemini tier via an edge function with per-user and shared daily caps; pauses until the daily reset when the provider quota is hit and tells the learner | #339 |
+| Content supply (§8.1, §8.4) | Source registry with licenses and allowed uses (CI-checked), ingestion runbook, supply and reuse map | #340 |
+| Open content first (§4.3) | The Reuse Gate offers free open textbook sections before any AI route | #341 |
+| Open textbook import (§8.2) | Approved CC BY sections become lessons with math, worked examples, practice, server-graded numeric checks and credit; owner-approved ingestion workflow; corrected re-imports replace the old version | #342, #343, #344 |
+| Version replacement continuity (P5.2) | Learning contexts move to the replacement lesson (#345). Learner history survives a new version: lineage is recorded when a version is retired, lesson progress and placed resources are copied, late offline events land on the replacement, and device-local progress and resume pointers move too. Local progress on the web is now actually saved (its storage adapter was never registered) | #345, this PR |
 
 **Still open (all retained):**
-- PR-C opt-in prompt-quality telemetry (§5.7.6): **blocked**. The product-analytics client (`ProductAnalyticsService`) is not wired in the app yet; it waits for the analytics plan's outbox, consent model and erasure policy. Prompt telemetry should ride on that, behind its own extra opt-in, after owner privacy review.
+- PR-C opt-in prompt-quality telemetry (§5.7.6): unblocked now that basic analytics exists (#331). Build it behind its own extra opt-in; switching it on needs owner privacy review.
 - Misconception tags are authored but not reviewed by a person. Review them before switching suggestions on.
 - P3.3: the help action in readers beyond the Excel pilot needs Bridges (and allowlisted check templates) for those subjects. This is content authoring work.
-- PR-F (local AI) and PR-G (BYOK) wait on owner prerequisites; BYOK stays hard-disabled (FLAG-015).
+- PR-F / P4.1 local AI experiment: not started. BYOK is built and stays hard-disabled until the owner approves release (FLAG-015).
+- Owner decisions: `GEMINI_API_KEY` for `ai.managed`; non-commercial (NC) sources; the Psychology 2e license mismatch; ingesting the seven curriculum manifests that pass checks.
 - M1 evidence review: needs real learner sessions with the switches on.
 
 ### What changed in v2.6 — Z.ai independent review, creation-path parity and full answer/scorer sweep

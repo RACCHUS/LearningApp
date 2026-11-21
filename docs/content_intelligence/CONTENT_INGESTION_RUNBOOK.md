@@ -54,7 +54,7 @@ python tool/import_open_textbook.py --source openstax-college-algebra-1e --chapt
 2. Review a few lessons.
 3. Have the owner ingest them (step 9).
 
-**Correcting lessons already published:** published versions cannot change. Fix the importer, bump `IMPORT_REVISION` in `tool/import_open_textbook.py` (the version code becomes `OPENSTAX-<book>-R<n>`), re-run the import, and run the ingestion workflow with `stop_after: published` and `retire_previous: true`. The new version replaces the old one in one step; progress on the retired version's lessons does not carry over.
+**Correcting lessons already published:** published versions cannot change. Fix the importer, bump `IMPORT_REVISION` in `tool/import_open_textbook.py` (the version code becomes `OPENSTAX-<book>-R<n>`), re-run the import, and run the ingestion workflow with `stop_after: published` and `retire_previous: true`. The new version replaces the old one in one step. Learners keep their place: lesson progress, placed resources, learning goals, resume points and device-local progress move to the same-title lesson in the new version (migration `20261121000000`). A section dropped from the new version keeps its history on the retired lesson, and its learning goal is archived.
 
 **Pilot (2026-11-20):**
 - College Algebra chapter 1: 4 lessons, 27 graded questions. 1.4 Polynomials and 1.5 Factoring were left out because none of their answers is a single number.
