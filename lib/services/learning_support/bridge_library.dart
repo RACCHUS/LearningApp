@@ -24,6 +24,8 @@ class BridgeLibrary {
     'content/bridges/exponents.bridge.json',
     'content/bridges/scientific_notation.bridge.json',
     'content/bridges/square_roots.bridge.json',
+    'content/bridges/order_of_operations.bridge.json',
+    'content/bridges/fraction_arithmetic.bridge.json',
   ];
 
   final List<BridgeLesson> bridges;
