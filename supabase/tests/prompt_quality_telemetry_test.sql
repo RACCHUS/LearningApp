@@ -23,9 +23,13 @@ create function pg_temp.ev(p_id text, p_outcome text default 'clean') returns js
 $$;
 grant execute on function pg_temp.ev(text, text) to authenticated;
 
-select ok(exists (select 1 from private.site_feature_controls
-                  where feature_key = 'analytics.prompt_quality' and not enabled and not release_ready),
-  'the switch is seeded OFF and not release ready');
+select ok(exists (select 1 from private.site_feature_change_audit
+                  where feature_key = 'analytics.prompt_quality' and next_enabled
+                    and reason like '%Owner-approved%'),
+  'turning it on was an audited owner decision');
+-- The gates below are tested from OFF, whatever production holds.
+update private.site_feature_controls set enabled = false, release_ready = false
+  where feature_key = 'analytics.prompt_quality';
 select ok(not has_function_privilege('anon', 'public.record_prompt_quality_events(jsonb[])', 'execute'),
   'guests cannot record');
 select ok(not has_table_privilege('authenticated', 'analytics.prompt_quality_events', 'select'),
