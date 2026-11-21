@@ -384,6 +384,22 @@ class LearningContextsNotifier extends StateNotifier<LearningContextsState> {
         scopeMode: stale.scopeMode,
         scopeConfig: stale.scopeConfig,
       );
+      // Keep the learner's place: carry the resume pointer to the new
+      // context unless it already has one of its own.
+      final pointer = service.resumeFor(stale.id);
+      if (pointer != null && service.resumeFor(moved.id) == null) {
+        await service.saveResume(ResumePointer(
+          contextId: moved.id,
+          kind: pointer.kind,
+          activityId: pointer.activityId == stale.rootId
+              ? replacementLessonId
+              : pointer.activityId,
+          itemIndex: pointer.itemIndex,
+          courseId: pointer.courseId,
+          moduleId: pointer.moduleId,
+          updatedAt: pointer.updatedAt,
+        ));
+      }
       await service.setArchived(stale.id, archived: true);
       await load();
       if (wasActive) await setActive(moved.id);

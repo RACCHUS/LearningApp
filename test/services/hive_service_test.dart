@@ -6,11 +6,22 @@ import 'package:learning_pwa/models/mcq.dart';
 import 'package:learning_pwa/models/lesson_progress.dart';
 import 'package:learning_pwa/models/local_lesson.dart';
 import 'package:learning_pwa/models/concept_adapter.dart' as concept_adapter;
+import 'package:learning_pwa/core/hive_type_ids.dart';
 import 'package:learning_pwa/services/hive_service.dart';
 import '../test_fixtures.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  // The app registers adapters only through registerHiveAdapters(); the
+  // group below registers its own, which is how a missing app registration
+  // for UserProgress went unnoticed (every web progress write failed).
+  test('the app registers the UserProgress adapter', () {
+    Hive.resetAdapters();
+    registerHiveAdapters();
+    expect(Hive.isAdapterRegistered(HiveTypeIds.userProgress), isTrue);
+    Hive.resetAdapters();
+  });
 
   group('HiveService', () {
     late HiveService service;
@@ -229,6 +240,33 @@ void main() {
         final retrieved = allProgress.firstWhere((p) => p.id == 'progress-1');
         expect(retrieved.userId, 'user-1');
         expect(retrieved.questionsAnswered, 5);
+      });
+
+      test('progress survives a restart, with metadata and resume position', () async {
+        await service.saveProgress(UserProgress(
+          id: 'progress-restart',
+          userId: 'local-user',
+          lessonId: 'lesson-r',
+          studyMode: StudyMode.lesson,
+          date: DateTime.utc(2026, 11, 21),
+          questionsAnswered: 2,
+          correctCount: 1,
+          lessonCompleted: true,
+          studyTimeSeconds: 90,
+          lastPosition: 7,
+          metadata: {'version_key': 'v1', 'nested': {'a': 1}},
+        ));
+
+        // Read from disk, not the in-memory cache.
+        await Hive.close();
+        service = HiveService();
+        await service.init();
+
+        final restored = (await service.getProgress()).singleWhere((p) => p.id == 'progress-restart');
+        expect(restored.lessonCompleted, isTrue);
+        expect(restored.studyTimeSeconds, 90);
+        expect(restored.lastPosition, 7);
+        expect(restored.metadata?['version_key'], 'v1');
       });
 
       test('getUnsyncedProgress() returns only unsynced items', () async {

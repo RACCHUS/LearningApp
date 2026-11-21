@@ -57,8 +57,11 @@ void registerHiveAdapters() {
   if (!Hive.isAdapterRegistered(HiveTypeIds.contextCurriculumSnapshot)) {
     Hive.registerAdapter(ContextCurriculumSnapshotAdapter());
   }
-  // UserProgress adapter should be registered if it exists
-  // Add other adapters as needed
+  // Local learner progress (offline queue and guest history). Without this,
+  // every progress write failed with "unknown type" and nothing was kept.
+  if (!Hive.isAdapterRegistered(HiveTypeIds.userProgress)) {
+    Hive.registerAdapter(UserProgressAdapter());
+  }
 }
 
 // Global instance to be initialized in main.dart
@@ -498,14 +501,18 @@ class UserProgressAdapter extends TypeAdapter<UserProgress> {
       lessonCompleted: fields[8] as bool? ?? false,
       studyTimeSeconds: fields[9] as int? ?? 0,
       isSynced: fields[10] as bool? ?? false,
-      metadata: fields[11] as Map<String, dynamic>?,
+      // Hive returns Map<dynamic, dynamic>; a direct cast would throw.
+      metadata: fields[11] is Map
+          ? Map<String, dynamic>.from(fields[11] as Map)
+          : null,
+      lastPosition: fields[12] as int?,
     );
   }
 
   @override
   void write(BinaryWriter writer, UserProgress obj) {
     writer
-      ..writeByte(12) // Number of fields
+      ..writeByte(13) // Number of fields
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -529,6 +536,8 @@ class UserProgressAdapter extends TypeAdapter<UserProgress> {
       ..writeByte(10)
       ..write(obj.isSynced)
       ..writeByte(11)
-      ..write(obj.metadata);
+      ..write(obj.metadata)
+      ..writeByte(12)
+      ..write(obj.lastPosition);
   }
 }
