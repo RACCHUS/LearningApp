@@ -17,7 +17,7 @@ class StudyHelpContext {
   final List<String> tags;
 
   /// The help button for an app bar. It hides itself when help is switched
-  /// off or the lesson is outside the pilot.
+  /// off or no Bridge applies to the lesson's tags.
   Widget action() => LearningHelpAction(
     lessonId: lessonId,
     lessonTitle: lessonTitle,

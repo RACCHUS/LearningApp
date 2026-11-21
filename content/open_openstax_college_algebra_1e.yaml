@@ -6,7 +6,7 @@ source_releases:
   title: College Algebra
   version: ebc5beb (archive 20260604.144757)
   source_url: https://openstax.org/books/college-algebra/pages/preface
-  retrieved_at: '2026-11-20T14:29:32Z'
+  retrieved_at: '2026-11-21T15:24:24Z'
   license: Creative Commons Attribution 4.0 International (CC BY 4.0)
   license_name: CC BY 4.0
   rights_note: Adapted under CC BY 4.0 (owner-approved, data/content_sources.json). OpenStax and Rice University names and logos are not covered by the license; no endorsement implied. Imported automatically; not reviewed by a person.
@@ -18,7 +18,7 @@ source_releases:
 target:
   slug: open-openstax-college-algebra-1e
   title: College Algebra (open textbook)
-  version_code: OPENSTAX-EBC5BEB-R2
+  version_code: OPENSTAX-EBC5BEB-R3
   version_title: College Algebra by OpenStax, CC BY 4.0
   version_description: Open textbook sections imported as LearningApp lessons.
 domains:
@@ -52,6 +52,8 @@ domains:
       - cc-by-4.0
       - algebra
       - math
+      - real-numbers
+      - order-of-operations
       - unreviewed
       citation: College Algebra (OpenStax), Section 1.1, https://openstax.org/books/college-algebra/pages/1-1-real-numbers-algebra-essentials, CC BY 4.0
       source_release_id: openstax-college-algebra-1e
@@ -1180,6 +1182,8 @@ domains:
       - cc-by-4.0
       - algebra
       - math
+      - exponents
+      - scientific-notation
       - unreviewed
       citation: College Algebra (OpenStax), Section 1.2, https://openstax.org/books/college-algebra/pages/1-2-exponents-and-scientific-notation, CC BY 4.0
       source_release_id: openstax-college-algebra-1e
@@ -2195,6 +2199,8 @@ domains:
       - cc-by-4.0
       - algebra
       - math
+      - radicals
+      - exponents
       - unreviewed
       citation: College Algebra (OpenStax), Section 1.3, https://openstax.org/books/college-algebra/pages/1-3-radicals-and-rational-exponents, CC BY 4.0
       source_release_id: openstax-college-algebra-1e
@@ -3032,6 +3038,7 @@ domains:
       - cc-by-4.0
       - algebra
       - math
+      - rational-expressions
       - unreviewed
       citation: College Algebra (OpenStax), Section 1.6, https://openstax.org/books/college-algebra/pages/1-6-rational-expressions, CC BY 4.0
       source_release_id: openstax-college-algebra-1e

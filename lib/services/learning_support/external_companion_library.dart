@@ -19,6 +19,9 @@ class ExternalCompanionLibrary {
     'content/companions/percent_change.companion.json',
     'content/companions/percent_of_number.companion.json',
     'content/companions/spreadsheet_percent_format.companion.json',
+    'content/companions/exponents.companion.json',
+    'content/companions/scientific_notation.companion.json',
+    'content/companions/square_roots.companion.json',
   ];
 
   final Map<String, ExternalCompanion> _byBridge;

@@ -1345,6 +1345,25 @@ Future<void> _executeApply(
   }
 
   final result = rpcRes['body'] as Map<String, dynamic>;
+
+  // 6. Lesson tags (topic tags decide where "Learning help" Bridges are
+  // offered). The ingestion RPC does not store them, so they are set here
+  // while the version is still a draft (migration 20261121020000).
+  final lessonTags = _lessonTags(manifest);
+  if (lessonTags.isNotEmpty) {
+    final tagRes = await client.restRpc('set_curriculum_lesson_tags', {
+      'p_target_version_id': result['target_version_id'],
+      'p_lessons': lessonTags,
+    });
+    if (tagRes['statusCode'] >= 400) {
+      throw Exception(
+        'Setting lesson tags failed (${tagRes['statusCode']}): ${tagRes['body']}. '
+        'The draft has no tags; do not publish it.',
+      );
+    }
+    print('Lesson tags set on ${lessonTags.length} lesson(s).');
+  }
+
   print('\n----------------------------------------------------');
   print('Ingestion Results (Atomic Transaction Succeeded):');
   print('  Target Version ID    : ${result['target_version_id']} (draft)');
@@ -1359,6 +1378,39 @@ Future<void> _executeApply(
   print('  Shared Stimuli       : ${result['stimuli_count']}');
   print('  Provenance Mappings  : ${result['mappings_count']}');
   print('----------------------------------------------------');
+}
+
+/// `{title, tags}` for every lesson in the manifest that declares tags.
+List<Map<String, Object>> _lessonTags(Map<String, dynamic> manifest) {
+  final out = <Map<String, Object>>[];
+  final seen = <String>{};
+  void walk(Object? node) {
+    if (node is Map) {
+      final lessons = node['lessons'];
+      if (lessons is List) {
+        for (final l in lessons) {
+          if (l is Map && l['title'] is String && l['tags'] is List) {
+            final tags = [
+              for (final t in l['tags'] as List)
+                if (t is String) t,
+            ];
+            final title = l['title'] as String;
+            if (tags.isNotEmpty && seen.add(title)) {
+              out.add({'title': title, 'tags': tags});
+            }
+          }
+        }
+      }
+      for (final v in node.values) {
+        if (v is List || v is Map) walk(v);
+      }
+    } else if (node is List) {
+      node.forEach(walk);
+    }
+  }
+
+  walk(manifest);
+  return out;
 }
 
 // ----------------------------------------------------------------------------

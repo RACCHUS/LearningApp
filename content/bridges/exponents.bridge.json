@@ -1,0 +1,144 @@
+{
+  "bridge_version": 1,
+  "bridge_id": "bridge-exponents",
+  "content_version": "1.0.0",
+  "title": "Exponents, including zero and negative ones",
+  "concept_id": "exponent-meaning",
+  "primary_objective": {
+    "objective_id": "algebra.exponents.evaluate",
+    "statement": "Work out a power such as 3⁴, 7⁰ or 2⁻³ by reading the exponent as repeated multiplication or division."
+  },
+  "locale": "en-US",
+  "estimated_minutes": 5,
+  "uses_ai": false,
+  "builds_on": [],
+  "applies_to_tags": ["exponents"],
+  "sources": [
+    {
+      "source_id": "openstax-college-algebra-1e-1-2",
+      "publisher": "OpenStax, Rice University",
+      "title": "College Algebra",
+      "section": "1.2 Exponents and Scientific Notation",
+      "url": "https://openstax.org/books/college-algebra/pages/1-2-exponents-and-scientific-notation",
+      "license": "CC BY 4.0",
+      "rights_posture": "link_only"
+    }
+  ],
+  "teach": [
+    {
+      "block_id": "exp-teach-1",
+      "text": "An exponent counts copies in a multiplication. 2⁵ means 2 × 2 × 2 × 2 × 2, which is 32. The number being multiplied (2) is the base; the small raised number (5) is the exponent.",
+      "source_ids": ["openstax-college-algebra-1e-1-2"]
+    },
+    {
+      "block_id": "exp-teach-2",
+      "text": "Any number other than zero to the power 0 equals 1. One way to see it: 2³ is 8, 2² is 4, 2¹ is 2, and each step down divides by 2, so the next step, 2⁰, is 1.",
+      "source_ids": ["openstax-college-algebra-1e-1-2"]
+    },
+    {
+      "block_id": "exp-teach-3",
+      "text": "A negative exponent means divide instead of multiply: 2⁻³ is 1 ÷ 2³, which is 1/8. The answer is a small positive number, not a negative one.",
+      "source_ids": ["openstax-college-algebra-1e-1-2"]
+    }
+  ],
+  "examples": [
+    {
+      "block_id": "exp-example-1",
+      "text": "3⁴: 3 × 3 × 3 × 3 = 81.",
+      "source_ids": ["openstax-college-algebra-1e-1-2"],
+      "worked": {
+        "template": "power",
+        "inputs": { "base": 3, "exponent": 4 },
+        "result": 81
+      }
+    },
+    {
+      "block_id": "exp-example-2",
+      "text": "2⁻³: 2³ = 8, so 2⁻³ = 1/8 = 0.125.",
+      "source_ids": ["openstax-college-algebra-1e-1-2"],
+      "worked": {
+        "template": "power",
+        "inputs": { "base": 2, "exponent": -3 },
+        "result": "0.125"
+      }
+    }
+  ],
+  "alternate_explanations": [
+    {
+      "block_id": "exp-alt-1",
+      "text": "Picture a number line of powers of 10: 10² is 100, 10¹ is 10, 10⁰ is 1, 10⁻¹ is 0.1 and 10⁻² is 0.01. Each step to the right of zero multiplies by 10; each step to the left divides by 10.",
+      "source_ids": ["openstax-college-algebra-1e-1-2"]
+    }
+  ],
+  "checks": [
+    {
+      "item_id": "exp-check-1",
+      "kind": "numeric",
+      "prompt": "What is 5³?",
+      "template": "power",
+      "inputs": { "base": 5, "exponent": 3 },
+      "answer": 125,
+      "feedback": "5 × 5 × 5 = 125. The exponent 3 means three copies of 5, not 5 × 3."
+    },
+    {
+      "item_id": "exp-check-2",
+      "kind": "choice",
+      "prompt": "What is 4⁻²?",
+      "template": "power",
+      "inputs": { "base": 4, "exponent": -2 },
+      "options": [
+        { "option_id": "a", "text": "-16", "value": -16, "misconception_id": "exp-negative-makes-negative" },
+        { "option_id": "b", "text": "0.0625 (that is, 1/16)", "value": "0.0625" },
+        { "option_id": "c", "text": "-8", "value": -8 },
+        { "option_id": "d", "text": "16", "value": 16 }
+      ],
+      "correct_option_id": "b",
+      "feedback": "4² = 16, and the negative exponent means one over that: 1/16 = 0.0625. A negative exponent never makes the answer negative."
+    },
+    {
+      "item_id": "exp-check-3",
+      "kind": "numeric",
+      "prompt": "What is 7⁰?",
+      "template": "power",
+      "inputs": { "base": 7, "exponent": 0 },
+      "answer": 1,
+      "feedback": "Any nonzero number to the power 0 is 1."
+    },
+    {
+      "item_id": "exp-check-4",
+      "kind": "choice",
+      "prompt": "What is 10⁻¹?",
+      "template": "power",
+      "inputs": { "base": 10, "exponent": -1 },
+      "options": [
+        { "option_id": "a", "text": "0.1", "value": "0.1" },
+        { "option_id": "b", "text": "-10", "value": -10, "misconception_id": "exp-negative-makes-negative" },
+        { "option_id": "c", "text": "1", "value": 1 },
+        { "option_id": "d", "text": "9", "value": 9 }
+      ],
+      "correct_option_id": "a",
+      "feedback": "10⁻¹ means 1 ÷ 10, which is 0.1. It is small and positive, not -10."
+    }
+  ],
+  "misconceptions": [
+    {
+      "misconception_id": "exp-negative-makes-negative",
+      "label": "reading a negative exponent as a negative answer",
+      "contrast": "The minus sign in an exponent tells you to divide, not to make the answer negative. 4⁻² is 1 ÷ 4² = 1/16, a small positive number. The answer is only negative when the base itself is negative.",
+      "source_ids": ["openstax-college-algebra-1e-1-2"]
+    }
+  ],
+  "return_cue": "Back to your lesson: count the copies for a positive exponent, use 1 for zero, and divide for a negative exponent.",
+  "accessibility": {
+    "plain_language": true,
+    "screen_reader_ready": true,
+    "audio_script_available": true,
+    "needs_images": false
+  },
+  "evidence": {
+    "human_reviewed": false,
+    "citations_checked_at": "2026-11-21",
+    "deterministic_checks": "All worked examples and check answers are recomputed by BridgeCheckEvaluator (power) in CI.",
+    "notes": "Draft for owner review. Text is independently written; the CC BY 4.0 source is linked only. No person has reviewed this content yet."
+  }
+}

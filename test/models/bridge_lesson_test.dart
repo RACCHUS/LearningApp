@@ -47,6 +47,39 @@ void main() {
   });
 
   group('BridgeCheckEvaluator', () {
+    ExactNumber? calc(BridgeCheckTemplate t, Map<String, Object?> inputs) =>
+        BridgeCheckEvaluator.compute(t, inputs).value;
+    String? err(BridgeCheckTemplate t, Map<String, Object?> inputs) =>
+        BridgeCheckEvaluator.compute(t, inputs).error;
+
+    test('powers, including zero and negative exponents, are exact', () {
+      const t = BridgeCheckTemplate.power;
+      expect(calc(t, {'base': 2, 'exponent': 10}), ExactNumber.fromInt(1024));
+      expect(calc(t, {'base': 7, 'exponent': 0}), ExactNumber.fromInt(1));
+      expect(calc(t, {'base': 2, 'exponent': -2}), ExactNumber.tryParse('0.25'));
+      expect(calc(t, {'base': '-3', 'exponent': 3}), ExactNumber.fromInt(-27));
+      expect(err(t, {'base': 2, 'exponent': 13}), isNotNull);
+      expect(err(t, {'base': 2, 'exponent': '1.5'}), isNotNull);
+      expect(err(t, {'base': 0, 'exponent': -1}), isNotNull);
+    });
+
+    test('scientific notation becomes an exact ordinary number', () {
+      const t = BridgeCheckTemplate.scientificToDecimal;
+      expect(calc(t, {'coefficient': '3.2', 'exponent': 4}), ExactNumber.fromInt(32000));
+      expect(calc(t, {'coefficient': '4.5', 'exponent': -3}), ExactNumber.tryParse('0.0045'));
+      expect(err(t, {'coefficient': 1, 'exponent': -13}), isNotNull);
+    });
+
+    test('square roots are exact or refused, never approximated', () {
+      const t = BridgeCheckTemplate.squareRoot;
+      expect(calc(t, {'radicand': 144}), ExactNumber.fromInt(12));
+      expect(calc(t, {'radicand': '0.36'}), ExactNumber.tryParse('0.6'));
+      expect(calc(t, {'radicand': 0}), ExactNumber.fromInt(0));
+      expect(err(t, {'radicand': 2}), isNotNull);
+      expect(err(t, {'radicand': '0.5'}), isNotNull);
+      expect(err(t, {'radicand': -4}), isNotNull);
+    });
+
     ExactNumber run(BridgeCheckTemplate t, Map<String, Object?> i) =>
         BridgeCheckEvaluator.compute(t, i).value!;
 
@@ -113,7 +146,7 @@ void main() {
         .toList();
 
     test('has a small, reviewed-size set of Bridges', () {
-      expect(files.length, inInclusiveRange(2, 6));
+      expect(files.length, inInclusiveRange(2, 12));
     });
 
     for (final f in files) {
@@ -138,12 +171,17 @@ void main() {
         }
         // Honest evidence: no claimed review without a reviewer.
         expect(b.evidence.humanReviewed, isFalse);
-        // OpenStax terms forbid reuse beyond linking for this project.
+        // OpenStax sources are linked only; text is written independently.
+        // Second editions are CC BY-NC-SA (and forbid model training);
+        // first editions are CC BY 4.0 (data/content_sources.json).
         for (final s in b.sources.where(
           (s) => s.url.contains('openstax.org'),
         )) {
           expect(s.rightsPosture, SourceRightsPosture.linkOnly);
-          expect(s.license, contains('NC-SA'));
+          expect(
+            s.license,
+            s.url.contains('-2e/') ? contains('NC-SA') : 'CC BY 4.0',
+          );
         }
       });
     }
