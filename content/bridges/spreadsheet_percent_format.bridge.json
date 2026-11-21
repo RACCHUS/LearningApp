@@ -12,6 +12,7 @@
   "estimated_minutes": 4,
   "uses_ai": false,
   "builds_on": ["bridge-fraction-decimal", "bridge-percent-change"],
+  "applies_to_tags": ["excel", "spreadsheet"],
   "sources": [
     {
       "source_id": "ms-format-percentages",

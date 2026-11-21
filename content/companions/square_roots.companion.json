@@ -1,0 +1,69 @@
+{
+  "companion_version": 1,
+  "companion_id": "companion-square-roots-openstax",
+  "bridge_id": "bridge-square-roots",
+  "objective_id": "algebra.radicals.square-root",
+  "uses_ai": false,
+  "resource": {
+    "publisher": "OpenStax, Rice University",
+    "title": "College Algebra",
+    "section": "1.3 Radicals and Rational Exponents",
+    "url": "https://openstax.org/books/college-algebra/pages/1-3-radicals-and-rational-exponents",
+    "license": "CC BY 4.0",
+    "rights_posture": "link_only",
+    "access": "free_no_login",
+    "last_checked_at": "2026-11-21"
+  },
+  "focus_note": "Read how a principal square root is defined. Notice that it is never negative and that you can check it by squaring.",
+  "checks": [
+    {
+      "item_id": "sqrtx-check-1",
+      "kind": "numeric",
+      "prompt": "What is the square root of 225?",
+      "template": "square_root",
+      "inputs": {
+        "radicand": 225
+      },
+      "answer": 15,
+      "feedback": "15 × 15 = 225."
+    },
+    {
+      "item_id": "sqrtx-check-2",
+      "kind": "choice",
+      "prompt": "What is the square root of 0.09?",
+      "template": "square_root",
+      "inputs": {
+        "radicand": "0.09"
+      },
+      "options": [
+        {
+          "option_id": "a",
+          "text": "0.045",
+          "value": "0.045"
+        },
+        {
+          "option_id": "b",
+          "text": "0.3",
+          "value": "0.3"
+        },
+        {
+          "option_id": "c",
+          "text": "0.03",
+          "value": "0.03"
+        },
+        {
+          "option_id": "d",
+          "text": "3",
+          "value": 3
+        }
+      ],
+      "correct_option_id": "b",
+      "feedback": "0.3 × 0.3 = 0.09. Halving gives 0.045, which is not the root."
+    }
+  ],
+  "evidence": {
+    "human_reviewed": false,
+    "citations_checked_at": "2026-11-21",
+    "notes": "Draft for owner review. Linked only; questions are independently written and recomputed by the shared Bridge evaluator. No person has reviewed this yet."
+  }
+}

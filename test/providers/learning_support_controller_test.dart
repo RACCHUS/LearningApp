@@ -61,6 +61,9 @@ void main() {
       'bridge-percent-change',
       'bridge-percent-of-number',
       'bridge-spreadsheet-percent-format',
+      'bridge-exponents',
+      'bridge-scientific-notation',
+      'bridge-square-roots',
     });
     expect(
       library.offerOrder.first.bridgeId,
@@ -184,10 +187,27 @@ void main() {
     expect((await c.returnFromTop())!.rescueSessionId, 'r1');
   });
 
-  test('pilot eligibility and owner scope', () {
-    expect(isQuickRescuePilotLesson(['Excel', 'budget']), isTrue);
-    expect(isQuickRescuePilotLesson(['spreadsheet']), isTrue);
-    expect(isQuickRescuePilotLesson(['algebra']), isFalse);
+  test('help is scoped to the lesson topic, with foundations kept', () {
+    Set<String> ids(List<String> tags) =>
+        library.forLesson(tags).bridges.map((b) => b.bridgeId).toSet();
+    expect(library.hasHelpFor(['Excel', 'budget']), isTrue);
+    expect(ids(['percent', 'math']), {
+      'bridge-fraction-decimal',
+      'bridge-percent-change',
+      'bridge-percent-of-number',
+    });
+    // Scientific notation builds on exponents, so both are offered.
+    expect(ids(['algebra', 'scientific-notation']), {
+      'bridge-exponents',
+      'bridge-scientific-notation',
+    });
+    expect(ids(['radicals']), {'bridge-exponents', 'bridge-square-roots'});
+    // A lesson no Bridge covers gets no help button.
+    expect(library.hasHelpFor(['algebra', 'math']), isFalse);
+    expect(library.forLesson(['history']).isEmpty, isTrue);
+  });
+
+  test('owner scope', () {
     expect(supportOwnerScope('8f0c-uuid'), '8f0c-uuid');
     expect(supportOwnerScope('bad owner'), 'guest');
     expect(key.ownerScope, 'user-a');

@@ -1,0 +1,144 @@
+{
+  "bridge_version": 1,
+  "bridge_id": "bridge-scientific-notation",
+  "content_version": "1.0.0",
+  "title": "Scientific notation to an ordinary number",
+  "concept_id": "scientific-notation",
+  "primary_objective": {
+    "objective_id": "algebra.scientific-notation.convert",
+    "statement": "Turn a number such as 3.2 × 10⁴ or 4.5 × 10⁻³ into an ordinary number by moving the decimal point."
+  },
+  "locale": "en-US",
+  "estimated_minutes": 4,
+  "uses_ai": false,
+  "builds_on": ["bridge-exponents"],
+  "applies_to_tags": ["scientific-notation"],
+  "sources": [
+    {
+      "source_id": "openstax-college-algebra-1e-1-2",
+      "publisher": "OpenStax, Rice University",
+      "title": "College Algebra",
+      "section": "1.2 Exponents and Scientific Notation",
+      "url": "https://openstax.org/books/college-algebra/pages/1-2-exponents-and-scientific-notation",
+      "license": "CC BY 4.0",
+      "rights_posture": "link_only"
+    }
+  ],
+  "teach": [
+    {
+      "block_id": "sci-teach-1",
+      "text": "Scientific notation writes a number as a number from 1 up to (but not including) 10, times a power of 10. It keeps very large and very small numbers short: 32,000 is 3.2 × 10⁴.",
+      "source_ids": ["openstax-college-algebra-1e-1-2"]
+    },
+    {
+      "block_id": "sci-teach-2",
+      "text": "To turn it back into an ordinary number, move the decimal point. A positive exponent moves it to the right that many places, making the number bigger. A negative exponent moves it to the left, making the number smaller.",
+      "source_ids": ["openstax-college-algebra-1e-1-2"]
+    },
+    {
+      "block_id": "sci-teach-3",
+      "text": "A size check helps: 10³ is a thousand and 10⁻³ is a thousandth. If the exponent is negative, your answer must be less than 1 (for a coefficient below 10).",
+      "source_ids": ["openstax-college-algebra-1e-1-2"]
+    }
+  ],
+  "examples": [
+    {
+      "block_id": "sci-example-1",
+      "text": "3.2 × 10⁴: move the point 4 places right: 32000.",
+      "source_ids": ["openstax-college-algebra-1e-1-2"],
+      "worked": {
+        "template": "scientific_to_decimal",
+        "inputs": { "coefficient": "3.2", "exponent": 4 },
+        "result": 32000
+      }
+    },
+    {
+      "block_id": "sci-example-2",
+      "text": "4.5 × 10⁻³: move the point 3 places left: 0.0045.",
+      "source_ids": ["openstax-college-algebra-1e-1-2"],
+      "worked": {
+        "template": "scientific_to_decimal",
+        "inputs": { "coefficient": "4.5", "exponent": -3 },
+        "result": "0.0045"
+      }
+    }
+  ],
+  "alternate_explanations": [
+    {
+      "block_id": "sci-alt-1",
+      "text": "Think of the exponent as a count of multiplications by 10 (positive) or divisions by 10 (negative). 4.5 divided by 10 three times is 0.45, then 0.045, then 0.0045.",
+      "source_ids": ["openstax-college-algebra-1e-1-2"]
+    }
+  ],
+  "checks": [
+    {
+      "item_id": "sci-check-1",
+      "kind": "numeric",
+      "prompt": "Write 6.02 × 10³ as an ordinary number.",
+      "template": "scientific_to_decimal",
+      "inputs": { "coefficient": "6.02", "exponent": 3 },
+      "answer": 6020,
+      "feedback": "Move the point 3 places right: 6.02 → 60.2 → 602 → 6020."
+    },
+    {
+      "item_id": "sci-check-2",
+      "kind": "choice",
+      "prompt": "Which ordinary number is 7.1 × 10⁻²?",
+      "template": "scientific_to_decimal",
+      "inputs": { "coefficient": "7.1", "exponent": -2 },
+      "options": [
+        { "option_id": "a", "text": "710", "value": 710, "misconception_id": "sci-wrong-direction" },
+        { "option_id": "b", "text": "0.71", "value": "0.71" },
+        { "option_id": "c", "text": "0.071", "value": "0.071" },
+        { "option_id": "d", "text": "0.0071", "value": "0.0071" }
+      ],
+      "correct_option_id": "c",
+      "feedback": "A negative exponent moves the point left: 7.1 → 0.71 → 0.071. Moving it right instead gives 710, which is far too big."
+    },
+    {
+      "item_id": "sci-check-3",
+      "kind": "choice",
+      "prompt": "Which ordinary number is 9 × 10⁵?",
+      "template": "scientific_to_decimal",
+      "inputs": { "coefficient": 9, "exponent": 5 },
+      "options": [
+        { "option_id": "a", "text": "900,000", "value": 900000 },
+        { "option_id": "b", "text": "0.00009", "value": "0.00009", "misconception_id": "sci-wrong-direction" },
+        { "option_id": "c", "text": "45", "value": 45 },
+        { "option_id": "d", "text": "90,000", "value": 90000 }
+      ],
+      "correct_option_id": "a",
+      "feedback": "A positive exponent moves the point right 5 places: 9 becomes 900,000. Moving left would give a tiny number instead."
+    },
+    {
+      "item_id": "sci-check-4",
+      "kind": "numeric",
+      "prompt": "Write 1.5 × 10⁻¹ as an ordinary number.",
+      "template": "scientific_to_decimal",
+      "inputs": { "coefficient": "1.5", "exponent": -1 },
+      "answer": "0.15",
+      "feedback": "Move the point 1 place left: 1.5 becomes 0.15."
+    }
+  ],
+  "misconceptions": [
+    {
+      "misconception_id": "sci-wrong-direction",
+      "label": "moving the decimal point the wrong way",
+      "contrast": "A positive power of ten makes a number bigger, so the point moves right; a negative power makes it smaller, so the point moves left. Check the size: 7.1 × 10⁻² must be less than 1, so 710 cannot be right.",
+      "source_ids": ["openstax-college-algebra-1e-1-2"]
+    }
+  ],
+  "return_cue": "Back to your lesson: positive exponent, move the point right; negative exponent, move it left.",
+  "accessibility": {
+    "plain_language": true,
+    "screen_reader_ready": true,
+    "audio_script_available": true,
+    "needs_images": false
+  },
+  "evidence": {
+    "human_reviewed": false,
+    "citations_checked_at": "2026-11-21",
+    "deterministic_checks": "All worked examples and check answers are recomputed by BridgeCheckEvaluator (scientific_to_decimal) in CI.",
+    "notes": "Draft for owner review. Text is independently written; the CC BY 4.0 source is linked only. No person has reviewed this content yet."
+  }
+}

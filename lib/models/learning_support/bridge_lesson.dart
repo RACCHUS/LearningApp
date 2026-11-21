@@ -225,6 +225,7 @@ class BridgeLesson {
     required this.accessibility,
     required this.evidence,
     this.misconceptions = const [],
+    this.appliesToTags = const [],
   });
 
   static const int currentVersion = 1;
@@ -254,6 +255,16 @@ class BridgeLesson {
 
   /// Known misconceptions that this Bridge's wrong options are tagged with.
   final List<BridgeMisconception> misconceptions;
+
+  /// Lesson tags this Bridge helps with (e.g. `percent`, `exponents`).
+  /// "Learning help" appears on a lesson only when a Bridge applies to one
+  /// of its tags, and offers only those Bridges (plus what they build on).
+  final List<String> appliesToTags;
+
+  bool appliesTo(Iterable<String> lessonTags) {
+    final tags = {for (final t in lessonTags) t.toLowerCase()};
+    return appliesToTags.any(tags.contains);
+  }
 
   BridgeMisconception? misconception(String id) {
     for (final m in misconceptions) {
@@ -421,6 +432,21 @@ class _BridgeDecoder {
       }
     } else {
       issue('$p.builds_on', 'must be a list (may be empty)');
+    }
+
+    final appliesTo = <String>[];
+    final rawApplies = json['applies_to_tags'];
+    if (rawApplies is List && rawApplies.isNotEmpty) {
+      for (var i = 0; i < rawApplies.length; i++) {
+        final t = rawApplies[i];
+        if (t is String && RegExp(r'^[a-z0-9][a-z0-9-]{1,39}$').hasMatch(t)) {
+          appliesTo.add(t);
+        } else {
+          issue('$p.applies_to_tags[$i]', 'must be a lowercase lesson tag');
+        }
+      }
+    } else {
+      issue('$p.applies_to_tags', 'must list at least one lesson tag');
     }
 
     final sources = <BridgeSource>[];
@@ -661,6 +687,7 @@ class _BridgeDecoder {
         examples: List.unmodifiable(examples),
         alternateExplanations: List.unmodifiable(alternates),
         misconceptions: List.unmodifiable(misconceptions),
+        appliesToTags: List.unmodifiable(appliesTo),
         checks: List.unmodifiable(checks),
         returnCue: returnCue!,
         accessibility: accessibility!,

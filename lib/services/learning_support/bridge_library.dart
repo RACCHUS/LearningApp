@@ -21,6 +21,9 @@ class BridgeLibrary {
     'content/bridges/percent_change.bridge.json',
     'content/bridges/percent_of_number.bridge.json',
     'content/bridges/spreadsheet_percent_format.bridge.json',
+    'content/bridges/exponents.bridge.json',
+    'content/bridges/scientific_notation.bridge.json',
+    'content/bridges/square_roots.bridge.json',
   ];
 
   final List<BridgeLesson> bridges;
@@ -41,6 +44,31 @@ class BridgeLibrary {
     });
     return out;
   }
+
+  /// Bridges for a lesson with [lessonTags]: those that apply to one of
+  /// its tags, plus everything they build on (so "Need a step back?" still
+  /// works), in [offerOrder]. Empty when nothing applies, and then the
+  /// lesson shows no "Learning help".
+  BridgeLibrary forLesson(Iterable<String> lessonTags) {
+    final keep = <String>{};
+    void add(String id) {
+      final b = _byId[id];
+      if (b == null || !keep.add(id)) return;
+      b.buildsOn.forEach(add);
+    }
+
+    for (final b in bridges) {
+      if (b.appliesTo(lessonTags)) add(b.bridgeId);
+    }
+    return BridgeLibrary([
+      for (final b in bridges)
+        if (keep.contains(b.bridgeId)) b,
+    ]);
+  }
+
+  /// Whether any Bridge applies to a lesson with [lessonTags].
+  bool hasHelpFor(Iterable<String> lessonTags) =>
+      bridges.any((b) => b.appliesTo(lessonTags));
 
   /// Loads and validates every bundled Bridge. Invalid files are skipped;
   /// a set-level problem (unknown dependency, cycle) drops the whole set,

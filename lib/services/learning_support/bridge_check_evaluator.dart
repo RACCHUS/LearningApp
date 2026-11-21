@@ -18,7 +18,19 @@ enum BridgeCheckTemplate {
   decimalToPercent('decimal_to_percent', ['value']),
 
   /// `percent ÷ 100`.
-  percentToDecimal('percent_to_decimal', ['percent']);
+  percentToDecimal('percent_to_decimal', ['percent']),
+
+  /// `base ^ exponent` for a whole-number exponent from −12 to 12
+  /// (a negative exponent means one over the positive power).
+  power('power', ['base', 'exponent']),
+
+  /// `coefficient × 10 ^ exponent` for a whole-number exponent from −12
+  /// to 12 (scientific notation to an ordinary number).
+  scientificToDecimal('scientific_to_decimal', ['coefficient', 'exponent']),
+
+  /// The non-negative square root, only when it is exact (a perfect square
+  /// such as 144 or 0.25); anything else is refused, never approximated.
+  squareRoot('square_root', ['radicand']);
 
   const BridgeCheckTemplate(this.wire, this.inputNames);
 
@@ -83,7 +95,61 @@ class BridgeCheckEvaluator {
         return BridgeComputation._(v['value']! * hundred, null);
       case BridgeCheckTemplate.percentToDecimal:
         return BridgeComputation._(v['percent']! / hundred, null);
+      case BridgeCheckTemplate.power:
+        final n = _smallWhole(v['exponent']!);
+        if (n == null) return fail('exponent must be a whole number from -12 to 12');
+        if (n < 0 && v['base']!.isZero) return fail('zero has no negative power');
+        return BridgeComputation._(_pow(v['base']!, n), null);
+      case BridgeCheckTemplate.scientificToDecimal:
+        final n = _smallWhole(v['exponent']!);
+        if (n == null) return fail('exponent must be a whole number from -12 to 12');
+        return BridgeComputation._(
+          v['coefficient']! * _pow(ExactNumber.fromInt(10), n),
+          null,
+        );
+      case BridgeCheckTemplate.squareRoot:
+        final r = v['radicand']!;
+        if (r.numerator.isNegative) return fail('radicand must not be negative');
+        final top = _exactSqrt(r.numerator);
+        final bottom = _exactSqrt(r.denominator);
+        if (top == null || bottom == null) {
+          return fail('radicand must be a perfect square');
+        }
+        return BridgeComputation._(ExactNumber(top, bottom), null);
     }
+  }
+
+  static int? _smallWhole(ExactNumber e) {
+    if (e.denominator != BigInt.one) return null;
+    final n = e.numerator.toInt();
+    return n >= -12 && n <= 12 ? n : null;
+  }
+
+  static ExactNumber _pow(ExactNumber base, int n) {
+    var out = ExactNumber.fromInt(1);
+    for (var i = 0; i < n.abs(); i++) {
+      out = out * base;
+    }
+    return n < 0 ? ExactNumber.fromInt(1) / out : out;
+  }
+
+  /// Integer square root when [x] is a perfect square, else null.
+  static BigInt? _exactSqrt(BigInt x) {
+    if (x < BigInt.zero) return null;
+    if (x < BigInt.two) return x;
+    var lo = BigInt.one;
+    var hi = x;
+    while (lo <= hi) {
+      final mid = (lo + hi) >> 1;
+      final sq = mid * mid;
+      if (sq == x) return mid;
+      if (sq < x) {
+        lo = mid + BigInt.one;
+      } else {
+        hi = mid - BigInt.one;
+      }
+    }
+    return null;
   }
 
   /// The value a learner must give: the exact result, or the result
