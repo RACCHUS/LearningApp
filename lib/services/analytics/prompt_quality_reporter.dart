@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:learning_pwa/services/content_generation/la_gen_parser.dart';
 import 'package:learning_pwa/services/content_generation/manual_job.dart';
 import 'package:learning_pwa/services/content_generation/model_capability_profile.dart';
@@ -19,6 +21,7 @@ class PromptQualityStatus {
     this.enabled = false,
     this.available = false,
     this.consented = false,
+    this.storedEvents = 0,
   });
 
   /// The `analytics.prompt_quality` switch is on.
@@ -27,8 +30,15 @@ class PromptQualityStatus {
   /// This account may opt in (eligible and base analytics consent given).
   final bool available;
 
-  /// The learner opted in to sharing prompt-quality codes.
+  /// The learner opted in to sharing prompt-quality codes. Reported even
+  /// while the switch is off, so withdrawal is always possible.
   final bool consented;
+
+  /// Rows stored for this account on the server.
+  final int storedEvents;
+
+  /// Show the opt-in: when it can be turned on, or to let it be turned off.
+  bool get showControl => (enabled && available) || consented || storedEvents > 0;
 
   static const off = PromptQualityStatus();
 
@@ -37,6 +47,7 @@ class PromptQualityStatus {
         enabled: json['enabled'] == true,
         available: json['available'] == true,
         consented: json['consented'] == true,
+        storedEvents: json['stored_events'] is int ? json['stored_events'] as int : 0,
       );
 }
 
@@ -117,6 +128,9 @@ abstract class PromptQualityApi {
   Future<PromptQualityStatus> status();
   Future<void> setConsent(bool consent);
   Future<void> record(List<PromptQualityEvent> events);
+
+  /// The learner's own stored rows, as JSON text.
+  Future<String> export();
 }
 
 class SupabasePromptQualityApi implements PromptQualityApi {
@@ -139,4 +153,10 @@ class SupabasePromptQualityApi implements PromptQualityApi {
     'record_prompt_quality_events',
     params: {'p_events': [for (final e in events) e.toJson()]},
   );
+
+  @override
+  Future<String> export() async {
+    final res = await _client.rpc('export_my_prompt_quality_events');
+    return const JsonEncoder.withIndent('  ').convert(res);
+  }
 }

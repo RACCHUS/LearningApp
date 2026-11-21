@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:learning_pwa/providers/prompt_quality_provider.dart';
+import 'package:learning_pwa/services/analytics/prompt_quality_reporter.dart';
 import 'package:learning_pwa/screens/settings/product_analytics_privacy_screen.dart';
 import 'package:learning_pwa/services/analytics/product_analytics_privacy_service.dart';
 
@@ -46,11 +49,17 @@ void main() {
 
   Future<void> show(WidgetTester tester, _PrivacyStub service,
       {Future<int> Function()? clear}) async {
-    await tester.pumpWidget(MaterialApp(
-      home: ProductAnalyticsPrivacyScreen(
-        service: service,
-        currentUserId: () => 'synthetic-user',
-        clearLocalEvents: clear ?? () async => 0,
+    await tester.pumpWidget(ProviderScope(
+      overrides: [
+        promptQualityStatusProvider
+            .overrideWith((ref) async => PromptQualityStatus.off),
+      ],
+      child: MaterialApp(
+        home: ProductAnalyticsPrivacyScreen(
+          service: service,
+          currentUserId: () => 'synthetic-user',
+          clearLocalEvents: clear ?? () async => 0,
+        ),
       ),
     ));
     await tester.pumpAndSettle();

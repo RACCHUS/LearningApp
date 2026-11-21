@@ -9,6 +9,7 @@ import 'package:learning_pwa/services/analytics/prompt_quality_reporter.dart';
 import 'package:learning_pwa/services/content_generation/manual_job.dart';
 import 'package:learning_pwa/services/content_generation/manual_prompt_builder.dart';
 import 'package:learning_pwa/services/content_generation/model_capability_profile.dart';
+import 'package:learning_pwa/widgets/analytics/prompt_quality_privacy_section.dart';
 import 'package:learning_pwa/widgets/lesson/prompt_quality_opt_in.dart';
 
 ManualJobSession newSession() => ManualJobSession(
@@ -74,6 +75,9 @@ class FakeApi implements PromptQualityApi {
 
   @override
   Future<void> record(List<PromptQualityEvent> events) async => sent.addAll(events);
+
+  @override
+  Future<String> export() async => '{"events":[]}';
 }
 
 void main() {
@@ -170,6 +174,34 @@ void main() {
       expect(find.byKey(const Key('prompt_quality_opt_in')), findsNothing);
       await pump(tester, PromptQualityStatus.off);
       expect(find.byKey(const Key('prompt_quality_opt_in')), findsNothing);
+    });
+
+    testWidgets('with the switch off, an earlier opt-in can still be withdrawn', (tester) async {
+      final api = await pump(tester, const PromptQualityStatus(consented: true, storedEvents: 3));
+      final tile = tester.widget<SwitchListTile>(find.byKey(const Key('prompt_quality_opt_in')));
+      expect(tile.value, isTrue);
+      expect(tile.onChanged, isNotNull);
+      await tester.tap(find.byKey(const Key('prompt_quality_opt_in')));
+      await tester.pumpAndSettle();
+      expect(api.consents, [false]);
+    });
+
+    testWidgets('privacy screen section: status, withdraw and export', (tester) async {
+      final api = FakeApi(const PromptQualityStatus(enabled: true, available: true, consented: true, storedEvents: 2));
+      await tester.pumpWidget(ProviderScope(
+        overrides: [
+          promptQualityApiProvider.overrideWithValue(api),
+          promptQualityStatusProvider.overrideWith((ref) async => api.current),
+        ],
+        child: const MaterialApp(home: Scaffold(body: SingleChildScrollView(child: PromptQualityPrivacySection()))),
+      ));
+      await tester.pumpAndSettle();
+      expect(find.text('On: 2 row(s) stored.'), findsOneWidget);
+      expect(find.textContaining('Never your prompts'), findsOneWidget);
+      await tester.tap(find.byKey(const Key('prompt_quality_withdraw')));
+      await tester.pumpAndSettle();
+      expect(api.consents, [false]);
+      expect(find.textContaining('Everything shared was deleted'), findsOneWidget);
     });
 
     testWidgets('off by default; turning it on saves the choice', (tester) async {

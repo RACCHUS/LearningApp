@@ -20,12 +20,13 @@ final promptQualityApiProvider = Provider<PromptQualityApi>(
   (ref) => SupabasePromptQualityApi(),
 );
 
-/// Whether to show the opt-in and whether to send. Off for guests, when
-/// the switch is off, and whenever the server cannot be asked.
+/// Whether to show the opt-in and whether to send. Off for guests and
+/// whenever the server cannot be asked. Signed-in accounts are asked even
+/// while the switch is off, so an earlier opt-in can still be withdrawn.
 final promptQualityStatusProvider = FutureProvider<PromptQualityStatus>((
   ref,
 ) async {
-  if (!ref.watch(promptQualityEnabledProvider)) return PromptQualityStatus.off;
+  ref.watch(promptQualityEnabledProvider);
   final auth = ref.watch(authProvider);
   if (auth is! AuthSuccess || auth.user.isAnonymous) {
     return PromptQualityStatus.off;
