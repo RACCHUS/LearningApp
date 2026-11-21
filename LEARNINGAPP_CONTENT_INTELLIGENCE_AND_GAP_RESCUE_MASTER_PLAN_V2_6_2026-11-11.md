@@ -48,7 +48,7 @@ This log records progress only; it does not change any decision above. Every new
 **Still open (all retained):**
 - PR-C opt-in prompt-quality telemetry (§5.7.6): unblocked now that basic analytics exists (#331). Build it behind its own extra opt-in; switching it on needs owner privacy review.
 - Misconception tags are authored but not reviewed by a person. Review them before switching suggestions on.
-- P3.3: the help action in readers beyond the Excel pilot needs Bridges (and allowlisted check templates) for those subjects. This is content authoring work.
+- P3.3: help is now scoped by lesson topic (`applies_to_tags`) instead of the Excel-only pilot. Percent lessons get the percent Bridges; College Algebra 1.2 and 1.3 get new exponent, scientific-notation and square-root Bridges (new deterministic templates `power`, `scientific_to_decimal`, `square_root`), each with a link-out companion. Still open: Bridges for other subjects and sections (for example order of operations and rational expressions), and the accessibility review named in P3.3's deliverable.
 - PR-F / P4.1 local AI experiment: not started. BYOK is built and stays hard-disabled until the owner approves release (FLAG-015).
 - Owner decisions: `GEMINI_API_KEY` for `ai.managed`; non-commercial (NC) sources; the Psychology 2e license mismatch; ingesting the seven curriculum manifests that pass checks.
 - M1 evidence review: needs real learner sessions with the switches on.

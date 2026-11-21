@@ -12,6 +12,7 @@
   "estimated_minutes": 4,
   "uses_ai": false,
   "builds_on": [],
+  "applies_to_tags": ["percent", "fractions", "decimals", "excel", "spreadsheet"],
   "sources": [
     {
       "source_id": "openstax-prealgebra-2e-5-3",

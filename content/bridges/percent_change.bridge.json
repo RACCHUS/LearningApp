@@ -12,6 +12,7 @@
   "estimated_minutes": 4,
   "uses_ai": false,
   "builds_on": ["bridge-fraction-decimal"],
+  "applies_to_tags": ["percent", "excel", "spreadsheet"],
   "sources": [
     {
       "source_id": "openstax-prealgebra-2e-6-2",

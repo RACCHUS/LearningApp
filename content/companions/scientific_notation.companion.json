@@ -1,0 +1,71 @@
+{
+  "companion_version": 1,
+  "companion_id": "companion-scientific-notation-openstax",
+  "bridge_id": "bridge-scientific-notation",
+  "objective_id": "algebra.scientific-notation.convert",
+  "uses_ai": false,
+  "resource": {
+    "publisher": "OpenStax, Rice University",
+    "title": "College Algebra",
+    "section": "1.2 Exponents and Scientific Notation",
+    "url": "https://openstax.org/books/college-algebra/pages/1-2-exponents-and-scientific-notation",
+    "license": "CC BY 4.0",
+    "rights_posture": "link_only",
+    "access": "free_no_login",
+    "last_checked_at": "2026-11-21"
+  },
+  "focus_note": "Read the part on converting from scientific notation. Notice which way the decimal point moves for positive and for negative exponents.",
+  "checks": [
+    {
+      "item_id": "scix-check-1",
+      "kind": "numeric",
+      "prompt": "Write 2.5 × 10² as an ordinary number.",
+      "template": "scientific_to_decimal",
+      "inputs": {
+        "coefficient": "2.5",
+        "exponent": 2
+      },
+      "answer": 250,
+      "feedback": "Move the point 2 places right: 2.5 → 25 → 250."
+    },
+    {
+      "item_id": "scix-check-2",
+      "kind": "choice",
+      "prompt": "Which ordinary number is 8.4 × 10⁻³?",
+      "template": "scientific_to_decimal",
+      "inputs": {
+        "coefficient": "8.4",
+        "exponent": -3
+      },
+      "options": [
+        {
+          "option_id": "a",
+          "text": "8400",
+          "value": 8400
+        },
+        {
+          "option_id": "b",
+          "text": "0.084",
+          "value": "0.084"
+        },
+        {
+          "option_id": "c",
+          "text": "0.0084",
+          "value": "0.0084"
+        },
+        {
+          "option_id": "d",
+          "text": "0.84",
+          "value": "0.84"
+        }
+      ],
+      "correct_option_id": "c",
+      "feedback": "A negative exponent moves the point left 3 places: 8.4 → 0.84 → 0.084 → 0.0084."
+    }
+  ],
+  "evidence": {
+    "human_reviewed": false,
+    "citations_checked_at": "2026-11-21",
+    "notes": "Draft for owner review. Linked only; questions are independently written and recomputed by the shared Bridge evaluator. No person has reviewed this yet."
+  }
+}

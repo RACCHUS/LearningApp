@@ -6,7 +6,7 @@ source_releases:
   title: Prealgebra
   version: eb2e29d (archive 20260604.144757)
   source_url: https://openstax.org/books/prealgebra/pages/preface
-  retrieved_at: '2026-11-20T14:29:35Z'
+  retrieved_at: '2026-11-21T15:24:27Z'
   license: Creative Commons Attribution 4.0 International (CC BY 4.0)
   license_name: CC BY 4.0
   rights_note: Adapted under CC BY 4.0 (owner-approved, data/content_sources.json). OpenStax and Rice University names and logos are not covered by the license; no endorsement implied. Imported automatically; not reviewed by a person.
@@ -18,7 +18,7 @@ source_releases:
 target:
   slug: open-openstax-prealgebra-1e
   title: Prealgebra (open textbook)
-  version_code: OPENSTAX-EB2E29D-R2
+  version_code: OPENSTAX-EB2E29D-R3
   version_title: Prealgebra by OpenStax, CC BY 4.0
   version_description: Open textbook sections imported as LearningApp lessons.
 domains:
@@ -53,6 +53,7 @@ domains:
       - prealgebra
       - math
       - arithmetic
+      - percent
       - unreviewed
       citation: Prealgebra (OpenStax), Section 6.1, https://openstax.org/books/prealgebra/pages/6-1-understand-percent, CC BY 4.0
       source_release_id: openstax-prealgebra-1e
@@ -1258,6 +1259,7 @@ domains:
       - prealgebra
       - math
       - arithmetic
+      - percent
       - unreviewed
       citation: Prealgebra (OpenStax), Section 6.2, https://openstax.org/books/prealgebra/pages/6-2-solve-general-applications-of-percent, CC BY 4.0
       source_release_id: openstax-prealgebra-1e
@@ -2100,6 +2102,7 @@ domains:
       - prealgebra
       - math
       - arithmetic
+      - percent
       - unreviewed
       citation: Prealgebra (OpenStax), Section 6.3, https://openstax.org/books/prealgebra/pages/6-3-solve-sales-tax-commission-and-discount-applications, CC BY 4.0
       source_release_id: openstax-prealgebra-1e
@@ -2751,6 +2754,7 @@ domains:
       - prealgebra
       - math
       - arithmetic
+      - percent
       - unreviewed
       citation: Prealgebra (OpenStax), Section 6.4, https://openstax.org/books/prealgebra/pages/6-4-solve-simple-interest-applications, CC BY 4.0
       source_release_id: openstax-prealgebra-1e
@@ -3310,6 +3314,7 @@ domains:
       - prealgebra
       - math
       - arithmetic
+      - percent
       - unreviewed
       citation: Prealgebra (OpenStax), Section 6.5, https://openstax.org/books/prealgebra/pages/6-5-solve-proportions-and-their-applications, CC BY 4.0
       source_release_id: openstax-prealgebra-1e

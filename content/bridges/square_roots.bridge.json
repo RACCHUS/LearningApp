@@ -1,0 +1,144 @@
+{
+  "bridge_version": 1,
+  "bridge_id": "bridge-square-roots",
+  "content_version": "1.0.0",
+  "title": "Square roots of perfect squares",
+  "concept_id": "square-roots",
+  "primary_objective": {
+    "objective_id": "algebra.radicals.square-root",
+    "statement": "Find the square root of a perfect square, including decimals such as 0.36, and check it by squaring."
+  },
+  "locale": "en-US",
+  "estimated_minutes": 4,
+  "uses_ai": false,
+  "builds_on": ["bridge-exponents"],
+  "applies_to_tags": ["radicals"],
+  "sources": [
+    {
+      "source_id": "openstax-college-algebra-1e-1-3",
+      "publisher": "OpenStax, Rice University",
+      "title": "College Algebra",
+      "section": "1.3 Radicals and Rational Exponents",
+      "url": "https://openstax.org/books/college-algebra/pages/1-3-radicals-and-rational-exponents",
+      "license": "CC BY 4.0",
+      "rights_posture": "link_only"
+    }
+  ],
+  "teach": [
+    {
+      "block_id": "sqrt-teach-1",
+      "text": "The square root of a number is the non-negative number that, multiplied by itself, gives that number. The square root of 144 is 12, because 12 × 12 = 144.",
+      "source_ids": ["openstax-college-algebra-1e-1-3"]
+    },
+    {
+      "block_id": "sqrt-teach-2",
+      "text": "Always check by squaring your answer. A square root is not half the number: half of 64 is 32, but 32 × 32 is 1024, not 64. The square root of 64 is 8.",
+      "source_ids": ["openstax-college-algebra-1e-1-3"]
+    },
+    {
+      "block_id": "sqrt-teach-3",
+      "text": "Decimals work the same way. The square root of 0.25 is 0.5, because 0.5 × 0.5 = 0.25. Notice the root of a number between 0 and 1 is bigger than the number itself.",
+      "source_ids": ["openstax-college-algebra-1e-1-3"]
+    }
+  ],
+  "examples": [
+    {
+      "block_id": "sqrt-example-1",
+      "text": "Square root of 81: 9 × 9 = 81, so it is 9.",
+      "source_ids": ["openstax-college-algebra-1e-1-3"],
+      "worked": {
+        "template": "square_root",
+        "inputs": { "radicand": 81 },
+        "result": 9
+      }
+    },
+    {
+      "block_id": "sqrt-example-2",
+      "text": "Square root of 0.36: 0.6 × 0.6 = 0.36, so it is 0.6.",
+      "source_ids": ["openstax-college-algebra-1e-1-3"],
+      "worked": {
+        "template": "square_root",
+        "inputs": { "radicand": "0.36" },
+        "result": "0.6"
+      }
+    }
+  ],
+  "alternate_explanations": [
+    {
+      "block_id": "sqrt-alt-1",
+      "text": "Picture a square made of tiles. If 49 tiles make a square, each side has 7 tiles. The square root is the side length of a square with that area.",
+      "source_ids": ["openstax-college-algebra-1e-1-3"]
+    }
+  ],
+  "checks": [
+    {
+      "item_id": "sqrt-check-1",
+      "kind": "numeric",
+      "prompt": "What is the square root of 169?",
+      "template": "square_root",
+      "inputs": { "radicand": 169 },
+      "answer": 13,
+      "feedback": "13 × 13 = 169, so the square root of 169 is 13."
+    },
+    {
+      "item_id": "sqrt-check-2",
+      "kind": "choice",
+      "prompt": "What is the square root of 64?",
+      "template": "square_root",
+      "inputs": { "radicand": 64 },
+      "options": [
+        { "option_id": "a", "text": "32", "value": 32, "misconception_id": "sqrt-halves" },
+        { "option_id": "b", "text": "8", "value": 8 },
+        { "option_id": "c", "text": "4096", "value": 4096 },
+        { "option_id": "d", "text": "6", "value": 6 }
+      ],
+      "correct_option_id": "b",
+      "feedback": "8 × 8 = 64. Halving gives 32, but 32 × 32 = 1024, so 32 is not the square root."
+    },
+    {
+      "item_id": "sqrt-check-3",
+      "kind": "choice",
+      "prompt": "What is the square root of 0.49?",
+      "template": "square_root",
+      "inputs": { "radicand": "0.49" },
+      "options": [
+        { "option_id": "a", "text": "0.07", "value": "0.07" },
+        { "option_id": "b", "text": "0.245", "value": "0.245", "misconception_id": "sqrt-halves" },
+        { "option_id": "c", "text": "0.7", "value": "0.7" },
+        { "option_id": "d", "text": "7", "value": 7 }
+      ],
+      "correct_option_id": "c",
+      "feedback": "0.7 × 0.7 = 0.49. Halving 0.49 gives 0.245, which squares to about 0.06, not 0.49."
+    },
+    {
+      "item_id": "sqrt-check-4",
+      "kind": "numeric",
+      "prompt": "What is the square root of 1.21?",
+      "template": "square_root",
+      "inputs": { "radicand": "1.21" },
+      "answer": "1.1",
+      "feedback": "1.1 × 1.1 = 1.21, so the square root is 1.1."
+    }
+  ],
+  "misconceptions": [
+    {
+      "misconception_id": "sqrt-halves",
+      "label": "halving the number instead of taking its square root",
+      "contrast": "A square root undoes squaring, not doubling. The square root of 64 is 8 because 8 × 8 = 64; half of 64 is 32, and 32 × 32 is 1024. Check any answer by multiplying it by itself.",
+      "source_ids": ["openstax-college-algebra-1e-1-3"]
+    }
+  ],
+  "return_cue": "Back to your lesson: look for the number that times itself gives the one under the root, and check by squaring.",
+  "accessibility": {
+    "plain_language": true,
+    "screen_reader_ready": true,
+    "audio_script_available": true,
+    "needs_images": false
+  },
+  "evidence": {
+    "human_reviewed": false,
+    "citations_checked_at": "2026-11-21",
+    "deterministic_checks": "All worked examples and check answers are recomputed by BridgeCheckEvaluator (square_root) in CI.",
+    "notes": "Draft for owner review. Text is independently written; the CC BY 4.0 source is linked only. No person has reviewed this content yet."
+  }
+}

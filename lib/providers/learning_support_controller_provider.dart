@@ -151,13 +151,6 @@ final supportSessionStoreProvider = Provider<SupportSessionStore>(
   (ref) => SupportSessionStore(),
 );
 
-/// The pilot is limited to one context: spreadsheet/Excel lessons
-/// (master plan v2.6 §17 PR-B "one existing Excel lesson/reader").
-bool isQuickRescuePilotLesson(Iterable<String> tags) => tags.any((t) {
-  final tag = t.toLowerCase();
-  return tag == 'excel' || tag == 'spreadsheet';
-});
-
 /// Owner scope for local storage: the signed-in user ID, or `guest` when
 /// the ID is not a safe opaque identifier.
 String supportOwnerScope(String learnerId) =>

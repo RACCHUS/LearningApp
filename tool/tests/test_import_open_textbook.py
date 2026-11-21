@@ -148,6 +148,8 @@ class SectionTests(unittest.TestCase):
                          [{"term": "percent", "definition": "A ratio whose denominator is 100."}])
         self.assertTrue(any("had no answer" in w for w in self.warnings))
         self.assertIn("unreviewed", self.lesson["tags"])
+        # Section 6.1 of this book is tagged with its topic for Learning help.
+        self.assertIn("percent", self.lesson["tags"])
 
 
 class SourceGateTests(unittest.TestCase):

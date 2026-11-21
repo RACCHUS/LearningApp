@@ -43,7 +43,23 @@ REGISTRY = REPO / "data" / "content_sources.json"
 # Bump when importer output changes for the same book version, so the
 # corrected lessons publish as a new target version (published versions are
 # immutable). Publish it with retire_previous to replace the old one.
-IMPORT_REVISION = 2
+IMPORT_REVISION = 3
+
+# Topic tags per section, so "Learning help" offers the Bridges for that
+# topic (content/bridges/*.bridge.json `applies_to_tags`). A section that
+# is not listed gets only the book's subject tags.
+TOPIC_TAGS: dict[str, dict[str, list[str]]] = {
+    "openstax-college-algebra-1e": {
+        "1.1": ["real-numbers", "order-of-operations"],
+        "1.2": ["exponents", "scientific-notation"],
+        "1.3": ["radicals", "exponents"],
+        "1.6": ["rational-expressions"],
+    },
+    "openstax-prealgebra-1e": {
+        "6.1": ["percent"], "6.2": ["percent"], "6.3": ["percent"],
+        "6.4": ["percent"], "6.5": ["percent"],
+    },
+}
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from build_open_content_index import (  # noqa: E402
     ARCHIVE, ARCHIVE_LICENSE, BOOKS, USER_AGENT, plain, split_number,
@@ -581,7 +597,9 @@ def section_lesson(page_html: str, meta: dict, answers: dict[str, str],
                         if objectives else meta["title"])[:500],
         "emoji": "📘",
         "tags": ["open-textbook", "openstax", lic_short.lower().replace(" ", "-"),
-                 *meta["subject"].split(), "unreviewed"],
+                 *meta["subject"].split(),
+                 *TOPIC_TAGS.get(meta["source_id"], {}).get(meta["number"], []),
+                 "unreviewed"],
         "citation": f"{meta['book']} (OpenStax), Section {meta['number']}, {meta['url']}, {lic_short}",
         "source_release_id": meta["source_id"],
         "blocks": blocks,

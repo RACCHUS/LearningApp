@@ -53,8 +53,8 @@ final supportOwnerScopeProvider = Provider<String>((ref) {
 /// Single "Learning help" entry for a lesson's top bar (master plan v2.6
 /// §13.4: one subject-help affordance, distinct from product Help `?`).
 ///
-/// Shown only when `learning.quick_rescue` is on, the lesson is in the
-/// pilot, and the bundled library loaded. It also tidies a finished help
+/// Shown only when `learning.quick_rescue` is on, the bundled library
+/// loaded, and a Bridge applies to one of the lesson's tags. It also tidies a finished help
 /// trail after a refresh, whether or not the flag is on.
 class LearningHelpAction extends ConsumerStatefulWidget {
   const LearningHelpAction({
@@ -169,10 +169,13 @@ class _LearningHelpActionState extends ConsumerState<LearningHelpAction> {
     }
 
     final gateOn = ref.watch(quickRescueEnabledProvider);
-    if (!gateOn || key == null || !isQuickRescuePilotLesson(widget.tags)) {
-      return const SizedBox.shrink();
-    }
-    final library = ref.watch(bridgeLibraryProvider).valueOrNull;
+    if (!gateOn || key == null) return const SizedBox.shrink();
+    // Only Bridges for this lesson's topics (and what they build on); a
+    // lesson no Bridge applies to shows no help button.
+    final library = ref
+        .watch(bridgeLibraryProvider)
+        .valueOrNull
+        ?.forLesson(widget.tags);
     if (library == null || library.isEmpty) return const SizedBox.shrink();
 
     final suggestion = _suggestion(library, key);
