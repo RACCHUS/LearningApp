@@ -64,6 +64,8 @@ void main() {
       'bridge-exponents',
       'bridge-scientific-notation',
       'bridge-square-roots',
+      'bridge-order-of-operations',
+      'bridge-fraction-arithmetic',
     });
     expect(
       library.offerOrder.first.bridgeId,
@@ -202,6 +204,12 @@ void main() {
       'bridge-scientific-notation',
     });
     expect(ids(['radicals']), {'bridge-exponents', 'bridge-square-roots'});
+    expect(ids(['order-of-operations']), {'bridge-order-of-operations'});
+    // Fraction arithmetic builds on fractions/decimals, which is kept.
+    expect(ids(['rational-expressions']), {
+      'bridge-fraction-arithmetic',
+      'bridge-fraction-decimal',
+    });
     // A lesson no Bridge covers gets no help button.
     expect(library.hasHelpFor(['algebra', 'math']), isFalse);
     expect(library.forLesson(['history']).isEmpty, isTrue);

@@ -79,6 +79,8 @@ flutter:
     - content/bridges/exponents.bridge.json
     - content/bridges/scientific_notation.bridge.json
     - content/bridges/square_roots.bridge.json
+    - content/bridges/order_of_operations.bridge.json
+    - content/bridges/fraction_arithmetic.bridge.json
     - content/companions/fraction_decimal.companion.json
     - content/companions/percent_change.companion.json
     - content/companions/percent_of_number.companion.json
@@ -86,6 +88,8 @@ flutter:
     - content/companions/exponents.companion.json
     - content/companions/scientific_notation.companion.json
     - content/companions/square_roots.companion.json
+    - content/companions/order_of_operations.companion.json
+    - content/companions/fraction_arithmetic.companion.json
     - .env
     
   # To add assets from your dependencies, use the following syntax:

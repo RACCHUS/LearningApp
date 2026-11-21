@@ -1,0 +1,75 @@
+{
+  "companion_version": 1,
+  "companion_id": "companion-fraction-arithmetic-openstax",
+  "bridge_id": "bridge-fraction-arithmetic",
+  "objective_id": "numeracy.fractions.operate",
+  "uses_ai": false,
+  "resource": {
+    "publisher": "OpenStax, Rice University",
+    "title": "College Algebra",
+    "section": "1.6 Rational Expressions",
+    "url": "https://openstax.org/books/college-algebra/pages/1-6-rational-expressions",
+    "license": "CC BY 4.0",
+    "rights_posture": "link_only",
+    "access": "free_no_login",
+    "last_checked_at": "2026-11-21"
+  },
+  "focus_note": "Read how rational expressions are multiplied, divided and added. Notice they use the same steps as ordinary fractions.",
+  "checks": [
+    {
+      "item_id": "frax-check-1",
+      "kind": "numeric",
+      "prompt": "What is 1/4 × 2/5? Give your answer as a decimal.",
+      "template": "fraction_multiply",
+      "inputs": {
+        "a": 1,
+        "b": 4,
+        "c": 2,
+        "d": 5
+      },
+      "answer": "0.1",
+      "feedback": "Tops 1 × 2 = 2, bottoms 4 × 5 = 20, so 2/20 = 1/10 = 0.1."
+    },
+    {
+      "item_id": "frax-check-2",
+      "kind": "choice",
+      "prompt": "What is 1/8 + 3/8?",
+      "template": "fraction_add",
+      "inputs": {
+        "a": 1,
+        "b": 8,
+        "c": 3,
+        "d": 8
+      },
+      "options": [
+        {
+          "option_id": "a",
+          "text": "4/16 (0.25)",
+          "value": "0.25"
+        },
+        {
+          "option_id": "b",
+          "text": "1/2 (0.5)",
+          "value": "0.5"
+        },
+        {
+          "option_id": "c",
+          "text": "3/8 (0.375)",
+          "value": "0.375"
+        },
+        {
+          "option_id": "d",
+          "text": "4",
+          "value": 4
+        }
+      ],
+      "correct_option_id": "b",
+      "feedback": "Same bottoms, so add the tops: 4/8, which is 1/2. Adding the bottoms gives 4/16, which is wrong."
+    }
+  ],
+  "evidence": {
+    "human_reviewed": false,
+    "citations_checked_at": "2026-11-21",
+    "notes": "Draft for owner review. Linked only; questions are independently written and recomputed by the shared Bridge evaluator. No person has reviewed this yet."
+  }
+}
