@@ -86,6 +86,17 @@ jobs:
             ) THEN
               RAISE EXCEPTION 'Retention verification failed';
             END IF;
+            -- Opt-in prompt-quality codes (migration 20261121010000).
+            IF to_regprocedure('analytics.purge_expired_prompt_quality_events()')
+                IS NOT NULL THEN
+              PERFORM analytics.purge_expired_prompt_quality_events();
+              IF EXISTS (
+                SELECT 1 FROM analytics.prompt_quality_events
+                 WHERE received_at < now() - interval '90 days'
+              ) THEN
+                RAISE EXCEPTION 'Prompt-quality retention verification failed';
+              END IF;
+            END IF;
           END;
           $block$;
           SQL

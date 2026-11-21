@@ -23,6 +23,9 @@ import 'package:learning_pwa/services/lesson/lesson_import_service.dart';
 import 'package:learning_pwa/services/lesson/lesson_quality_check.dart';
 import 'package:learning_pwa/widgets/ai/byok_settings_dialog.dart';
 import 'package:learning_pwa/widgets/lesson/ai_chat_profile_section.dart';
+import 'package:learning_pwa/widgets/lesson/prompt_quality_opt_in.dart';
+import 'package:learning_pwa/providers/prompt_quality_provider.dart';
+import 'package:learning_pwa/services/analytics/prompt_quality_reporter.dart';
 
 /// Additive slot-based manual generator (master plan v2.6 §5, PR-C).
 ///
@@ -189,16 +192,22 @@ class _ManualGenerationV2ScreenState
     final awaiting = _awaitingReply;
     if (label == null || awaiting == null) return;
     _awaitingReply = null;
-    final updated = _profiles
-        .profileFor(label)
-        .record(
-          ReplyObservation.from(
-            mode: awaiting.mode,
-            requested: awaiting.batch,
-            outcome: outcome,
-            nowAccepted: s.accepted.keys.toSet(),
-          ),
-        );
+    final observation = ReplyObservation.from(
+      mode: awaiting.mode,
+      requested: awaiting.batch,
+      outcome: outcome,
+      nowAccepted: s.accepted.keys.toSet(),
+    );
+    final updated = _profiles.profileFor(label).record(observation);
+    // Opt-in only; sends nothing unless the learner chose to share codes.
+    ref.read(promptQualityReporterProvider)(
+      PromptQualityEvent.fromReply(
+        aiLabel: label,
+        tier: _tier,
+        observation: observation,
+        outcome: outcome,
+      ),
+    );
     _profiles = CapabilityProfiles(
       selected: label,
       profiles: {..._profiles.profiles, label: updated},
@@ -843,6 +852,7 @@ class _ManualGenerationV2ScreenState
               ),
               onProbeResult: _recordProbe,
             ),
+            const PromptQualityOptIn(),
             const SizedBox(height: 12),
             Text(
               'How much can your AI handle at once?',
