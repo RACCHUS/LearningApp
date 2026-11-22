@@ -26,6 +26,8 @@ class BridgeLibrary {
     'content/bridges/square_roots.bridge.json',
     'content/bridges/order_of_operations.bridge.json',
     'content/bridges/fraction_arithmetic.bridge.json',
+    'content/bridges/integer_division.bridge.json',
+    'content/bridges/loop_count.bridge.json',
   ];
 
   final List<BridgeLesson> bridges;

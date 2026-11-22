@@ -1,0 +1,71 @@
+{
+  "companion_version": 1,
+  "companion_id": "companion-integer-division-openstax",
+  "bridge_id": "bridge-integer-division",
+  "objective_id": "programming.operators.integer-division",
+  "uses_ai": false,
+  "resource": {
+    "publisher": "OpenStax, Rice University",
+    "title": "Introduction to Python Programming",
+    "section": "2.5 Dividing integers",
+    "url": "https://openstax.org/books/introduction-python-programming/pages/2-5-dividing-integers",
+    "license": "CC BY-NC-SA 4.0",
+    "rights_posture": "link_only",
+    "access": "free_no_login",
+    "last_checked_at": "2026-11-22"
+  },
+  "focus_note": "Read how Python's // and % operators split one division into a whole-number quotient and a remainder, and try the small examples yourself.",
+  "checks": [
+    {
+      "item_id": "divx-check-1",
+      "kind": "numeric",
+      "prompt": "What is 61 // 8?",
+      "template": "integer_quotient",
+      "inputs": {
+        "dividend": 61,
+        "divisor": 8
+      },
+      "answer": 7,
+      "feedback": "8 × 7 = 56, and 8 × 8 = 64 is too big, so 61 // 8 is 7."
+    },
+    {
+      "item_id": "divx-check-2",
+      "kind": "choice",
+      "prompt": "What is 61 % 8?",
+      "template": "remainder",
+      "inputs": {
+        "dividend": 61,
+        "divisor": 8
+      },
+      "options": [
+        {
+          "option_id": "a",
+          "text": "7",
+          "value": 7
+        },
+        {
+          "option_id": "b",
+          "text": "5",
+          "value": 5
+        },
+        {
+          "option_id": "c",
+          "text": "7.625",
+          "value": "7.625"
+        },
+        {
+          "option_id": "d",
+          "text": "8",
+          "value": 8
+        }
+      ],
+      "correct_option_id": "b",
+      "feedback": "61 − 56 = 5 is left over."
+    }
+  ],
+  "evidence": {
+    "human_reviewed": false,
+    "citations_checked_at": "2026-11-22",
+    "notes": "Draft for owner review. Linked only; questions are independently written and recomputed by the shared Bridge evaluator. No person has reviewed this yet."
+  }
+}

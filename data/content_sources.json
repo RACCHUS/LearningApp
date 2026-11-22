@@ -129,6 +129,23 @@
       "notes": ""
     },
     {
+      "id": "openstax-intro-python-programming",
+      "publisher": "OpenStax, Rice University",
+      "title": "Introduction to Python Programming",
+      "url_prefixes": ["https://openstax.org/books/introduction-python-programming/", "https://openstax.org/details/books/introduction-python-programming"],
+      "license": "cc_by_nc_sa_4",
+      "license_evidence": {
+        "url": "https://openstax.org/apps/cms/api/v2/pages/?type=books.Book&fields=title,license_name",
+        "checked_at": "2026-11-22",
+        "statement": "Introduction to Python Programming | Creative Commons Attribution-NonCommercial-ShareAlike License"
+      },
+      "allowed_uses": ["link", "reference"],
+      "attribution": "{title}, OpenStax, Rice University, {section_url}, CC BY-NC-SA 4.0.",
+      "status": "approved",
+      "decided_by": "default for CC BY-NC-SA until the owner decides on non-commercial status",
+      "notes": "Linked by the programming Bridges (integer division, loop counting). Text is independently written; never pasted or adapted."
+    },
+    {
       "id": "openstax-psychology-1e",
       "publisher": "OpenStax, Rice University",
       "title": "Psychology (1st edition)",

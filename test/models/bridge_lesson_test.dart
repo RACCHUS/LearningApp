@@ -52,6 +52,41 @@ void main() {
     String? err(BridgeCheckTemplate t, Map<String, Object?> inputs) =>
         BridgeCheckEvaluator.compute(t, inputs).error;
 
+    test('whole-number quotient and remainder, non-negative only', () {
+      const q = BridgeCheckTemplate.integerQuotient;
+      const r = BridgeCheckTemplate.remainder;
+      expect(calc(q, {'dividend': 38, 'divisor': 6}), ExactNumber.fromInt(6));
+      expect(calc(r, {'dividend': 38, 'divisor': 6}), ExactNumber.fromInt(2));
+      expect(calc(q, {'dividend': 7, 'divisor': 9}), ExactNumber.fromInt(0));
+      expect(calc(r, {'dividend': 50, 'divisor': 10}), ExactNumber.fromInt(0));
+      expect(err(q, {'dividend': 5, 'divisor': 0}), isNotNull);
+      expect(err(r, {'dividend': -7, 'divisor': 2}), isNotNull);
+      expect(err(q, {'dividend': '7.5', 'divisor': 2}), isNotNull);
+      expect(err(q, {'dividend': 2000000, 'divisor': 2}), isNotNull);
+    });
+
+    test('range counts match Python range()', () {
+      const t = BridgeCheckTemplate.rangeCount;
+      int count(int a, int b, int c) =>
+          calc(t, {'start': a, 'stop': b, 'step': c})!.numerator.toInt();
+      int python(int a, int b, int c) {
+        var n = 0;
+        for (var i = a; c > 0 ? i < b : i > b; i += c) {
+          n++;
+        }
+        return n;
+      }
+
+      for (final (a, b, c) in [
+        (0, 4, 1), (2, 9, 1), (0, 20, 5), (0, 15, 4), (10, 0, -2),
+        (5, 5, 1), (9, 2, 1), (2, 9, -1), (-3, 3, 2), (10, -10, -3),
+      ]) {
+        expect(count(a, b, c), python(a, b, c), reason: 'range($a, $b, $c)');
+      }
+      expect(err(t, {'start': 0, 'stop': 5, 'step': 0}), isNotNull);
+      expect(err(t, {'start': 0, 'stop': 50000, 'step': 1}), isNotNull);
+    });
+
     test('powers, including zero and negative exponents, are exact', () {
       const t = BridgeCheckTemplate.power;
       expect(calc(t, {'base': 2, 'exponent': 10}), ExactNumber.fromInt(1024));
@@ -188,15 +223,19 @@ void main() {
         // Honest evidence: no claimed review without a reviewer.
         expect(b.evidence.humanReviewed, isFalse);
         // OpenStax sources are linked only; text is written independently.
-        // Second editions are CC BY-NC-SA (and forbid model training);
-        // first editions are CC BY 4.0 (data/content_sources.json).
+        // Second editions and Introduction to Python Programming are
+        // CC BY-NC-SA; first editions are CC BY 4.0
+        // (data/content_sources.json, checked by verify_content_sources).
         for (final s in b.sources.where(
           (s) => s.url.contains('openstax.org'),
         )) {
           expect(s.rightsPosture, SourceRightsPosture.linkOnly);
           expect(
             s.license,
-            s.url.contains('-2e/') ? contains('NC-SA') : 'CC BY 4.0',
+            s.url.contains('-2e/') ||
+                    s.url.contains('/introduction-python-programming/')
+                ? contains('NC-SA')
+                : 'CC BY 4.0',
           );
         }
       });

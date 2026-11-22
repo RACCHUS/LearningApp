@@ -1,0 +1,220 @@
+{
+  "bridge_version": 1,
+  "bridge_id": "bridge-loop-count",
+  "content_version": "1.0.0",
+  "title": "How many times a counting loop runs",
+  "concept_id": "range-count",
+  "primary_objective": {
+    "objective_id": "programming.control-flow.range-count",
+    "statement": "Say how many times a loop over range(start, stop, step) runs, including a step and a loop that runs zero times."
+  },
+  "locale": "en-US",
+  "estimated_minutes": 4,
+  "uses_ai": false,
+  "builds_on": [
+    "bridge-integer-division"
+  ],
+  "applies_to_tags": [
+    "control-flow"
+  ],
+  "sources": [
+    {
+      "source_id": "openstax-intro-python-5-2",
+      "publisher": "OpenStax, Rice University",
+      "title": "Introduction to Python Programming",
+      "section": "5.2 For loop",
+      "url": "https://openstax.org/books/introduction-python-programming/pages/5-2-for-loop",
+      "license": "CC BY-NC-SA 4.0",
+      "rights_posture": "link_only"
+    }
+  ],
+  "teach": [
+    {
+      "block_id": "loop-teach-1",
+      "text": "A counting loop such as for i in range(start, stop) begins at start and stops before it reaches stop. The stop value itself is never used.",
+      "source_ids": [
+        "openstax-intro-python-5-2"
+      ]
+    },
+    {
+      "block_id": "loop-teach-2",
+      "text": "With just a start and a stop, the loop runs stop minus start times. Counting the stop as well is the classic off-by-one mistake.",
+      "source_ids": [
+        "openstax-intro-python-5-2"
+      ]
+    },
+    {
+      "block_id": "loop-teach-3",
+      "text": "A third number is the step: each value jumps by that much. Count the values, or take the gap divided by the step and round up. A negative step counts down. If the start is already past the stop, the loop runs zero times.",
+      "source_ids": [
+        "openstax-intro-python-5-2"
+      ]
+    }
+  ],
+  "examples": [
+    {
+      "block_id": "loop-example-1",
+      "text": "range(2, 9) gives 2, 3, 4, 5, 6, 7, 8: seven values, because 9 − 2 = 7.",
+      "source_ids": [
+        "openstax-intro-python-5-2"
+      ],
+      "worked": {
+        "template": "range_count",
+        "inputs": {
+          "start": 2,
+          "stop": 9,
+          "step": 1
+        },
+        "result": 7
+      }
+    },
+    {
+      "block_id": "loop-example-2",
+      "text": "range(0, 20, 5) gives 0, 5, 10, 15: four values. 20 is the stop, so it is not included.",
+      "source_ids": [
+        "openstax-intro-python-5-2"
+      ],
+      "worked": {
+        "template": "range_count",
+        "inputs": {
+          "start": 0,
+          "stop": 20,
+          "step": 5
+        },
+        "result": 4
+      }
+    }
+  ],
+  "alternate_explanations": [
+    {
+      "block_id": "loop-alt-1",
+      "text": "Think of a ruler where you touch every mark from the start up to, but not including, the stop. The number of marks you touch is the number of times the loop runs.",
+      "source_ids": [
+        "openstax-intro-python-5-2"
+      ]
+    }
+  ],
+  "checks": [
+    {
+      "item_id": "loop-check-1",
+      "kind": "numeric",
+      "prompt": "How many times does a loop over range(3, 11) run?",
+      "template": "range_count",
+      "inputs": {
+        "start": 3,
+        "stop": 11,
+        "step": 1
+      },
+      "answer": 8,
+      "feedback": "11 − 3 = 8: the values are 3 to 10."
+    },
+    {
+      "item_id": "loop-check-2",
+      "kind": "choice",
+      "prompt": "How many values does range(1, 6) give?",
+      "template": "range_count",
+      "inputs": {
+        "start": 1,
+        "stop": 6,
+        "step": 1
+      },
+      "options": [
+        {
+          "option_id": "a",
+          "text": "6",
+          "value": 6,
+          "misconception_id": "include-stop"
+        },
+        {
+          "option_id": "b",
+          "text": "5",
+          "value": 5
+        },
+        {
+          "option_id": "c",
+          "text": "4",
+          "value": 4
+        },
+        {
+          "option_id": "d",
+          "text": "7",
+          "value": 7
+        }
+      ],
+      "correct_option_id": "b",
+      "feedback": "1, 2, 3, 4, 5: five values. 6 is the stop, so it is not included."
+    },
+    {
+      "item_id": "loop-check-3",
+      "kind": "choice",
+      "prompt": "How many values does range(0, 15, 4) give?",
+      "template": "range_count",
+      "inputs": {
+        "start": 0,
+        "stop": 15,
+        "step": 4
+      },
+      "options": [
+        {
+          "option_id": "a",
+          "text": "3",
+          "value": 3
+        },
+        {
+          "option_id": "b",
+          "text": "4",
+          "value": 4
+        },
+        {
+          "option_id": "c",
+          "text": "15",
+          "value": 15
+        },
+        {
+          "option_id": "d",
+          "text": "5",
+          "value": 5,
+          "misconception_id": "include-stop"
+        }
+      ],
+      "correct_option_id": "b",
+      "feedback": "0, 4, 8, 12: four values. The next would be 16, which is past the stop."
+    },
+    {
+      "item_id": "loop-check-4",
+      "kind": "numeric",
+      "prompt": "How many values does range(10, 0, -2) give?",
+      "template": "range_count",
+      "inputs": {
+        "start": 10,
+        "stop": 0,
+        "step": -2
+      },
+      "answer": 5,
+      "feedback": "10, 8, 6, 4, 2: five values. Counting down still stops before the stop, 0."
+    }
+  ],
+  "misconceptions": [
+    {
+      "misconception_id": "include-stop",
+      "label": "counting the stop value as if the loop reached it",
+      "contrast": "range stops before the stop value. range(0, 4) is 0, 1, 2, 3: four values, the same as 4 − 0.",
+      "source_ids": [
+        "openstax-intro-python-5-2"
+      ]
+    }
+  ],
+  "return_cue": "Back to your lesson: the loop starts at start, never reaches stop, and jumps by the step.",
+  "accessibility": {
+    "plain_language": true,
+    "screen_reader_ready": true,
+    "audio_script_available": true,
+    "needs_images": false
+  },
+  "evidence": {
+    "human_reviewed": false,
+    "citations_checked_at": "2026-11-22",
+    "deterministic_checks": "All worked examples and check answers are recomputed by BridgeCheckEvaluator (range_count) in CI.",
+    "notes": "Draft for owner review. Text is independently written; the CC BY-NC-SA 4.0 source is linked only, never pasted or adapted. No person has reviewed this content yet."
+  }
+}
