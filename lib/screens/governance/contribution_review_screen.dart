@@ -291,6 +291,10 @@ class _ContributionReviewScreenState
         childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
         expandedCrossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          _DuplicateCandidates(
+            key: Key('duplicates_${item.id}'),
+            load: () => _service.duplicateCandidates(item.id),
+          ),
           for (final code in item.issues) Text('• Check failed: $code'),
           if (item.reviewNote != null) Text('Note: ${item.reviewNote}'),
           for (final t in item.terms)
@@ -402,6 +406,55 @@ class _ContributionReviewScreenState
             Text('Why: ${q['explanation']}', style: theme.textTheme.bodySmall),
         ],
       ),
+    );
+  }
+}
+
+/// Possible duplicates for a contribution (plan v2.6 §6.4). Loaded when
+/// the card is expanded; shown as suggestions with their reason and
+/// confidence. Nothing is merged automatically.
+class _DuplicateCandidates extends StatelessWidget {
+  const _DuplicateCandidates({super.key, required this.load});
+
+  final Future<List<DuplicateCandidate>> Function() load;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return FutureBuilder<List<DuplicateCandidate>>(
+      future: load(),
+      builder: (context, snap) {
+        if (snap.connectionState != ConnectionState.done) {
+          return const Padding(
+            padding: EdgeInsets.only(bottom: 8),
+            child: LinearProgressIndicator(),
+          );
+        }
+        if (snap.hasError) {
+          return Text('Could not check for duplicates.', style: theme.textTheme.bodySmall);
+        }
+        final found = snap.data ?? const [];
+        if (found.isEmpty) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Text('No likely duplicates found.', style: theme.textTheme.bodySmall),
+          );
+        }
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Possible duplicates (check before approving)', style: theme.textTheme.titleSmall),
+              for (final d in found)
+                Text(
+                  '• ${d.title} (${d.kind}, ${d.reasonLabel}, ${(d.confidence * 100).round()}%)',
+                  style: theme.textTheme.bodySmall,
+                ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
