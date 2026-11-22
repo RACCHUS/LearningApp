@@ -1,0 +1,25 @@
+# Weekly dead-link check for Bridge sources and external companions
+# (master plan v2.6 §7.5, §9.3). Fails when a link is dead so the owner is
+# notified; no secrets, nothing changes in the app.
+name: External link check
+
+on:
+  schedule:
+    - cron: '40 7 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  links:
+    if: ${{ github.repository == 'RACCHUS/LearningApp' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+      - name: Check every external link
+        run: python3 tool/check_external_links.py | tee -a "$GITHUB_STEP_SUMMARY"

@@ -28,6 +28,11 @@ class FakeWanted extends WantedBoardService {
   @override
   Future<List<WantedNeed>> board() async => needs;
 
+  List<WantedPriority> priorities = const [];
+
+  @override
+  Future<List<WantedPriority>> priorityList() async => priorities;
+
   @override
   Future<void> propose(String title, {String? details, String? tag}) async {
     await _maybeFail();
@@ -179,6 +184,29 @@ void main() {
     await tester.tap(find.byKey(const Key('wanted_send')));
     await tester.pumpAndSettle();
     expect(find.textContaining('Please give a short title'), findsOneWidget);
+  });
+
+  testWidgets('moderators see the priority list with its terms', (
+    tester,
+  ) async {
+    final s = FakeWanted(needs: [vlookup])
+      ..priorities = const [
+        WantedPriority(id: 'n1', title: 'Percent of a number', priority: 2,
+            fanIn: 2, gapCount: 0, coverageDeficit: 1),
+        WantedPriority(id: 'n2', title: 'Partly covered', priority: 0.5,
+            fanIn: 1, gapCount: 0, coverageDeficit: 0.5),
+      ];
+    await pump(tester, s, moderator: true);
+    await tester.tap(find.byKey(const Key('wanted_priority_tab')));
+    await tester.pumpAndSettle();
+    expect(find.text('2.00'), findsOneWidget);
+    expect(find.text('used in 2 places · few requests · nothing linked'), findsOneWidget);
+    expect(find.text('used in 1 place · few requests · partly covered'), findsOneWidget);
+  });
+
+  testWidgets('learners see no priority tab', (tester) async {
+    await pump(tester, FakeWanted(needs: [vlookup]));
+    expect(find.byKey(const Key('wanted_priority_tab')), findsNothing);
   });
 
   testWidgets('moderators approve, reject with a note and fulfil', (

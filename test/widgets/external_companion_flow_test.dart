@@ -132,6 +132,30 @@ void main() {
     );
   });
 
+  testWidgets('the learner chooses how much companion to see (§9.2)', (
+    tester,
+  ) async {
+    await openBridge(tester, companions: true);
+    final depth = find.byKey(const Key('external-companion-depth-bridge-percent-change'));
+    await reveal(tester, depth);
+    expect(find.textContaining('What to look for:'), findsOneWidget);
+    expect(find.byKey(const Key('bridge-check-input-pcx-check-1')), findsOneWidget);
+
+    await tester.tap(find.text('Just the link'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('What to look for:'), findsNothing);
+    expect(find.byKey(const Key('bridge-check-input-pcx-check-1')), findsNothing);
+    expect(find.byKey(openKey), findsOneWidget);
+
+    await tester.tap(find.text('Link + what to look for'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('What to look for:'), findsOneWidget);
+    expect(find.byKey(const Key('bridge-check-input-pcx-check-1')), findsNothing);
+
+    final prefs = await SharedPreferences.getInstance();
+    expect(prefs.getString('companion_depth_v1'), 'pointer');
+  });
+
   testWidgets('a failed launch explains itself and keeps the learner here', (
     tester,
   ) async {
