@@ -86,3 +86,46 @@ class CoverageRow {
     );
   }
 }
+
+/// One missing piece for one objective: what the Need cards and the Create
+/// chooser's need list show (master plan v2.6 §13.0).
+class CoverageNeed {
+  const CoverageNeed({required this.row, required this.missing});
+
+  final CoverageRow row;
+  final List<CoverageRole> missing;
+
+  String get missingLabel => missing.map((r) => r.label).join(', ');
+}
+
+/// Per-role counts of each state across a target's objectives, for the
+/// Target Detail chips. Derived from the rows; never stored.
+class CoverageSummary {
+  CoverageSummary(this.rows);
+
+  final List<CoverageRow> rows;
+
+  Map<CoverageState, int> countsFor(CoverageRole role) {
+    final out = <CoverageState, int>{};
+    for (final r in rows) {
+      final s = r.cells[role];
+      if (s != null) out[s] = (out[s] ?? 0) + 1;
+    }
+    return out;
+  }
+
+  /// Objectives with at least one content gap (Teach, Example, Practice,
+  /// Check or Bridge), in outline order. Access is "not yet verified"
+  /// everywhere, so it is not listed as a need.
+  List<CoverageNeed> get needs => [
+        for (final r in rows)
+          if (r.gaps.where((g) => g != CoverageRole.access).isNotEmpty)
+            CoverageNeed(
+              row: r,
+              missing: [
+                for (final g in r.gaps)
+                  if (g != CoverageRole.access) g,
+              ],
+            ),
+      ];
+}
