@@ -41,6 +41,43 @@ class WantedNeed {
 }
 
 /// A contribution that can be linked to a need.
+/// One open need with its reuse-value priority and the terms behind it.
+class WantedPriority {
+  const WantedPriority({
+    required this.id,
+    required this.title,
+    this.subjectTag,
+    required this.priority,
+    required this.fanIn,
+    required this.gapCount,
+    required this.coverageDeficit,
+  });
+
+  final String id;
+  final String title;
+  final String? subjectTag;
+  final double priority;
+  final int fanIn;
+  final int gapCount;
+  final double coverageDeficit;
+
+  factory WantedPriority.fromJson(Map<String, dynamic> j) => WantedPriority(
+    id: j['id'] as String,
+    title: j['title'] as String? ?? '',
+    subjectTag: j['subject_tag'] as String?,
+    priority: (j['priority'] as num?)?.toDouble() ?? 0,
+    fanIn: (j['fan_in'] as num?)?.toInt() ?? 1,
+    gapCount: (j['gap_count'] as num?)?.toInt() ?? 0,
+    coverageDeficit: (j['coverage_deficit'] as num?)?.toDouble() ?? 1,
+  );
+
+  /// Plain explanation of the score, for auditing.
+  String get explanation =>
+      'used in $fanIn ${fanIn == 1 ? 'place' : 'places'} · '
+      '${gapCount == 0 ? 'few requests' : '$gapCount requests'} · '
+      '${coverageDeficit >= 1 ? 'nothing linked' : 'partly covered'}';
+}
+
 class LinkableContribution {
   const LinkableContribution(this.id, this.title, this.status);
 
@@ -136,6 +173,15 @@ class WantedBoardService {
     final rows = await _db.rpc('wanted_board') as List;
     return [
       for (final r in rows) WantedNeed.fromJson(Map<String, dynamic>.from(r)),
+    ];
+  });
+
+  /// Maintainer seeding list (plan v2.6 §6.5): open needs with the
+  /// priority score and each of its terms. Moderators only.
+  Future<List<WantedPriority>> priorityList() => _guard(() async {
+    final rows = await _db.rpc('wanted_priority_list') as List;
+    return [
+      for (final r in rows) WantedPriority.fromJson(Map<String, dynamic>.from(r)),
     ];
   });
 
