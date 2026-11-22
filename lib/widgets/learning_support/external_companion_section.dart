@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:learning_pwa/providers/companion_depth_provider.dart';
 import 'package:learning_pwa/providers/learning_support_controller_provider.dart';
 import 'package:learning_pwa/widgets/learning_support/bridge_check_card.dart';
 
 /// "Learn more outside LearningApp" for one Bridge (master plan v2.6 §9,
 /// PR-E): a link-only section pointer, a focus note in our own words and
-/// independent checks. Reading outside is never tracked or counted as
+/// independent checks, at the depth the learner picks (§9.2). Reading outside is never tracked or counted as
 /// progress, and the learner's place in the Bridge is kept while away.
 ///
 /// Renders nothing unless `content.external_companion` is on and a valid
@@ -27,6 +28,7 @@ class ExternalCompanionSection extends ConsumerWidget {
     if (companion == null) return const SizedBox.shrink();
 
     final theme = Theme.of(context);
+    final depth = ref.watch(companionDepthProvider);
     final r = companion.resource;
     final uri = Uri.parse(r.url);
 
@@ -61,6 +63,20 @@ class ExternalCompanionSection extends ConsumerWidget {
             ),
           ),
         ),
+        Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: SegmentedButton<CompanionDepth>(
+            key: Key('external-companion-depth-$bridgeId'),
+            segments: [
+              for (final d in CompanionDepth.values)
+                ButtonSegment(value: d, label: Text(d.label)),
+            ],
+            selected: {depth},
+            showSelectedIcon: false,
+            onSelectionChanged: (s) =>
+                ref.read(companionDepthProvider.notifier).set(s.first),
+          ),
+        ),
         Card(
           child: Padding(
             padding: const EdgeInsets.all(12),
@@ -78,11 +94,13 @@ class ExternalCompanionSection extends ConsumerWidget {
                   '${r.lastCheckedAt.toIso8601String().substring(0, 10)}',
                   style: theme.textTheme.bodySmall,
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  'What to look for: ${companion.focusNote}',
-                  style: theme.textTheme.bodyMedium,
-                ),
+                if (depth.showsFocusNote) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    'What to look for: ${companion.focusNote}',
+                    style: theme.textTheme.bodyMedium,
+                  ),
+                ],
                 const SizedBox(height: 8),
                 FilledButton.tonalIcon(
                   key: Key('external-companion-open-$bridgeId'),
@@ -102,12 +120,14 @@ class ExternalCompanionSection extends ConsumerWidget {
             ),
           ),
         ),
-        Text(
-          'Check yourself after reading (practice only):',
-          style: theme.textTheme.bodyMedium,
-        ),
-        for (final (i, c) in companion.checks.indexed)
-          BridgeCheckCard(check: c, index: i),
+        if (depth.showsChecks) ...[
+          Text(
+            'Check yourself after reading (practice only):',
+            style: theme.textTheme.bodyMedium,
+          ),
+          for (final (i, c) in companion.checks.indexed)
+            BridgeCheckCard(check: c, index: i),
+        ],
       ],
     );
   }
