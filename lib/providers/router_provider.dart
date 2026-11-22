@@ -11,6 +11,8 @@ import 'package:learning_pwa/screens/governance/coverage_matrix_screen.dart'
     deferred as coverage_matrix;
 import 'package:learning_pwa/screens/governance/curriculum_freshness_screen.dart'
     deferred as curriculum_freshness;
+import 'package:learning_pwa/screens/governance/prompt_pack_signals_screen.dart'
+    deferred as prompt_pack_signals;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -585,6 +587,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => DeferredLoaderWidget(
           loader: curriculum_freshness.loadLibrary,
           builder: () => curriculum_freshness.CurriculumFreshnessScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/admin/prompt-signals',
+        name: 'prompt-pack-signals',
+        builder: (context, state) => DeferredLoaderWidget(
+          loader: prompt_pack_signals.loadLibrary,
+          builder: () => prompt_pack_signals.PromptPackSignalsScreen(),
         ),
       ),
       GoRoute(

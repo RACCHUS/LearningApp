@@ -117,6 +117,12 @@ class _CostObservabilityScreenState extends State<CostObservabilityScreen> {
             ),
           if (_isAdmin)
             IconButton(
+              icon: const Icon(Icons.fact_check_outlined),
+              tooltip: 'Prompt pack signals',
+              onPressed: () => context.push('/admin/prompt-signals'),
+            ),
+          if (_isAdmin)
+            IconButton(
               icon: const Icon(Icons.refresh),
               tooltip: 'Refresh Telemetry',
               onPressed: _isLoading ? null : _loadSnapshot,

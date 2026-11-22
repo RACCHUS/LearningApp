@@ -42,7 +42,7 @@ Our core privacy principles:
 
 ### 2.4 Optional Analytics You Choose to Turn On
 - **Product analytics (opt-in)**: if you opt in from Settings → Privacy, we record which main screens you open, when the app starts and which lesson you open, linked to your account. Never your answers, anything you type, AI replies or lesson content.
-- **Prompt-quality sharing (separate opt-in)**: if you also turn this on in the lesson generator, each AI reply you check there shares only which AI you picked, whether the reply passed, error codes and counts. Never your prompts, replies, topics or answers.
+- **Prompt-quality sharing (separate opt-in)**: if you also turn this on in the lesson generator, each AI reply you check there shares only which AI you picked, whether the reply passed, error codes and counts. For AI lessons you add to a goal topic, how your later checks on that topic go is also counted, only in groups of five or more people and from progress the app already keeps. Never your prompts, replies or answers. If you opted in before this was included, it is not counted for you unless you opt in again.
 - Both are off unless you turn them on, are available only to reviewed adult accounts, are kept for up to 90 days, and can be exported or turned off at any time in Settings → Privacy. Turning either off deletes what it recorded.
 
 ---
