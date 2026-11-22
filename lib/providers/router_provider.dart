@@ -7,6 +7,8 @@ import 'package:learning_pwa/screens/governance/product_analytics_overview_scree
     deferred as product_analytics_overview;
 import 'package:learning_pwa/screens/governance/feature_control_center_screen.dart'
     deferred as feature_control_center;
+import 'package:learning_pwa/screens/governance/coverage_matrix_screen.dart'
+    deferred as coverage_matrix;
 import 'package:learning_pwa/screens/governance/curriculum_freshness_screen.dart'
     deferred as curriculum_freshness;
 
@@ -583,6 +585,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => DeferredLoaderWidget(
           loader: curriculum_freshness.loadLibrary,
           builder: () => curriculum_freshness.CurriculumFreshnessScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/admin/coverage',
+        name: 'coverage-matrix',
+        builder: (context, state) => DeferredLoaderWidget(
+          loader: coverage_matrix.loadLibrary,
+          builder: () => coverage_matrix.CoverageMatrixScreen(),
         ),
       ),
       GoRoute(
