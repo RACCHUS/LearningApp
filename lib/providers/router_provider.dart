@@ -7,6 +7,8 @@ import 'package:learning_pwa/screens/governance/product_analytics_overview_scree
     deferred as product_analytics_overview;
 import 'package:learning_pwa/screens/governance/feature_control_center_screen.dart'
     deferred as feature_control_center;
+import 'package:learning_pwa/screens/governance/curriculum_freshness_screen.dart'
+    deferred as curriculum_freshness;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -573,6 +575,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => DeferredLoaderWidget(
           loader: feature_control_center.loadLibrary,
           builder: () => feature_control_center.FeatureControlCenterScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/admin/freshness',
+        name: 'curriculum-freshness',
+        builder: (context, state) => DeferredLoaderWidget(
+          loader: curriculum_freshness.loadLibrary,
+          builder: () => curriculum_freshness.CurriculumFreshnessScreen(),
         ),
       ),
       GoRoute(
