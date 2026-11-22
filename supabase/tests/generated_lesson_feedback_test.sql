@@ -19,9 +19,13 @@ insert into public.lessons (id, title, visibility, user_id, tags) values
   ('ca000000-0000-4000-8000-000000000103', 'Old generated lesson', 'private',
    'ca000000-0000-4000-8000-000000000001', array['ai-generated']);
 
-select ok(exists (select 1 from private.site_feature_controls
-                  where feature_key = 'content.feedback_chips' and not enabled),
-  'the switch is seeded OFF');
+select ok(exists (select 1 from private.site_feature_change_audit
+                  where feature_key = 'content.feedback_chips' and next_enabled
+                    and reason like '%Owner-approved%'),
+  'turning it on was an audited owner decision');
+-- The gates below are tested from OFF, whatever production holds.
+update private.site_feature_controls set enabled = false, release_ready = false
+  where feature_key = 'content.feedback_chips';
 select ok(not has_table_privilege('authenticated', 'private.generated_lesson_feedback', 'select'),
   'learners cannot read the feedback table');
 
