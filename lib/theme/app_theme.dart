@@ -259,8 +259,15 @@ class AppTheme {
     );
   }
   
+  /// Widget tests that need the real theme colours (for example the
+  /// accessibility guideline checks) set this to false: the web fonts
+  /// cannot be fetched in tests, and font family does not change contrast.
+  @visibleForTesting
+  static bool useWebFonts = true;
+
   /// Build a refined text theme with better hierarchy
   static TextTheme _buildTextTheme(TextTheme base) {
+    if (!useWebFonts) return base;
     return GoogleFonts.interTextTheme(base).copyWith(
       displayLarge: GoogleFonts.poppins(
         fontSize: 57,

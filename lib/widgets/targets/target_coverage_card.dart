@@ -142,7 +142,13 @@ class NeedCard extends StatelessWidget {
     return Card(
       key: Key('need-card-${need.row.objectiveId}'),
       elevation: 0,
-      color: theme.colorScheme.surfaceContainerHighest,
+      // The primary colour is tuned for 4.5:1 on surfaceContainerLow; a
+      // darker fill made these buttons 3.9:1 (accessibility review P3.3).
+      color: theme.colorScheme.surfaceContainerLow,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+        side: BorderSide(color: theme.colorScheme.outlineVariant),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(DesignTokens.space2),
         child: Column(
