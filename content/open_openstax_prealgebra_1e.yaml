@@ -6,7 +6,7 @@ source_releases:
   title: Prealgebra
   version: eb2e29d (archive 20260604.144757)
   source_url: https://openstax.org/books/prealgebra/pages/preface
-  retrieved_at: '2026-11-21T15:24:27Z'
+  retrieved_at: '2026-11-22T16:35:57Z'
   license: Creative Commons Attribution 4.0 International (CC BY 4.0)
   license_name: CC BY 4.0
   rights_note: Adapted under CC BY 4.0 (owner-approved, data/content_sources.json). OpenStax and Rice University names and logos are not covered by the license; no endorsement implied. Imported automatically; not reviewed by a person.
@@ -21,6 +21,7 @@ target:
   version_code: OPENSTAX-EB2E29D-R3
   version_title: Prealgebra by OpenStax, CC BY 4.0
   version_description: Open textbook sections imported as LearningApp lessons.
+  volatility_class: V0
 domains:
 - code: CH6
   title: Percents
