@@ -10,9 +10,10 @@
 -- or rejected. Replacing retires the champion: old versions, their lessons
 -- and every decision remain.
 --
--- publish_target_version now refuses to retire an official target's
--- published version without a matching 'replace' decision. Learner-owned
--- goals are unchanged.
+-- publish_target_version now refuses to retire a catalog target's
+-- published version (no owning learner, or flagged official; this covers
+-- the open-textbook curricula) without a matching 'replace' decision.
+-- Learner-owned goals are unchanged.
 
 CREATE TABLE IF NOT EXISTS private.content_version_decisions (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -202,7 +203,9 @@ begin
   end if;
 
   v_target_owner := v_tv.created_by;
-  v_official := coalesce(v_tv.is_official, false);
+  -- Catalog content: flagged official, or owned by no learner (the open
+  -- textbooks and seeded catalog targets have no created_by).
+  v_official := coalesce(v_tv.is_official, false) or v_target_owner is null;
 
   if coalesce(auth.role(), '') <> 'service_role'
      and (auth.uid() is null or v_target_owner is distinct from auth.uid()) then
@@ -232,7 +235,7 @@ begin
         and status = 'published'
         and id <> p_version_id
     loop
-      -- Champion/challenger (plan v2.6 §7.3): an official champion is
+      -- Champion/challenger (plan v2.6 §7.3): a catalog champion is
       -- retired only by a recorded 'replace' decision for this pair.
       if v_official and not exists (
         select 1 from private.content_version_decisions d

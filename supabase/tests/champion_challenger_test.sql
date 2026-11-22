@@ -2,7 +2,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(17);
+select plan(18);
 
 insert into auth.users (id, email) values
   ('d1000000-0000-4000-8000-000000000001', 'cc-admin@example.invalid'),
@@ -22,6 +22,15 @@ insert into public.target_versions (id, target_id, version_code, status) values
   ('d1000000-0000-4000-8000-000000000013', 'd1000000-0000-4000-8000-000000000010', 'R3', 'draft');
 update public.target_versions set status = 'review_ready' where target_id = 'd1000000-0000-4000-8000-000000000010';
 update public.target_versions set status = 'published' where id = 'd1000000-0000-4000-8000-000000000011';
+
+-- An ownerless catalog target not flagged official (like the open textbooks).
+insert into public.learning_targets (id, target_type, title, slug) values
+  ('d1000000-0000-4000-8000-000000000030', 'certification', 'Open Book', 'test-cc-open');
+insert into public.target_versions (id, target_id, version_code, status) values
+  ('d1000000-0000-4000-8000-000000000031', 'd1000000-0000-4000-8000-000000000030', 'O1', 'draft'),
+  ('d1000000-0000-4000-8000-000000000032', 'd1000000-0000-4000-8000-000000000030', 'O2', 'draft');
+update public.target_versions set status = 'review_ready' where target_id = 'd1000000-0000-4000-8000-000000000030';
+update public.target_versions set status = 'published' where id = 'd1000000-0000-4000-8000-000000000031';
 
 -- A learner-owned goal: unchanged behaviour.
 insert into public.learning_targets (id, target_type, title, slug, created_by) values
@@ -72,6 +81,8 @@ select set_config('request.jwt.claim.role', 'service_role', true);
 select set_config('request.jwt.claim.sub', '', true);
 select throws_ok($$ select public.publish_target_version('d1000000-0000-4000-8000-000000000012', true) $$,
   '22023', null, 'retiring an official champion without a decision is refused');
+select throws_ok($$ select public.publish_target_version('d1000000-0000-4000-8000-000000000032', true) $$,
+  '22023', null, 'an ownerless catalog target (not flagged official) is gated too');
 -- An alternate decision does not unlock it either.
 select lives_ok($$ select public.record_content_version_decision(
   'd1000000-0000-4000-8000-000000000011', 'd1000000-0000-4000-8000-000000000013', 'alternate', 'none',
