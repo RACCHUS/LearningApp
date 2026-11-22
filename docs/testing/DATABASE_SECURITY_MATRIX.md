@@ -12,7 +12,7 @@ Columns are **static text signals**, not proof. Read a test before relying on it
 - **RLS checks**: assertions that row-level security is enabled (`relrowsecurity`).
 - A file has a **security signal** if it has any denial, privilege or RLS check, or at least two identity switches (cross-user tests often assert that another learner's rows count as zero).
 
-**Totals:** 91 test files, 2020 planned assertions, plus 4 files using `no_plan()` (counted only when run; pg_prove reports the full total in the database job).
+**Totals:** 92 test files, 2031 planned assertions, plus 4 files using `no_plan()` (counted only when run; pg_prove reports the full total in the database job).
 
 ## By area
 
@@ -27,7 +27,7 @@ Columns are **static text signals**, not proof. Read a test before relying on it
 | Catalog, taxonomy & versioning | 14 | 261 | 5 | 3 | 75 | 41 | 12 |
 | Feature controls & cost | 2 | 54 | 2 | 1 | 18 | 0 | 0 |
 | Schema integrity | 1 | 8 | 0 | 0 | 0 | 0 | 0 |
-| Other | 14 | 240 | 4 | 8 | 82 | 17 | 1 |
+| Other | 15 | 251 | 4 | 9 | 84 | 18 | 1 |
 
 ## Files with no security signal
 
@@ -139,3 +139,4 @@ No denial, privilege or RLS check and fewer than two identity switches. These ma
 | `question_scratchpad_flag_test.sql` | Other | 3 | — | 0 | 0 | 0 | 0 |
 | `reinforcement_suggestions_flag_test.sql` | Other | 3 | — | 0 | 0 | 0 | 0 |
 | `study_reminders_web_push_test.sql` | Other | 37 | anon, authenticated, service_role | 5 | 15 | 0 | 0 |
+| `wanted_priority_score_test.sql` | Other | 11 | authenticated | 2 | 2 | 1 | 0 |

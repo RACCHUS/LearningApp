@@ -201,7 +201,7 @@ class _WantedBoardScreenState extends ConsumerState<WantedBoardScreen> {
     }
     final board = _boardBody(context);
     return DefaultTabController(
-      length: isModerator ? 2 : 1,
+      length: isModerator ? 3 : 1,
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Wanted lessons'),
@@ -210,6 +210,7 @@ class _WantedBoardScreenState extends ConsumerState<WantedBoardScreen> {
                   tabs: [
                     Tab(text: 'Board'),
                     Tab(key: Key('wanted_review_tab'), text: 'To review'),
+                    Tab(key: Key('wanted_priority_tab'), text: 'Priority'),
                   ],
                 )
               : null,
@@ -221,7 +222,9 @@ class _WantedBoardScreenState extends ConsumerState<WantedBoardScreen> {
           label: const Text('Ask for a lesson'),
         ),
         body: isModerator
-            ? TabBarView(children: [board, const _WantedReviewTab()])
+            ? TabBarView(
+                children: [board, const _WantedReviewTab(), const _WantedPriorityTab()],
+              )
             : board,
       ),
     );
@@ -509,6 +512,52 @@ class _WantedReviewTabState extends ConsumerState<_WantedReviewTab> {
             ),
           ),
       ],
+    );
+  }
+}
+
+/// Maintainer seeding list (plan v2.6 §6.5): open needs by reuse-value
+/// priority, with the terms behind each score. Moderators only; learners
+/// never see a score, only the board's order.
+class _WantedPriorityTab extends ConsumerWidget {
+  const _WantedPriorityTab();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    return FutureBuilder<List<WantedPriority>>(
+      future: ref.read(wantedBoardServiceProvider).priorityList(),
+      builder: (context, snap) {
+        if (snap.connectionState != ConnectionState.done) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (snap.hasError) {
+          return const Center(child: Text('Could not load the priority list.'));
+        }
+        final rows = snap.data ?? const [];
+        if (rows.isEmpty) {
+          return const Center(child: Text('No open needs.'));
+        }
+        return ListView(
+          key: const Key('wanted_priority_list'),
+          padding: const EdgeInsets.all(16),
+          children: [
+            Text(
+              'Ordered by reuse value: places it would serve × request boost × '
+              'how uncovered it is. A work order for seeding, not a quality '
+              'judgement.',
+              style: theme.textTheme.bodySmall,
+            ),
+            for (final r in rows)
+              ListTile(
+                key: Key('wanted_priority_${r.id}'),
+                title: Text(r.title),
+                subtitle: Text(r.explanation),
+                trailing: Text(r.priority.toStringAsFixed(2)),
+              ),
+          ],
+        );
+      },
     );
   }
 }
