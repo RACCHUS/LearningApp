@@ -48,7 +48,20 @@ enum BridgeCheckTemplate {
   fractionMultiply('fraction_multiply', ['a', 'b', 'c', 'd']),
 
   /// `a/b ÷ c/d`.
-  fractionDivide('fraction_divide', ['a', 'b', 'c', 'd']);
+  fractionDivide('fraction_divide', ['a', 'b', 'c', 'd']),
+
+  /// Whole-number division, the whole part only (Python `//`), for a
+  /// dividend from 0 to 1,000,000 and a divisor from 1 to 1,000,000.
+  /// Negative numbers are refused: languages disagree on them.
+  integerQuotient('integer_quotient', ['dividend', 'divisor']),
+
+  /// The remainder of that division (Python `%`), same limits.
+  remainder('remainder', ['dividend', 'divisor']),
+
+  /// How many values `range(start, stop, step)` produces (how many times
+  /// a counting loop runs): whole numbers from −10,000 to 10,000, step not
+  /// zero.
+  rangeCount('range_count', ['start', 'stop', 'step']);
 
   const BridgeCheckTemplate(this.wire, this.inputNames);
 
@@ -162,7 +175,38 @@ class BridgeCheckEvaluator {
         }
         if (right.isZero) return fail('cannot divide by zero');
         return BridgeComputation._(left / right, null);
+      case BridgeCheckTemplate.integerQuotient:
+      case BridgeCheckTemplate.remainder:
+        final dividend = _whole(v['dividend']!, 0, 1000000);
+        final divisor = _whole(v['divisor']!, 1, 1000000);
+        if (dividend == null || divisor == null) {
+          return fail('dividend must be a whole number from 0 and divisor from 1, up to 1,000,000');
+        }
+        return BridgeComputation._(
+          ExactNumber.fromInt(template == BridgeCheckTemplate.integerQuotient
+              ? dividend ~/ divisor
+              : dividend % divisor),
+          null,
+        );
+      case BridgeCheckTemplate.rangeCount:
+        final start = _whole(v['start']!, -10000, 10000);
+        final stop = _whole(v['stop']!, -10000, 10000);
+        final step = _whole(v['step']!, -10000, 10000);
+        if (start == null || stop == null || step == null || step == 0) {
+          return fail('start, stop and step must be whole numbers from -10000 to 10000, step not zero');
+        }
+        final span = step > 0 ? stop - start : start - stop;
+        final by = step.abs();
+        final count = span <= 0 ? 0 : (span + by - 1) ~/ by;
+        return BridgeComputation._(ExactNumber.fromInt(count), null);
     }
+  }
+
+  static int? _whole(ExactNumber e, int min, int max) {
+    if (e.denominator != BigInt.one) return null;
+    final n = e.numerator;
+    if (n < BigInt.from(min) || n > BigInt.from(max)) return null;
+    return n.toInt();
   }
 
   static int? _smallWhole(ExactNumber e) {

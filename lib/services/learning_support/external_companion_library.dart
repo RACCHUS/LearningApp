@@ -24,6 +24,8 @@ class ExternalCompanionLibrary {
     'content/companions/square_roots.companion.json',
     'content/companions/order_of_operations.companion.json',
     'content/companions/fraction_arithmetic.companion.json',
+    'content/companions/integer_division.companion.json',
+    'content/companions/loop_count.companion.json',
   ];
 
   final Map<String, ExternalCompanion> _byBridge;
