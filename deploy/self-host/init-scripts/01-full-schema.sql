@@ -1,7 +1,7 @@
 -- ====================================================================
 -- LearningApp Consolidated Turnkey Self-Hosting Database Schema Bundle
 -- Automatically compiled from 150 immutable migrations
--- Generated: 2026-11-22T17:00:33.166125Z
+-- Generated: 2026-11-22T17:08:44.064613Z
 -- ====================================================================
 
 BEGIN;
