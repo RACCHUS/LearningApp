@@ -1364,6 +1364,35 @@ Future<void> _executeApply(
     print('Lesson tags set on ${lessonTags.length} lesson(s).');
   }
 
+  // 7. Freshness (plan v2.6 §7.1): volatility class, review-by and the
+  // source pin, while the version is a draft (migration 20261122010000).
+  final target = manifest['target'];
+  final volatility = target is Map ? target['volatility_class'] : null;
+  if (volatility is String) {
+    final releases = manifest['source_releases'];
+    final firstVersion = releases is List && releases.isNotEmpty && releases.first is Map
+        ? (releases.first as Map)['version']?.toString()
+        : null;
+    final pin = firstVersion == null || firstVersion.trim().isEmpty
+        ? null
+        : firstVersion.trim().split(RegExp(r'\s+')).first.toLowerCase();
+    final freshRes = await client.restRpc('set_target_version_freshness', {
+      'p_target_version_id': result['target_version_id'],
+      'p_volatility_class': volatility,
+      'p_review_by': target is Map ? target['review_by'] : null,
+      'p_source_pin': pin,
+    });
+    if (freshRes['statusCode'] >= 400) {
+      throw Exception(
+        'Setting freshness failed (${freshRes['statusCode']}): ${freshRes['body']}. '
+        'Do not publish this draft.',
+      );
+    }
+    print('Freshness: $volatility, review by ${(freshRes['body'] as Map)['review_by']}, pin ${pin ?? '-'}.');
+  } else {
+    print('Note: manifest has no target.volatility_class; no review-by date is set.');
+  }
+
   print('\n----------------------------------------------------');
   print('Ingestion Results (Atomic Transaction Succeeded):');
   print('  Target Version ID    : ${result['target_version_id']} (draft)');
