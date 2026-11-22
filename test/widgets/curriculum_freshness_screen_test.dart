@@ -49,4 +49,40 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.textContaining('Admins only'), findsOneWidget);
   });
+
+  testWidgets('lists champion/challenger decisions with their basis', (tester) async {
+    tester.view.physicalSize = const Size(1200, 2000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    await tester.pumpWidget(MaterialApp(
+      home: CurriculumFreshnessScreen(
+        load: () async => data(withItem: false),
+        loadDecisions: () async => [
+          {'target_slug': 'open-openstax-prealgebra-1e', 'champion': 'R2', 'challenger': 'R3',
+           'decision': 'replace', 'basis': 'fixes_defect', 'defect_ref': 'Inline math broke paragraphs',
+           'decided_via': 'service_role', 'decided_at': '2026-11-22T10:00:00Z'},
+          {'target_slug': 'open-openstax-prealgebra-1e', 'champion': 'R3', 'challenger': 'R4',
+           'decision': 'alternate', 'basis': 'none', 'note': 'Different wording',
+           'decided_via': 'admin', 'decided_at': '2026-11-23T10:00:00Z'},
+        ],
+      ),
+    ));
+    await tester.pumpAndSettle();
+    expect(find.text('Replacement decisions (2)'), findsOneWidget);
+    expect(find.text('Replaced: open-openstax-prealgebra-1e R2 → R3'), findsOneWidget);
+    expect(find.textContaining('fixes: Inline math broke paragraphs · 2026-11-22'), findsOneWidget);
+    expect(find.text('Kept as alternate: open-openstax-prealgebra-1e R3 → R4'), findsOneWidget);
+  });
+
+  testWidgets('a decisions failure still shows freshness', (tester) async {
+    await tester.pumpWidget(MaterialApp(
+      home: CurriculumFreshnessScreen(
+        load: () async => data(withItem: false),
+        loadDecisions: () async => throw Exception('nope'),
+      ),
+    ));
+    await tester.pumpAndSettle();
+    expect(find.text('Needs attention (0)'), findsOneWidget);
+    expect(find.text('Replacement decisions (0)'), findsOneWidget);
+  });
 }

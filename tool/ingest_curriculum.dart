@@ -379,6 +379,7 @@ void main(List<String> args) async {
   bool isStageReview = false;
   bool isPublish = false;
   bool retirePrevious = false;
+  String? replaceReason;
   String? customUrl;
   String? customKey;
 
@@ -402,6 +403,8 @@ void main(List<String> args) async {
       isPublish = true;
     } else if (arg == '--retire-previous') {
       retirePrevious = true;
+    } else if (arg == '--replace-reason' && i + 1 < args.length) {
+      replaceReason = args[++i];
     } else if (arg == '--url' && i + 1 < args.length) {
       customUrl = args[++i];
     } else if (arg == '--service-key' && i + 1 < args.length) {
@@ -618,7 +621,13 @@ void main(List<String> args) async {
   // MODE 4: PUBLISH (Promote to published immutable)
   if (isPublish) {
     print('\n--- Executing TargetVersion Promotion to Published ---');
-    await _executePublish(client, targetArg, versionArg, retirePrevious: retirePrevious);
+    if (retirePrevious && (replaceReason == null || replaceReason.trim().length < 5)) {
+      print('Error: --retire-previous needs --replace-reason "<the documented defect this version fixes>".');
+      print('Replacing a published official version is a champion/challenger decision (plan v2.6 §7.3).');
+      exit(1);
+    }
+    await _executePublish(client, targetArg, versionArg,
+        retirePrevious: retirePrevious, replaceReason: replaceReason);
     print('\n✅ Publication complete! TargetVersion is now published and immutable under database RLS.');
     exit(0);
   }
@@ -1492,6 +1501,7 @@ Future<void> _executePublish(
   String targetSlug,
   String versionCode, {
   bool retirePrevious = false,
+  String? replaceReason,
 }) async {
   // 1. Locate target (exact match)
   final targetRes = await client.restGet('learning_targets?slug=eq.$targetSlug&limit=1');
@@ -1527,6 +1537,30 @@ Future<void> _executePublish(
       'Publication strictly requires "review_ready" staging status to ensure QA verification. '
       'Run with --stage-review first.',
     );
+  }
+
+  // Champion/challenger (plan v2.6 §7.3): record why this version replaces
+  // each published one before retiring it. The database refuses to retire
+  // an official champion without this decision.
+  if (retirePrevious) {
+    final champions = asList((await client.restGet(
+      'target_versions?target_id=eq.$targetId&status=eq.published&select=id,version_code',
+    ))['body']);
+    for (final c in champions) {
+      final champion = c as Map<String, dynamic>;
+      if (champion['id'] == versionId) continue;
+      final decisionRes = await client.restRpc('record_content_version_decision', {
+        'p_champion_version_id': champion['id'],
+        'p_challenger_version_id': versionId,
+        'p_decision': 'replace',
+        'p_basis': 'fixes_defect',
+        'p_defect_ref': replaceReason,
+      });
+      if (decisionRes['statusCode'] >= 400) {
+        throw Exception('Could not record the replace decision: ${decisionRes['body']}');
+      }
+      print('Recorded replace decision ${champion['version_code']} -> $versionCode: $replaceReason');
+    }
   }
 
   // 3. Atomically publish (and optionally retire previous) via DB transaction RPC

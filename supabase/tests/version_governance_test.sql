@@ -222,6 +222,11 @@ select set_config('request.jwt.claim.role', 'service_role', true);
 select set_config('request.jwt.claim.sub', '88888888-8888-4888-8888-888888888888', true);
 
 -- 16. Test publish_target_version with retire_previous = true
+-- (An official champion needs a recorded replace decision first: plan
+-- v2.6 §7.3, migration 20261122060000.)
+select public.record_content_version_decision(
+  '99999999-aaaa-4999-8999-999999999999', '99999999-bbbb-4999-8999-999999999999',
+  'replace', 'fixes_defect', 'New exam edition SY0-701 supersedes SY0-601');
 select is(
   (public.publish_target_version('99999999-bbbb-4999-8999-999999999999', true)->>'status')::text,
   'published',
