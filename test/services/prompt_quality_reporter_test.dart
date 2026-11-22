@@ -176,6 +176,26 @@ void main() {
       expect(find.byKey(const Key('prompt_quality_opt_in')), findsNothing);
     });
 
+    testWidgets('an opt-in under the older wording is offered the current one', (tester) async {
+      final api = await pump(tester,
+          const PromptQualityStatus(enabled: true, available: true, consented: true, scope: 1));
+      expect(find.textContaining('later checks on that topic'), findsOneWidget);
+      await tester.tap(find.byKey(const Key('prompt_quality_update_scope')));
+      await tester.pumpAndSettle();
+      expect(api.consents, [true]);
+    });
+
+    testWidgets('no scope offer once the current wording was accepted', (tester) async {
+      await pump(tester,
+          const PromptQualityStatus(enabled: true, available: true, consented: true, scope: 2));
+      expect(find.byKey(const Key('prompt_quality_update_scope')), findsNothing);
+    });
+
+    test('status reads the consent scope', () {
+      expect(PromptQualityStatus.fromJson({'consented': true, 'scope': 1}).scope, 1);
+      expect(PromptQualityStatus.fromJson({'consented': true}).scope, 0);
+    });
+
     testWidgets('with the switch off, an earlier opt-in can still be withdrawn', (tester) async {
       final api = await pump(tester, const PromptQualityStatus(consented: true, storedEvents: 3));
       final tile = tester.widget<SwitchListTile>(find.byKey(const Key('prompt_quality_opt_in')));

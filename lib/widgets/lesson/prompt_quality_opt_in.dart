@@ -2,6 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:learning_pwa/providers/prompt_quality_provider.dart';
 
+/// What opting in covers. Opting in with this wording is consent scope 2.
+const kPromptQualityOptInWording =
+    'Share how each reply checked out: which AI you picked, whether it '
+    'passed, error codes and counts. For AI lessons you add to a goal '
+    'topic, also count how your later checks on that topic go, only in '
+    'groups of five or more people. Never your prompts, replies or '
+    'answers. Turning this off deletes what was shared and stops the '
+    'counting.';
+
 /// The separate opt-in for prompt-quality telemetry (plan v2.6 §5.7.6).
 /// Shown only when the switch is on and this account already shares basic
 /// product analytics; otherwise nothing is rendered.
@@ -53,13 +62,17 @@ class _PromptQualityOptInState extends ConsumerState<PromptQualityOptIn> {
                 ? null
                 : _set,
             title: const Text('Help improve our prompts'),
-            subtitle: const Text(
-              'Share how each reply checked out: which AI you picked, '
-              'whether it passed, error codes and counts. Never your prompts, '
-              'replies, topics or answers. Turning this off deletes what was '
-              'shared.',
-            ),
+            subtitle: const Text(kPromptQualityOptInWording),
           ),
+          if (status.canUpdateScope)
+            TextButton(
+              key: const Key('prompt_quality_update_scope'),
+              onPressed: _saving ? null : () => _set(true),
+              child: const Text(
+                'You opted in before later checks were included. '
+                'Tap to include them too.',
+              ),
+            ),
           if (_error != null)
             Text(
               _error!,

@@ -180,7 +180,7 @@ class LessonContributionService {
     final rows = await _db
         .from('content_contributions')
         .select(
-          'id, version, status, license, ai_assisted, trust_tier, snapshot, '
+          'id, lesson_id, version, status, license, ai_assisted, trust_tier, snapshot, '
           'check_issues, review_note, created_at, published_at',
         )
         .inFilter('status', statuses)
@@ -205,6 +205,23 @@ class LessonContributionService {
         DuplicateCandidate.fromJson(Map<String, dynamic>.from(r as Map)),
     ];
   }
+
+  /// Records one piece of review evidence on a lesson (plan v2.6 §5.7.6
+  /// signal 3): what was checked, what was found and who looked.
+  Future<void> recordReviewEvidence({
+    required String lessonId,
+    required String aspect,
+    required String outcome,
+    required String reviewerKind,
+    String? note,
+  }) =>
+      _call('record_content_review_evidence', {
+        'p_lesson_id': lessonId,
+        'p_aspect': aspect,
+        'p_outcome': outcome,
+        'p_reviewer_kind': reviewerKind,
+        'p_note': note,
+      });
 
   Future<void> review(String id, {required bool approve, String? note}) =>
       _call('review_lesson_contribution', {
@@ -338,6 +355,7 @@ class ContributionQueueItem {
     required this.createdAt,
     this.issues = const [],
     this.reviewNote,
+    this.lessonId,
   });
 
   factory ContributionQueueItem.fromJson(Map<String, dynamic> j) =>
@@ -354,9 +372,13 @@ class ContributionQueueItem {
             if (i is Map) '${i['code']}',
         ],
         reviewNote: j['review_note'] as String?,
+        lessonId: j['lesson_id'] as String?,
       );
 
   final String id;
+
+  /// The contributed lesson, when the queue row carries it.
+  final String? lessonId;
   final int version;
   final String status;
   final String license;

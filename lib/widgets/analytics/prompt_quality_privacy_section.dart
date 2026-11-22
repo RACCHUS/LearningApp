@@ -57,8 +57,10 @@ class _PromptQualityPrivacySectionState
               'A separate choice from the analytics above, offered in the lesson '
               'generator. If you turn it on, each AI reply you check there shares '
               'only which AI you picked, whether the reply passed, error codes and '
-              'counts. Never your prompts, replies, topics or answers. Rows are '
-              'kept for up to 90 days.',
+              'counts. For AI lessons you add to a goal topic, how your later '
+              'checks on that topic go is also counted, only in groups of five or '
+              'more people. Never your prompts, replies or answers. Rows are kept '
+              'for up to 90 days.',
             ),
             const SizedBox(height: 8),
             Text(
