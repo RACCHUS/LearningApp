@@ -53,6 +53,12 @@ class FakeService extends LessonContributionService {
   @override
   Future<void> takedown(String id, String reason) =>
       _record('takedown:$id:$reason');
+
+  List<DuplicateCandidate> duplicates = const [];
+
+  @override
+  Future<List<DuplicateCandidate>> duplicateCandidates(String id) async =>
+      duplicates;
 }
 
 void main() {
@@ -105,6 +111,30 @@ void main() {
     expect(find.text('Base: Starting amount'), findsOneWidget);
     expect(find.text('✓ B'), findsOneWidget);
     expect(find.text('· A'), findsOneWidget);
+  });
+
+  testWidgets('possible duplicates are listed with reason and confidence', (
+    tester,
+  ) async {
+    service.byStatus['submitted'] = [item('a', 'submitted')];
+    service.duplicates = const [
+      DuplicateCandidate(kind: 'contribution', id: 'c9', title: 'Percent change explained',
+          reason: 'same_snapshot', confidence: 1),
+      DuplicateCandidate(kind: 'lesson', id: 'l2', title: 'Understanding percent change!',
+          reason: 'similar_title', confidence: 0.82),
+    ];
+    await pump(tester);
+    await expand(tester, 'a');
+    expect(find.text('Possible duplicates (check before approving)'), findsOneWidget);
+    expect(find.textContaining('Percent change explained (contribution, identical content, 100%)'), findsOneWidget);
+    expect(find.textContaining('(lesson, similar title, 82%)'), findsOneWidget);
+  });
+
+  testWidgets('no candidates says so', (tester) async {
+    service.byStatus['submitted'] = [item('a', 'submitted')];
+    await pump(tester);
+    await expand(tester, 'a');
+    expect(find.text('No likely duplicates found.'), findsOneWidget);
   });
 
   testWidgets('approve with an optional note; reject needs the dialog', (

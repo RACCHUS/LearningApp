@@ -192,6 +192,20 @@ class LessonContributionService {
     ];
   }
 
+  /// Possible duplicates of a contribution (plan v2.6 §6.4), strongest
+  /// first, each with its reason. Suggestions for a moderator only;
+  /// nothing is merged. Moderator-only on the server.
+  Future<List<DuplicateCandidate>> duplicateCandidates(String id) async {
+    final raw = await _db.rpc(
+      'contribution_duplicate_candidates',
+      params: {'p_contribution_id': id},
+    );
+    return [
+      for (final r in (raw as List? ?? const []))
+        DuplicateCandidate.fromJson(Map<String, dynamic>.from(r as Map)),
+    ];
+  }
+
   Future<void> review(String id, {required bool approve, String? note}) =>
       _call('review_lesson_contribution', {
         'p_id': id,
@@ -409,4 +423,40 @@ class RefreshProposal {
   final String? itemRef;
   final String? sourceUrl;
   final String? reviewNote;
+}
+
+/// One near-duplicate candidate for a contribution.
+class DuplicateCandidate {
+  const DuplicateCandidate({
+    required this.kind,
+    required this.id,
+    required this.title,
+    required this.reason,
+    required this.confidence,
+  });
+
+  /// `contribution` or `lesson`.
+  final String kind;
+  final String id;
+  final String title;
+
+  /// `same_snapshot`, `similar_title` or `similar_content`.
+  final String reason;
+  final double confidence;
+
+  String get reasonLabel => switch (reason) {
+    'same_snapshot' => 'identical content',
+    'similar_title' => 'similar title',
+    'similar_content' => 'similar content',
+    _ => reason,
+  };
+
+  factory DuplicateCandidate.fromJson(Map<String, dynamic> json) =>
+      DuplicateCandidate(
+        kind: json['kind']?.toString() ?? 'contribution',
+        id: json['id']?.toString() ?? '',
+        title: json['title']?.toString() ?? '',
+        reason: json['reason']?.toString() ?? '',
+        confidence: (json['confidence'] as num?)?.toDouble() ?? 0,
+      );
 }
