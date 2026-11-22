@@ -13,6 +13,7 @@ import '../../providers/version_governance_provider.dart';
 import '../../theme/design_tokens.dart';
 import '../../widgets/governance/target_version_migration_dialog.dart';
 import '../../widgets/targets/target_readiness_card.dart';
+import '../../widgets/targets/target_coverage_card.dart';
 import '../../widgets/targets/exam_preparation_overview_card.dart';
 import '../../widgets/targets/diagnostic_launch_banner.dart';
 import '../../widgets/targets/simulation_exam_launch_card.dart';
@@ -384,6 +385,13 @@ class TargetDetailScreen extends ConsumerWidget {
                         ],
                         TargetReadinessCard(targetVersionId: ver.id),
                         const SizedBox(height: DesignTokens.space3),
+                        if (ver.isPublished) ...[
+                          TargetCoverageCard(
+                            targetSlug: target.slug,
+                            targetVersionId: ver.id,
+                          ),
+                          const SizedBox(height: DesignTokens.space3),
+                        ],
                         SizedBox(
                           width: double.infinity,
                           child: OutlinedButton.icon(
