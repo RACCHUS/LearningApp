@@ -27,6 +27,11 @@ on:
         required: false
         type: boolean
         default: false
+      replace_reason:
+        description: 'With retire_previous: the documented defect this version fixes (recorded as the champion/challenger decision)'
+        required: false
+        type: string
+        default: ''
       confirm_project_ref:
         description: 'Type the hosted Supabase project ref xzvkdwebtbxlrxagtzlv'
         required: true
@@ -73,6 +78,8 @@ jobs:
         env:
           MANIFEST: ${{ inputs.manifest }}
           STOP_AFTER: ${{ inputs.stop_after }}
+          RETIRE_PREVIOUS: ${{ inputs.retire_previous }}
+          REPLACE_REASON: ${{ inputs.replace_reason }}
           CONFIRMED_REF: ${{ inputs.confirm_project_ref }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
@@ -95,6 +102,12 @@ jobs:
           case "${STOP_AFTER}" in dry-run|draft|review-ready|published) ;; *)
             echo "::error::Unsupported stop_after value."; exit 2 ;;
           esac
+          # Replacing a published version needs a stated reason (plan §7.3),
+          # checked before anything is written.
+          if [[ "${RETIRE_PREVIOUS}" == "true" && "${#REPLACE_REASON}" -lt 5 ]]; then
+            echo "::error::retire_previous needs replace_reason: the documented defect this version fixes."
+            exit 2
+          fi
           # Only a committed top-level manifest in content/ may be ingested.
           if [[ ! "${MANIFEST}" =~ ^content/[a-z0-9_]+\.ya?ml$ ]]; then
             echo "::error::Manifest must be a file directly in content/ (lowercase, .yaml)."
@@ -168,11 +181,12 @@ jobs:
           SLUG: ${{ steps.target.outputs.slug }}
           VERSION: ${{ steps.target.outputs.version }}
           RETIRE_PREVIOUS: ${{ inputs.retire_previous }}
+          REPLACE_REASON: ${{ inputs.replace_reason }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: |
           set -euo pipefail
           retire=()
-          if [[ "${RETIRE_PREVIOUS}" == "true" ]]; then retire=(--retire-previous); fi
+          if [[ "${RETIRE_PREVIOUS}" == "true" ]]; then retire=(--retire-previous --replace-reason "${REPLACE_REASON}"); fi
           dart run tool/ingest_curriculum.dart --target "$SLUG" --version "$VERSION" --publish "${retire[@]}"
           echo "- Published: learners can now see it (retire previous: ${RETIRE_PREVIOUS})" >> "$GITHUB_STEP_SUMMARY"
