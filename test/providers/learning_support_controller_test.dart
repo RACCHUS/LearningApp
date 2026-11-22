@@ -66,6 +66,8 @@ void main() {
       'bridge-square-roots',
       'bridge-order-of-operations',
       'bridge-fraction-arithmetic',
+      'bridge-integer-division',
+      'bridge-loop-count',
     });
     expect(
       library.offerOrder.first.bridgeId,

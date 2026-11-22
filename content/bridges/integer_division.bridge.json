@@ -1,0 +1,222 @@
+{
+  "bridge_version": 1,
+  "bridge_id": "bridge-integer-division",
+  "content_version": "1.0.0",
+  "title": "Whole-number division and remainders",
+  "concept_id": "integer-division",
+  "primary_objective": {
+    "objective_id": "programming.operators.integer-division",
+    "statement": "Work out a whole-number quotient (//) and a remainder (%) for non-negative whole numbers, and use a remainder of 0 to spot an even split."
+  },
+  "locale": "en-US",
+  "estimated_minutes": 4,
+  "uses_ai": false,
+  "builds_on": [],
+  "applies_to_tags": [
+    "variables",
+    "algorithms"
+  ],
+  "sources": [
+    {
+      "source_id": "openstax-intro-python-2-5",
+      "publisher": "OpenStax, Rice University",
+      "title": "Introduction to Python Programming",
+      "section": "2.5 Dividing integers",
+      "url": "https://openstax.org/books/introduction-python-programming/pages/2-5-dividing-integers",
+      "license": "CC BY-NC-SA 4.0",
+      "rights_posture": "link_only"
+    }
+  ],
+  "teach": [
+    {
+      "block_id": "div-teach-1",
+      "text": "When a program divides whole numbers it can keep two parts: how many whole times the divisor fits (the quotient) and what is left over (the remainder). In Python the quotient is written with // and the remainder with %.",
+      "source_ids": [
+        "openstax-intro-python-2-5"
+      ]
+    },
+    {
+      "block_id": "div-teach-2",
+      "text": "To find them, ask how many whole times the divisor fits, multiply back, and subtract. The remainder is always smaller than the divisor; if it is not, the divisor fits at least once more.",
+      "source_ids": [
+        "openstax-intro-python-2-5"
+      ]
+    },
+    {
+      "block_id": "div-teach-3",
+      "text": "A remainder of 0 means the division comes out even. That is how programs test for even numbers: a number % 2 is 0 when it is even and 1 when it is odd.",
+      "source_ids": [
+        "openstax-intro-python-2-5"
+      ]
+    }
+  ],
+  "examples": [
+    {
+      "block_id": "div-example-1",
+      "text": "23 // 4: 4 fits into 23 five whole times (4 × 5 = 20), so the quotient is 5.",
+      "source_ids": [
+        "openstax-intro-python-2-5"
+      ],
+      "worked": {
+        "template": "integer_quotient",
+        "inputs": {
+          "dividend": 23,
+          "divisor": 4
+        },
+        "result": 5
+      }
+    },
+    {
+      "block_id": "div-example-2",
+      "text": "23 % 4: after taking 20 away, 3 is left over, so the remainder is 3.",
+      "source_ids": [
+        "openstax-intro-python-2-5"
+      ],
+      "worked": {
+        "template": "remainder",
+        "inputs": {
+          "dividend": 23,
+          "divisor": 4
+        },
+        "result": 3
+      }
+    }
+  ],
+  "alternate_explanations": [
+    {
+      "block_id": "div-alt-1",
+      "text": "Think of sharing sweets equally among friends with nothing cut in half. Each friend's share is the quotient; the sweets nobody gets are the remainder.",
+      "source_ids": [
+        "openstax-intro-python-2-5"
+      ]
+    }
+  ],
+  "checks": [
+    {
+      "item_id": "div-check-1",
+      "kind": "numeric",
+      "prompt": "What is 38 // 6?",
+      "template": "integer_quotient",
+      "inputs": {
+        "dividend": 38,
+        "divisor": 6
+      },
+      "answer": 6,
+      "feedback": "6 fits into 38 six whole times (6 × 6 = 36), so 38 // 6 is 6."
+    },
+    {
+      "item_id": "div-check-2",
+      "kind": "choice",
+      "prompt": "What is 38 % 6?",
+      "template": "remainder",
+      "inputs": {
+        "dividend": 38,
+        "divisor": 6
+      },
+      "options": [
+        {
+          "option_id": "a",
+          "text": "6",
+          "value": 6,
+          "misconception_id": "rem-is-quotient"
+        },
+        {
+          "option_id": "b",
+          "text": "2",
+          "value": 2
+        },
+        {
+          "option_id": "c",
+          "text": "6.33",
+          "value": "6.33",
+          "misconception_id": "rem-is-decimal"
+        },
+        {
+          "option_id": "d",
+          "text": "0",
+          "value": 0
+        }
+      ],
+      "correct_option_id": "b",
+      "feedback": "6 × 6 = 36 and 38 − 36 = 2, so the remainder is 2. 6 is the quotient, not the remainder."
+    },
+    {
+      "item_id": "div-check-3",
+      "kind": "choice",
+      "prompt": "What is 50 % 10?",
+      "template": "remainder",
+      "inputs": {
+        "dividend": 50,
+        "divisor": 10
+      },
+      "options": [
+        {
+          "option_id": "a",
+          "text": "5",
+          "value": 5,
+          "misconception_id": "rem-is-quotient"
+        },
+        {
+          "option_id": "b",
+          "text": "0",
+          "value": 0
+        },
+        {
+          "option_id": "c",
+          "text": "10",
+          "value": 10
+        },
+        {
+          "option_id": "d",
+          "text": "1",
+          "value": 1
+        }
+      ],
+      "correct_option_id": "b",
+      "feedback": "10 fits into 50 exactly five times with nothing left, so 50 % 10 is 0."
+    },
+    {
+      "item_id": "div-check-4",
+      "kind": "numeric",
+      "prompt": "What is 7 // 9?",
+      "template": "integer_quotient",
+      "inputs": {
+        "dividend": 7,
+        "divisor": 9
+      },
+      "answer": 0,
+      "feedback": "9 does not fit into 7 even once, so the quotient is 0 (and 7 % 9 is 7)."
+    }
+  ],
+  "misconceptions": [
+    {
+      "misconception_id": "rem-is-quotient",
+      "label": "giving the quotient when the remainder was asked for",
+      "contrast": "// answers how many whole times the divisor fits; % answers what is left after that. Work out the quotient first, multiply back, and the difference is the remainder.",
+      "source_ids": [
+        "openstax-intro-python-2-5"
+      ]
+    },
+    {
+      "misconception_id": "rem-is-decimal",
+      "label": "giving the decimal answer of ordinary division",
+      "contrast": "% never gives a decimal. It is the whole amount left over, always smaller than the divisor.",
+      "source_ids": [
+        "openstax-intro-python-2-5"
+      ]
+    }
+  ],
+  "return_cue": "Back to your lesson: // keeps the whole times it fits, % keeps what is left over.",
+  "accessibility": {
+    "plain_language": true,
+    "screen_reader_ready": true,
+    "audio_script_available": true,
+    "needs_images": false
+  },
+  "evidence": {
+    "human_reviewed": false,
+    "citations_checked_at": "2026-11-22",
+    "deterministic_checks": "All worked examples and check answers are recomputed by BridgeCheckEvaluator (integer_quotient, remainder) in CI.",
+    "notes": "Draft for owner review. Text is independently written; the CC BY-NC-SA 4.0 source is linked only, never pasted or adapted. No person has reviewed this content yet."
+  }
+}
