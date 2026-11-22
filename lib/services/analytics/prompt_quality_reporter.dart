@@ -22,6 +22,7 @@ class PromptQualityStatus {
     this.available = false,
     this.consented = false,
     this.storedEvents = 0,
+    this.scope = 0,
   });
 
   /// The `analytics.prompt_quality` switch is on.
@@ -37,6 +38,14 @@ class PromptQualityStatus {
   /// Rows stored for this account on the server.
   final int storedEvents;
 
+  /// What the opt-in covers: 0 none, 1 reply checks only (opted in before
+  /// later checks were named), 2 reply checks and later checks on the same
+  /// topic. The server never widens 1 to 2 without a new opt-in.
+  final int scope;
+
+  /// Opted in under the older wording; offer the current one.
+  bool get canUpdateScope => enabled && available && consented && scope == 1;
+
   /// Show the opt-in: when it can be turned on, or to let it be turned off.
   bool get showControl => (enabled && available) || consented || storedEvents > 0;
 
@@ -48,6 +57,7 @@ class PromptQualityStatus {
         available: json['available'] == true,
         consented: json['consented'] == true,
         storedEvents: json['stored_events'] is int ? json['stored_events'] as int : 0,
+        scope: json['scope'] is int ? json['scope'] as int : 0,
       );
 }
 

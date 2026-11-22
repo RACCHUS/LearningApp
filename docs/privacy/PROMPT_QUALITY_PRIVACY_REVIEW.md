@@ -48,6 +48,16 @@ Not collected, and impossible to store (the table has typed columns only, no fre
 ### Recommendation
 Ready to switch on once the owner accepts the draft privacy-policy wording in section 2.4. Switching on changes nothing for learners until they opt in.
 
+### Addendum 2026-11-22: later checks on the same topic (consent scope 2)
+
+Migration `20261122050000_prompt_pack_signals.sql` adds plan §5.7.6 signal 4.
+
+- **What is derived**: for AI-generated lessons a learner attached to a goal topic, that learner's later answered/correct counts on the same topic's published, non-generated lessons, taken from `user_progress` (already synced for progress). Nothing new is stored; the owner report computes it on request.
+- **Consent**: counted only for accounts whose opt-in was given with the wording that names it (`prompt_quality_consents.scope = 2`). Earlier opt-ins stay scope 1 and are never widened; the app offers them the new wording. Base eligibility and analytics consent are still required. Withdrawing removes the account from the report at once.
+- **Disclosure**: groups under 5 accounts are suppressed; only per-pack totals (accounts, answers, accuracy) are returned, to admins only. Labelled "not a controlled comparison".
+- **Signals 3 and 5** (review evidence, golden runs) hold moderator and maintainer notes about content and prompts, never learner data.
+- **Verdict**: acceptable; privacy policy §2.4 wording updated (still draft pending owner acceptance).
+
 ## 2. On-device key points
 
 | Area | Finding | Result |

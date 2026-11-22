@@ -311,6 +311,27 @@ class _ContributionReviewScreenState
               ),
             ),
           for (final q in item.questions) _question(q, theme),
+          if (item.lessonId != null)
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                key: Key('evidence_${item.id}'),
+                onPressed: () => showDialog<void>(
+                  context: context,
+                  builder: (_) => ReviewEvidenceDialog(
+                    save: (aspect, outcome, kind, note) => _service.recordReviewEvidence(
+                      lessonId: item.lessonId!,
+                      aspect: aspect,
+                      outcome: outcome,
+                      reviewerKind: kind,
+                      note: note,
+                    ),
+                  ),
+                ),
+                icon: const Icon(Icons.fact_check_outlined, size: 18),
+                label: const Text('Record review evidence'),
+              ),
+            ),
           if (actions.isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(top: 12),
@@ -455,6 +476,113 @@ class _DuplicateCandidates extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+/// Records what a moderator, volunteer or source check found about one
+/// lesson: accuracy, accessibility or rights, ok or a concern, and a note.
+/// Evidence is a signal for prompt and content quality; it does not
+/// approve or publish anything.
+class ReviewEvidenceDialog extends StatefulWidget {
+  const ReviewEvidenceDialog({super.key, required this.save});
+
+  final Future<void> Function(String aspect, String outcome, String kind, String? note) save;
+
+  @override
+  State<ReviewEvidenceDialog> createState() => _ReviewEvidenceDialogState();
+}
+
+class _ReviewEvidenceDialogState extends State<ReviewEvidenceDialog> {
+  String _aspect = 'accuracy';
+  String _outcome = 'ok';
+  String _kind = 'volunteer';
+  final _note = TextEditingController();
+  String? _error;
+  bool _saving = false;
+
+  @override
+  void dispose() {
+    _note.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
+    try {
+      final note = _note.text.trim();
+      await widget.save(_aspect, _outcome, _kind, note.isEmpty ? null : note);
+      if (mounted) Navigator.of(context).pop();
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _saving = false;
+          _error = _kind == 'owner'
+              ? 'Only the owner can record owner review.'
+              : 'Could not record the evidence.';
+        });
+      }
+    }
+  }
+
+  Widget _choice(String label, String value, Map<String, String> options,
+      ValueChanged<String> onChanged, Key key) {
+    return DropdownButtonFormField<String>(
+      key: key,
+      value: value,
+      decoration: InputDecoration(labelText: label),
+      items: [
+        for (final e in options.entries)
+          DropdownMenuItem(value: e.key, child: Text(e.value)),
+      ],
+      onChanged: (v) => onChanged(v ?? value),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Record review evidence'),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _choice('What was checked', _aspect, const {
+              'accuracy': 'Accuracy',
+              'accessibility': 'Accessibility',
+              'rights': 'Rights and licence',
+            }, (v) => setState(() => _aspect = v), const Key('evidence-aspect')),
+            _choice('Finding', _outcome, const {
+              'ok': 'Looks right',
+              'concern': 'Concern',
+            }, (v) => setState(() => _outcome = v), const Key('evidence-outcome')),
+            _choice('Who looked', _kind, const {
+              'source_check': 'Checked against the source',
+              'volunteer': 'Volunteer reviewer',
+              'owner': 'Owner',
+            }, (v) => setState(() => _kind = v), const Key('evidence-kind')),
+            TextField(
+              key: const Key('evidence-note'),
+              controller: _note,
+              maxLength: 500,
+              decoration: const InputDecoration(labelText: 'Note (optional)'),
+            ),
+            if (_error != null)
+              Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancel')),
+        FilledButton(
+          key: const Key('evidence-save'),
+          onPressed: _saving ? null : _submit,
+          child: const Text('Record'),
+        ),
+      ],
     );
   }
 }
