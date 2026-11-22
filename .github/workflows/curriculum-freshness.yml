@@ -1,0 +1,55 @@
+# Daily curriculum freshness check (master plan v2.6 §7.2, §8.7).
+# Compares open-textbook manifests' pinned book versions with the
+# publisher's current release and raises review-due items. It only adds
+# owner work-queue items (migration 20261122010000); nothing learners see
+# changes. Uses the repository's Supabase secrets.
+name: Curriculum freshness check
+
+on:
+  schedule:
+    - cron: '20 7 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: learningapp-curriculum-freshness
+  cancel-in-progress: false
+
+jobs:
+  freshness:
+    if: ${{ github.repository == 'RACCHUS/LearningApp' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+
+      - name: Install PyYAML
+        run: python3 -m pip install --quiet 'PyYAML==6.0.2'
+
+      - name: Reject a wrong destination or missing secrets
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          set -euo pipefail
+          if [[ "${SUPABASE_URL%/}" != "https://xzvkdwebtbxlrxagtzlv.supabase.co" ]]; then
+            echo "::error::SUPABASE_URL is absent or points at the wrong project."
+            exit 2
+          fi
+          if [[ -z "${SUPABASE_SERVICE_ROLE_KEY}" ]]; then
+            echo "::error::SUPABASE_SERVICE_ROLE_KEY secret is not configured."
+            exit 2
+          fi
+
+      - name: Check sources and raise refresh items
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          set -euo pipefail
+          python3 tool/check_open_source_versions.py --report --raise-due | tee -a "$GITHUB_STEP_SUMMARY"

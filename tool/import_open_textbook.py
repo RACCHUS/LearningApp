@@ -737,6 +737,8 @@ def import_book(source_id: str, chapters: set[int], delay: float) -> tuple[dict,
             "version_code": f"OPENSTAX-{book['book'].split('@')[1].upper()}-R{IMPORT_REVISION}",
             "version_title": f"{meta.get('title', '')} by OpenStax, {lic_short}",
             "version_description": "Open textbook sections imported as LearningApp lessons.",
+            # Plan v2.6 §7.1: math definitions and methods are timeless (V0).
+            "volatility_class": "V0",
         },
         "domains": domains,
     }
