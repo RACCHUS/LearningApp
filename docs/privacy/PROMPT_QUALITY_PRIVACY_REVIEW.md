@@ -1,6 +1,6 @@
 # Privacy review: prompt-quality telemetry and on-device key points
 
-Date: 2026-11-21. Reviewer: Claude (AI agent), at the owner's request. This is an engineering privacy review against the master plan v2.6 rules (§5.7.6, P4.1) and the existing analytics privacy controls. It is not legal advice, and the policy wording in `docs/legal/PRIVACY_POLICY.md` remains a draft for the owner.
+Date: 2026-11-21. Reviewer: Claude (AI agent), at the owner's request. This is an engineering privacy review against the master plan v2.6 rules (§5.7.6, P4.1) and the existing analytics privacy controls. It is not legal advice. The owner accepted the policy wording in `docs/legal/PRIVACY_POLICY.md` §2.4 for now on 2026-11-23; the policy as a whole still awaits qualified legal review.
 
 Features reviewed:
 - `analytics.prompt_quality`: opt-in prompt-quality telemetry (migrations `20261121010000`, `20261121040000`). Switch OFF.
@@ -46,7 +46,7 @@ Not collected, and impossible to store (the table has typed columns only, no fre
 - An admin comparing reports across 7/30/90-day windows could in theory narrow a small group. Admin access is the owner alone today; revisit if more admins are added.
 
 ### Recommendation
-Ready to switch on once the owner accepts the draft privacy-policy wording in section 2.4. Switching on changes nothing for learners until they opt in.
+The owner accepted the section 2.4 wording on 2026-11-23 (for now, pending legal review of the whole policy). Switching on changes nothing for learners until they opt in.
 
 ### Addendum 2026-11-22: later checks on the same topic (consent scope 2)
 
@@ -56,7 +56,7 @@ Migration `20261122050000_prompt_pack_signals.sql` adds plan §5.7.6 signal 4.
 - **Consent**: counted only for accounts whose opt-in was given with the wording that names it (`prompt_quality_consents.scope = 2`). Earlier opt-ins stay scope 1 and are never widened; the app offers them the new wording. Base eligibility and analytics consent are still required. Withdrawing removes the account from the report at once.
 - **Disclosure**: groups under 5 accounts are suppressed; only per-pack totals (accounts, answers, accuracy) are returned, to admins only. Labelled "not a controlled comparison".
 - **Signals 3 and 5** (review evidence, golden runs) hold moderator and maintainer notes about content and prompts, never learner data.
-- **Verdict**: acceptable; privacy policy §2.4 wording updated (still draft pending owner acceptance).
+- **Verdict**: acceptable; privacy policy §2.4 wording updated and accepted by the owner on 2026-11-23 (for now, pending legal review).
 
 ## 2. On-device key points
 
