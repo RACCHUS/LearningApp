@@ -9,11 +9,12 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 /// how (reviewed, imported, gap, not yet verified). Gaps are the planner's
 /// fill list.
 class CoverageMatrixScreen extends ConsumerStatefulWidget {
-  const CoverageMatrixScreen({super.key, this.loadTargets, this.loadMatrix});
+  const CoverageMatrixScreen({super.key, this.loadTargets, this.loadMatrix, this.loadFillList});
 
   /// Test seams; default to the Supabase RPCs.
   final Future<List<String>> Function()? loadTargets;
   final Future<Map<String, dynamic>> Function(String slug)? loadMatrix;
+  final Future<List<dynamic>> Function()? loadFillList;
 
   @override
   ConsumerState<CoverageMatrixScreen> createState() => _CoverageMatrixScreenState();
@@ -77,7 +78,19 @@ class _CoverageMatrixScreenState extends ConsumerState<CoverageMatrixScreen> {
               CoverageRow.fromServer(Map<String, dynamic>.from(r as Map), bridges),
           ];
     return Scaffold(
-      appBar: AppBar(title: const Text('Coverage matrix')),
+      appBar: AppBar(
+        title: const Text('Coverage matrix'),
+        actions: [
+          IconButton(
+            key: const Key('coverage_fill_list'),
+            icon: const Icon(Icons.format_list_numbered),
+            tooltip: 'Fill list: every gap, most valuable first',
+            onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+              builder: (_) => CoverageFillListScreen(load: widget.loadFillList),
+            )),
+          ),
+        ],
+      ),
       body: _error != null
           ? Center(child: Text(_error!))
           : _targets == null
@@ -134,6 +147,77 @@ class _CoverageMatrixScreenState extends ConsumerState<CoverageMatrixScreen> {
                       ),
                   ],
                 ),
+    );
+  }
+}
+
+/// The maintainer seeding list (plan v2.6 §4.2, §6.5): every published
+/// topic missing a content role, ranked by reuse value, with every term of
+/// the score shown so the order can be checked. It orders work only.
+class CoverageFillListScreen extends StatefulWidget {
+  const CoverageFillListScreen({super.key, this.load});
+
+  /// Test seam; defaults to `get_coverage_fill_list`.
+  final Future<List<dynamic>> Function()? load;
+
+  @override
+  State<CoverageFillListScreen> createState() => _CoverageFillListScreenState();
+}
+
+class _CoverageFillListScreenState extends State<CoverageFillListScreen> {
+  List<dynamic>? _rows;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    final load = widget.load ??
+        () async => (await Supabase.instance.client
+                .rpc('get_coverage_fill_list', params: {'p_limit': 200}) as List?) ??
+            const [];
+    load().then((r) {
+      if (mounted) setState(() => _rows = r);
+    }).catchError((_) {
+      if (mounted) setState(() => _error = 'Could not load the fill list. Moderators only.');
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Scaffold(
+      appBar: AppBar(title: const Text('Fill list')),
+      body: _error != null
+          ? Center(child: Text(_error!))
+          : _rows == null
+              ? const Center(child: CircularProgressIndicator())
+              : ListView(
+                  padding: const EdgeInsets.all(16),
+                  children: [
+                    Text(
+                      'Topics missing Teach, Example, Practice or Check, most valuable first: '
+                      'how many books share the topic × learner requests × how much is missing. '
+                      'Bridges and outside resources are not counted here.',
+                      style: theme.textTheme.bodySmall,
+                    ),
+                    if (_rows!.isEmpty) const ListTile(title: Text('No gaps in published curricula.')),
+                    for (final (i, raw) in _rows!.indexed) _row(i + 1, Map<String, dynamic>.from(raw as Map)),
+                  ],
+                ),
+    );
+  }
+
+  Widget _row(int rank, Map<String, dynamic> r) {
+    final missing = [for (final m in (r['missing'] as List? ?? const [])) '$m'];
+    final code = r['code'];
+    return ListTile(
+      key: Key('fill_${r['objective_id']}'),
+      leading: Text('$rank'),
+      title: Text('${r['target_slug']} · ${code == null ? '' : '$code '}${r['title']}'),
+      subtitle: Text(
+        'Missing: ${missing.join(', ')} · priority ${r['priority']} '
+        '(books ${r['fan_in']} × requests ${r['frequency_boost']} × missing ${r['coverage_deficit']})',
+      ),
     );
   }
 }

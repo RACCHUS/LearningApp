@@ -1,3 +1,4 @@
+import 'package:learning_pwa/providers/target_coverage_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:learning_pwa/providers/available_lessons_provider.dart';
@@ -125,6 +126,8 @@ Future<void> _invalidateTargetAndCatalog(
   ref.invalidate(availableLessonsCatalogProvider);
   ref.invalidate(remoteCatalogLessonsProvider);
   ref.invalidate(learningContextsProvider);
+  // The coverage chips now show this topic as "Your draft".
+  ref.invalidate(targetCoverageProvider);
 }
 
 class PersonalAttachmentResultDialog extends StatefulWidget {
