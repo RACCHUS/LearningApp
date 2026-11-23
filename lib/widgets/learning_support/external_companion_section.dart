@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:learning_pwa/providers/companion_depth_provider.dart';
+import 'package:learning_pwa/providers/companion_plan_provider.dart';
 import 'package:learning_pwa/providers/learning_support_controller_provider.dart';
 import 'package:learning_pwa/widgets/learning_support/bridge_check_card.dart';
+import 'package:learning_pwa/widgets/learning_support/companion_plan_screen.dart';
 
 /// "Learn more outside LearningApp" for one Bridge (master plan v2.6 §9,
 /// PR-E): a link-only section pointer, a focus note in our own words and
@@ -29,6 +31,7 @@ class ExternalCompanionSection extends ConsumerWidget {
 
     final theme = Theme.of(context);
     final depth = ref.watch(companionDepthProvider);
+    final plan = ref.watch(companionPlanLibraryProvider).valueOrNull?.forBridge(bridgeId);
     final r = companion.resource;
     final uri = Uri.parse(r.url);
 
@@ -120,6 +123,21 @@ class ExternalCompanionSection extends ConsumerWidget {
             ),
           ),
         ),
+        if (plan != null)
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(
+              key: Key('external-companion-plan-$bridgeId'),
+              onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+                builder: (_) => CompanionPlanScreen(plan: plan),
+              )),
+              icon: const Icon(Icons.format_list_numbered),
+              label: Text(
+                'Step ${plan.indexOfBridge(bridgeId) + 1} of ${plan.parts.length} in '
+                '"${plan.title}": see the whole plan',
+              ),
+            ),
+          ),
         if (depth.showsChecks) ...[
           Text(
             'Check yourself after reading (practice only):',

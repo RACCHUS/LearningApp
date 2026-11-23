@@ -1,0 +1,19 @@
+{
+  "plan_version": 1,
+  "plan_id": "plan-openstax-python-basics",
+  "title": "Python basics, following OpenStax Introduction to Python Programming",
+  "uses_ai": false,
+  "intro": "Two sections of OpenStax Introduction to Python Programming in order: dividing whole numbers, then counting loops, with what to look for and a few checks after each.",
+  "parts": [
+    {
+      "part_id": "py-1",
+      "bridge_id": "bridge-integer-division",
+      "kind": "outside_section"
+    },
+    {
+      "part_id": "py-2",
+      "bridge_id": "bridge-loop-count",
+      "kind": "outside_section"
+    }
+  ]
+}

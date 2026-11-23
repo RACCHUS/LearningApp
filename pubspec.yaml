@@ -94,6 +94,9 @@ flutter:
     - content/companions/fraction_arithmetic.companion.json
     - content/companions/integer_division.companion.json
     - content/companions/loop_count.companion.json
+    - content/companion_plans/openstax_prealgebra_percent.plan.json
+    - content/companion_plans/openstax_college_algebra_ch1.plan.json
+    - content/companion_plans/openstax_python_basics.plan.json
     - .env
     
   # To add assets from your dependencies, use the following syntax:
