@@ -65,4 +65,31 @@ void main() {
     expect(tester.widget<Text>(find.byKey(const Key('cell_1.4_check'))).data, '○ Not available yet');
     expect(tester.widget<Text>(find.byKey(const Key('cell_1.2_access'))).data, '? Not yet verified');
   });
+
+  testWidgets('the fill list opens from the matrix and shows every score term', (tester) async {
+    tester.view.physicalSize = const Size(1600, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    await tester.pumpWidget(ProviderScope(
+      overrides: [bridgeLibraryProvider.overrideWith((ref) async => bridges)],
+      child: MaterialApp(
+        home: CoverageMatrixScreen(
+          loadTargets: () async => ['open-openstax-prealgebra-1e'],
+          loadMatrix: (slug) async => {'objectives': []},
+          loadFillList: () async => [
+            {'target_slug': 'open-openstax-prealgebra-1e', 'objective_id': 'o1', 'code': '6.1',
+             'title': 'Understand Percent', 'missing': ['check'], 'priority': 0.5,
+             'fan_in': 2, 'frequency_boost': 1.0, 'coverage_deficit': 0.25},
+          ],
+        ),
+      ),
+    ));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('coverage_fill_list')));
+    await tester.pumpAndSettle();
+    expect(find.text('open-openstax-prealgebra-1e · 6.1 Understand Percent'), findsOneWidget);
+    expect(find.textContaining('Missing: check · priority 0.5 (books 2 × requests 1.0 × missing 0.25)'),
+        findsOneWidget);
+  });
 }
+
