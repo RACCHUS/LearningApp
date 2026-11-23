@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:learning_pwa/models/learning_strategy.dart';
 import 'package:learning_pwa/models/learning_support/bridge_lesson.dart';
 import 'package:learning_pwa/models/learning_support/support_identifiers.dart';
@@ -7,6 +8,7 @@ import 'package:learning_pwa/providers/learning_context_provider.dart';
 import 'package:learning_pwa/providers/learning_strategy_provider.dart';
 import 'package:learning_pwa/providers/learning_support_controller_provider.dart';
 import 'package:learning_pwa/providers/reading_position_provider.dart';
+import 'package:learning_pwa/providers/rescue_candidates_provider.dart';
 import 'package:learning_pwa/services/learning_support/bridge_library.dart';
 import 'package:learning_pwa/services/learning_support/gap_signal_service.dart';
 import 'package:learning_pwa/widgets/learning_support/bridge_lesson_view.dart';
@@ -54,7 +56,9 @@ final supportOwnerScopeProvider = Provider<String>((ref) {
 /// §13.4: one subject-help affordance, distinct from product Help `?`).
 ///
 /// Shown only when `learning.quick_rescue` is on, the bundled library
-/// loaded, and a Bridge applies to one of the lesson's tags. It also tidies a finished help
+/// loaded, and a Bridge applies to one of the lesson's tags or another
+/// published lesson shares its topic (rescue candidate search, §4.2 and
+/// §10.0). It also tidies a finished help
 /// trail after a refresh, whether or not the flag is on.
 class LearningHelpAction extends ConsumerStatefulWidget {
   const LearningHelpAction({
@@ -107,13 +111,25 @@ class _LearningHelpActionState extends ConsumerState<LearningHelpAction> {
     );
   }
 
-  Future<void> _open(BridgeLibrary library, GapSuggestion? suggestion) async {
+  Future<void> _open(
+    BridgeLibrary library,
+    GapSuggestion? suggestion,
+    List<RescueCandidate> candidates,
+  ) async {
     final key = _key();
     if (key == null) return;
+    final router = GoRouter.maybeOf(context);
     final bridge = await showSupportChoiceSheet(
       context,
       library,
       suggestion: suggestion,
+      candidates: candidates,
+      // Another lesson opens on top; Back returns here, where the reading
+      // position is kept.
+      onOpenLesson: router == null
+          ? null
+          : (c) => router.push('/lesson/${c.lessonId}'),
+      onAskForIt: router == null ? null : () => router.push('/community/wanted'),
       onNotTheIssue: suggestion == null
           ? null
           : () {
@@ -170,13 +186,18 @@ class _LearningHelpActionState extends ConsumerState<LearningHelpAction> {
 
     final gateOn = ref.watch(quickRescueEnabledProvider);
     if (!gateOn || key == null) return const SizedBox.shrink();
-    // Only Bridges for this lesson's topics (and what they build on); a
-    // lesson no Bridge applies to shows no help button.
+    // Only Bridges for this lesson's topics (and what they build on), and
+    // other published lessons on the same topic; with neither, no button.
     final library = ref
         .watch(bridgeLibraryProvider)
         .valueOrNull
         ?.forLesson(widget.tags);
-    if (library == null || library.isEmpty) return const SizedBox.shrink();
+    final candidates =
+        ref.watch(rescueCandidatesProvider(widget.lessonId)).valueOrNull ??
+            const <RescueCandidate>[];
+    if (library == null || (library.isEmpty && candidates.isEmpty)) {
+      return const SizedBox.shrink();
+    }
 
     final suggestion = _suggestion(library, key);
     return IconButton(
@@ -190,7 +211,7 @@ class _LearningHelpActionState extends ConsumerState<LearningHelpAction> {
       tooltip: suggestion == null
           ? 'Learning help'
           : 'Learning help (a suggestion is waiting)',
-      onPressed: () => _open(library, suggestion),
+      onPressed: () => _open(library, suggestion, candidates),
     );
   }
 }
@@ -205,6 +226,9 @@ Future<BridgeLesson?> showSupportChoiceSheet(
   BridgeLibrary library, {
   GapSuggestion? suggestion,
   VoidCallback? onNotTheIssue,
+  List<RescueCandidate> candidates = const [],
+  void Function(RescueCandidate)? onOpenLesson,
+  VoidCallback? onAskForIt,
 }) {
   return showModalBottomSheet<BridgeLesson>(
     context: context,
@@ -283,6 +307,51 @@ Future<BridgeLesson?> showSupportChoiceSheet(
                   ),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () => Navigator.of(context).pop(b),
+                ),
+              if (library.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Text(
+                    'There is no short lesson for this topic yet.',
+                    key: const Key('support_choice_no_bridge'),
+                    style: theme.textTheme.bodyMedium,
+                  ),
+                ),
+              if (candidates.isNotEmpty && onOpenLesson != null) ...[
+                const SizedBox(height: 8),
+                Semantics(
+                  header: true,
+                  child: Text(
+                    'Other lessons on this topic',
+                    style: theme.textTheme.titleSmall,
+                  ),
+                ),
+                for (final c in candidates)
+                  ListTile(
+                    key: Key('support_candidate_${c.lessonId}'),
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.menu_book_outlined),
+                    title: Text(c.title),
+                    subtitle: Text(c.summary),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      onOpenLesson(c);
+                    },
+                  ),
+              ],
+              if (library.isEmpty && onAskForIt != null)
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton.icon(
+                    key: const Key('support_choice_ask_for_it'),
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      onAskForIt();
+                    },
+                    icon: const Icon(Icons.campaign_outlined),
+                    label: const Text('Ask for a short lesson'),
+                  ),
                 ),
               Align(
                 alignment: Alignment.centerRight,
