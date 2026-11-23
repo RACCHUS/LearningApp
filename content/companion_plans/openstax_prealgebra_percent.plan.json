@@ -1,0 +1,29 @@
+{
+  "plan_version": 1,
+  "plan_id": "plan-openstax-prealgebra-percent",
+  "title": "Percent, following OpenStax Prealgebra",
+  "uses_ai": false,
+  "intro": "Read three sections of OpenStax Prealgebra in order, with what to look for and a few checks after each. The book does not cover showing percentages in a spreadsheet, so a short LearningApp lesson fills that in at the end.",
+  "parts": [
+    {
+      "part_id": "pa-1",
+      "bridge_id": "bridge-fraction-decimal",
+      "kind": "outside_section"
+    },
+    {
+      "part_id": "pa-2",
+      "bridge_id": "bridge-percent-of-number",
+      "kind": "outside_section"
+    },
+    {
+      "part_id": "pa-3",
+      "bridge_id": "bridge-percent-change",
+      "kind": "outside_section"
+    },
+    {
+      "part_id": "pa-4",
+      "bridge_id": "bridge-spreadsheet-percent-format",
+      "kind": "fill_in"
+    }
+  ]
+}

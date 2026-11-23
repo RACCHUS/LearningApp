@@ -30,3 +30,7 @@ Each Bridge lists `applies_to_tags`. "Learning help" appears on a lesson only wh
   - Checks must use numbers that do not appear in any worked example.
 - `evidence.human_reviewed` stays `false` until a named person has actually reviewed the Bridge. A passing CI check proves the arithmetic is reproducible. It does not prove the teaching is good.
 - `builds_on` must name Bridges that exist, with no cycles.
+
+## Companion plans (level 4)
+
+`content/companion_plans/*.plan.json` order existing companions (`outside_section`) and Bridges (`fill_in`, for what the outside course skips) into a full plan across a multi-part outside course (master plan v2.6 §9.2 level 4). A plan adds order, not new claims: every step must resolve to a valid Bridge, and every outside section to that Bridge's companion. Checked in CI by `test/models/companion_plan_test.dart`. Learners' ticks stay on the device and never count as progress.
