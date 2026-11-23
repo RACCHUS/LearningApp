@@ -787,6 +787,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: 'manual-generation-v2',
         builder: (context, state) => ManualGenerationV2Screen(
           initialSubject: state.uri.queryParameters['subject'],
+          initialIdeas: state.uri.queryParameters['ideas'],
         ),
       ),
 
