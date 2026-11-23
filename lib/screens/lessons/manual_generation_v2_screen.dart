@@ -37,9 +37,12 @@ import 'package:learning_pwa/services/analytics/prompt_quality_reporter.dart';
 /// result imports as a private, unreviewed lesson through the normal
 /// validated importer.
 class ManualGenerationV2Screen extends ConsumerStatefulWidget {
-  const ManualGenerationV2Screen({super.key, this.initialSubject});
+  const ManualGenerationV2Screen({super.key, this.initialSubject, this.initialIdeas});
 
   final String? initialSubject;
+
+  /// Ideas, one per line, e.g. from the prompt cart.
+  final String? initialIdeas;
 
   @override
   ConsumerState<ManualGenerationV2Screen> createState() =>
@@ -49,7 +52,7 @@ class ManualGenerationV2Screen extends ConsumerStatefulWidget {
 class _ManualGenerationV2ScreenState
     extends ConsumerState<ManualGenerationV2Screen> {
   late final _subject = TextEditingController(text: widget.initialSubject);
-  final _ideas = TextEditingController();
+  late final _ideas = TextEditingController(text: widget.initialIdeas);
   final _paste = TextEditingController();
   final _title = TextEditingController();
   int _questions = 2;

@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:learning_pwa/models/content_generation/coverage_matrix.dart';
+import 'package:learning_pwa/providers/manual_generation_v2_provider.dart';
 import 'package:learning_pwa/providers/target_coverage_provider.dart';
+import 'package:learning_pwa/screens/lessons/prompt_cart_screen.dart';
 import 'package:learning_pwa/theme/design_tokens.dart';
 
 /// Opens the private "make my own version" flow for one objective: a
@@ -33,10 +35,14 @@ class TargetCoverageCard extends ConsumerStatefulWidget {
     super.key,
     required this.targetSlug,
     required this.targetVersionId,
+    this.goalTitle,
   });
 
   final String targetSlug;
   final String targetVersionId;
+
+  /// Shown in the prompt cart; the cart is offered only when given.
+  final String? goalTitle;
 
   @override
   ConsumerState<TargetCoverageCard> createState() => _TargetCoverageCardState();
@@ -86,6 +92,23 @@ class _TargetCoverageCardState extends ConsumerState<TargetCoverageCard> {
               Text('Missing pieces (${needs.length})',
                   style: theme.textTheme.labelLarge?.copyWith(fontWeight: FontWeight.bold)),
               const SizedBox(height: DesignTokens.space1),
+              if (widget.goalTitle != null &&
+                  needs.length > 1 &&
+                  ref.watch(manualGenerationV2EnabledProvider))
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton.icon(
+                    key: const Key('target-coverage-prompt-cart'),
+                    onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+                      builder: (_) => PromptCartScreen(
+                        goalTitle: widget.goalTitle!,
+                        needs: needs,
+                      ),
+                    )),
+                    icon: const Icon(Icons.shopping_basket_outlined, size: 18),
+                    label: Text('Make all ${needs.length} with my AI'),
+                  ),
+                ),
               for (final n in shown)
                 NeedCard(need: n, targetVersionId: widget.targetVersionId),
               if (needs.length > _collapsedNeeds)

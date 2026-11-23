@@ -35,9 +35,13 @@ class CoverageRow {
     required this.code,
     required this.title,
     required this.cells,
+    this.priority = 0,
   });
 
   final String objectiveId;
+
+  /// Reuse-value priority from the server (§6.5); 0 when unknown.
+  final double priority;
   final String? code;
   final String title;
   final Map<CoverageRole, CoverageState> cells;
@@ -57,6 +61,7 @@ class CoverageRow {
         objectiveId: objectiveId,
         code: code,
         title: title,
+        priority: priority,
         cells: {
           for (final e in cells.entries)
             e.key: e.value == CoverageState.gap && draftableRoles.contains(e.key)
@@ -94,6 +99,9 @@ class CoverageRow {
       objectiveId: row['objective_id'].toString(),
       code: row['code'] as String?,
       title: row['title']?.toString() ?? '',
+      priority: (row['priority'] is num)
+          ? (row['priority'] as num).toDouble()
+          : double.tryParse('${row['priority']}') ?? 0,
       cells: {
         CoverageRole.teach: content('teach_blocks'),
         CoverageRole.example: content('example_blocks'),

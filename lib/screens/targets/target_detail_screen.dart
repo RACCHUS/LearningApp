@@ -389,6 +389,7 @@ class TargetDetailScreen extends ConsumerWidget {
                           TargetCoverageCard(
                             targetSlug: target.slug,
                             targetVersionId: ver.id,
+                            goalTitle: target.title,
                           ),
                           const SizedBox(height: DesignTokens.space3),
                         ],
