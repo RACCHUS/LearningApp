@@ -42,6 +42,29 @@ class CoverageRow {
   final String title;
   final Map<CoverageRole, CoverageState> cells;
 
+  /// Content roles a learner's own private lesson can stand in for.
+  static const draftableRoles = {
+    CoverageRole.teach,
+    CoverageRole.example,
+    CoverageRole.practice,
+    CoverageRole.check,
+  };
+
+  /// The same row with its content gaps marked "Your draft", for a learner
+  /// who attached a private lesson to this objective. Reviewed and
+  /// imported cells are left as they are: a draft never outranks them.
+  CoverageRow withDraft() => CoverageRow(
+        objectiveId: objectiveId,
+        code: code,
+        title: title,
+        cells: {
+          for (final e in cells.entries)
+            e.key: e.value == CoverageState.gap && draftableRoles.contains(e.key)
+                ? CoverageState.draft
+                : e.value,
+        },
+      );
+
   List<CoverageRole> get gaps => [
     for (final e in cells.entries)
       if (e.value == CoverageState.gap) e.key,

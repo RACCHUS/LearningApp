@@ -23,7 +23,8 @@ void main() {
   late BridgeLibrary bridges;
   setUpAll(() async => bridges = await BridgeLibrary.load(rootBundle));
 
-  Future<void> pumpCard(WidgetTester tester, List<Map<String, dynamic>> rows) async {
+  Future<void> pumpCard(WidgetTester tester, List<Map<String, dynamic>> rows,
+      {Set<String> drafts = const {}}) async {
     tester.view.physicalSize = const Size(1200, 2000);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -43,6 +44,7 @@ void main() {
       overrides: [
         bridgeLibraryProvider.overrideWith((ref) async => bridges),
         coverageMatrixLoaderProvider.overrideWithValue((slug) async => {'objectives': rows}),
+        coverageDraftsLoaderProvider.overrideWithValue((ids) async => drafts.intersection(ids)),
       ],
       child: MaterialApp.router(routerConfig: router),
     ));
@@ -113,5 +115,44 @@ void main() {
     ));
     expect(find.textContaining('Missing from'), findsNothing);
     expect(find.byKey(const Key('create-chooser-goal')), findsOneWidget);
+  });
+
+  test('a draft fills content gaps but never outranks imported content', () {
+    final r = CoverageRow.fromServer(row('1.4', ['history'], check: 0), bridges).withDraft();
+    expect(r.cells[CoverageRole.check], CoverageState.draft);
+    expect(r.cells[CoverageRole.teach], CoverageState.imported);
+    // Bridge and Access are not something a private lesson stands in for.
+    expect(r.cells[CoverageRole.bridge], CoverageState.gap);
+    expect(r.cells[CoverageRole.access], CoverageState.notVerified);
+  });
+
+  testWidgets('a learner-attached lesson shows as "Your draft"', (tester) async {
+    await pumpCard(tester, [row('1.4', ['exponents'], check: 0)], drafts: {'o-1.4'});
+    expect(find.text('Check: ✎ 1 your draft'), findsOneWidget);
+    // Nothing is missing any more, so no Need card.
+    expect(find.byType(NeedCard), findsNothing);
+  });
+
+  testWidgets('a drafts lookup failure still shows coverage', (tester) async {
+    tester.view.physicalSize = const Size(1200, 2000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    await tester.pumpWidget(ProviderScope(
+      overrides: [
+        bridgeLibraryProvider.overrideWith((ref) async => bridges),
+        coverageMatrixLoaderProvider.overrideWithValue(
+            (slug) async => {'objectives': [row('1.4', ['history'], check: 0)]}),
+        coverageDraftsLoaderProvider.overrideWithValue((ids) async => throw Exception('offline')),
+      ],
+      child: const MaterialApp(
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: TargetCoverageCard(targetSlug: 'x', targetVersionId: 'v1'),
+          ),
+        ),
+      ),
+    ));
+    await tester.pumpAndSettle();
+    expect(find.text('Check: ○ 1 not available yet'), findsOneWidget);
   });
 }
