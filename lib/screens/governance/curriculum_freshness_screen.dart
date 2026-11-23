@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:learning_pwa/screens/governance/version_decision_screen.dart';
 
 /// Owner view of curriculum freshness (master plan v2.6 §7.1–7.2): each
 /// published version's volatility class, review-by date and source pin,
@@ -83,6 +84,17 @@ class _CurriculumFreshnessScreenState extends State<CurriculumFreshnessScreen> {
       appBar: AppBar(
         title: const Text('Curriculum freshness'),
         actions: [
+          IconButton(
+            key: const Key('freshness_record_decision'),
+            icon: const Icon(Icons.compare_arrows),
+            tooltip: 'Replace a published version?',
+            onPressed: () async {
+              final recorded = await Navigator.of(context).push<bool>(
+                MaterialPageRoute(builder: (_) => const VersionDecisionScreen()),
+              );
+              if (recorded == true) await _refresh();
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.refresh),
             tooltip: 'Refresh',
