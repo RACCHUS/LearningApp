@@ -12,7 +12,7 @@ Columns are **static text signals**, not proof. Read a test before relying on it
 - **RLS checks**: assertions that row-level security is enabled (`relrowsecurity`).
 - A file has a **security signal** if it has any denial, privilege or RLS check, or at least two identity switches (cross-user tests often assert that another learner's rows count as zero).
 
-**Totals:** 95 test files, 2075 planned assertions, plus 4 files using `no_plan()` (counted only when run; pg_prove reports the full total in the database job).
+**Totals:** 96 test files, 2084 planned assertions, plus 4 files using `no_plan()` (counted only when run; pg_prove reports the full total in the database job).
 
 ## By area
 
@@ -24,7 +24,7 @@ Columns are **static text signals**, not proof. Read a test before relying on it
 | Excel / software-learning uploads & storage | 4 | 0 + 4 no_plan | 1 | 4 | 20 | 17 | 2 |
 | Community, educators & moderation | 6 | 299 | 3 | 4 | 100 | 4 | 0 |
 | Content, lessons & import | 15 | 286 | 8 | 9 | 75 | 12 | 2 |
-| Catalog, taxonomy & versioning | 14 | 261 | 5 | 3 | 75 | 41 | 12 |
+| Catalog, taxonomy & versioning | 15 | 270 | 5 | 4 | 77 | 41 | 12 |
 | Feature controls & cost | 2 | 54 | 2 | 1 | 18 | 0 | 0 |
 | Schema integrity | 1 | 8 | 0 | 0 | 0 | 0 | 0 |
 | Other | 18 | 295 | 4 | 11 | 103 | 20 | 1 |
@@ -112,6 +112,7 @@ No denial, privilege or RLS check and fewer than two identity switches. These ma
 | `catalog_bls_reporting_code_members_test.sql` | Catalog, taxonomy & versioning | 14 | — | 0 | 4 | 3 | 1 |
 | `catalog_candidate_intake_test.sql` | Catalog, taxonomy & versioning | 11 | — | 0 | 3 | 4 | 2 |
 | `catalog_destination_resources_goal_links_test.sql` | Catalog, taxonomy & versioning | 11 | — | 0 | 4 | 6 | 2 |
+| `catalog_duplicate_candidates_test.sql` | Catalog, taxonomy & versioning | 9 | authenticated | 2 | 2 | 0 | 0 |
 | `catalog_license_pathway_versions_test.sql` | Catalog, taxonomy & versioning | 23 | anon | 0 | 7 | 3 | 1 |
 | `catalog_official_demand_test.sql` | Catalog, taxonomy & versioning | 12 | — | 0 | 4 | 4 | 2 |
 | `catalog_professional_license_goals_test.sql` | Catalog, taxonomy & versioning | 14 | — | 0 | 6 | 1 | 1 |

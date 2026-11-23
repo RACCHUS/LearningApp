@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:learning_pwa/providers/lesson_contribution_provider.dart';
+import 'package:learning_pwa/screens/governance/catalog_duplicates_screen.dart';
 import 'package:learning_pwa/services/community/lesson_contribution_service.dart';
 
 /// Moderator/admin review of community lesson contributions (master plan
@@ -154,6 +155,14 @@ class _ContributionReviewScreenState
       appBar: AppBar(
         title: const Text('Lesson contributions'),
         actions: [
+          IconButton(
+            key: const Key('open_catalog_duplicates'),
+            tooltip: 'Possible duplicates in the catalog',
+            icon: const Icon(Icons.difference_outlined),
+            onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+              builder: (_) => const CatalogDuplicatesScreen(),
+            )),
+          ),
           IconButton(
             tooltip: 'Refresh',
             onPressed: _busy ? null : _load,
