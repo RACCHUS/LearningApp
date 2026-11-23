@@ -1,0 +1,34 @@
+{
+  "plan_version": 1,
+  "plan_id": "plan-openstax-college-algebra-ch1",
+  "title": "Algebra essentials, following OpenStax College Algebra chapter 1",
+  "uses_ai": false,
+  "intro": "Work through chapter 1 of OpenStax College Algebra section by section: order of operations, exponents, scientific notation, roots and rational expressions, with what to look for and a few checks after each.",
+  "parts": [
+    {
+      "part_id": "ca-1",
+      "bridge_id": "bridge-order-of-operations",
+      "kind": "outside_section"
+    },
+    {
+      "part_id": "ca-2",
+      "bridge_id": "bridge-exponents",
+      "kind": "outside_section"
+    },
+    {
+      "part_id": "ca-3",
+      "bridge_id": "bridge-scientific-notation",
+      "kind": "outside_section"
+    },
+    {
+      "part_id": "ca-4",
+      "bridge_id": "bridge-square-roots",
+      "kind": "outside_section"
+    },
+    {
+      "part_id": "ca-5",
+      "bridge_id": "bridge-fraction-arithmetic",
+      "kind": "outside_section"
+    }
+  ]
+}

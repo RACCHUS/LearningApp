@@ -9,9 +9,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:learning_pwa/models/learning_strategy.dart';
 import 'package:learning_pwa/providers/learning_support_controller_provider.dart';
 import 'package:learning_pwa/providers/target_coverage_provider.dart';
+import 'package:learning_pwa/providers/companion_plan_provider.dart';
 import 'package:learning_pwa/services/learning_support/bridge_library.dart';
+import 'package:learning_pwa/services/learning_support/companion_plan_library.dart';
+import 'package:learning_pwa/services/learning_support/external_companion_library.dart';
 import 'package:learning_pwa/services/learning_support/support_session_store.dart';
 import 'package:learning_pwa/theme/app_theme.dart';
+import 'package:learning_pwa/widgets/learning_support/companion_plan_screen.dart';
 import 'package:learning_pwa/widgets/learning_support/learning_help_action.dart';
 import 'package:learning_pwa/widgets/targets/target_coverage_card.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -21,10 +25,14 @@ void main() {
   // No web fonts in tests; colours (what contrast depends on) are real.
   AppTheme.useWebFonts = false;
   late BridgeLibrary library;
+  late ExternalCompanionLibrary companions;
+  late CompanionPlanLibrary plans;
 
   setUpAll(() async {
     TestWidgetsFlutterBinding.ensureInitialized();
     library = await BridgeLibrary.load(rootBundle);
+    companions = await ExternalCompanionLibrary.load(rootBundle, library);
+    plans = await CompanionPlanLibrary.load(rootBundle, library, companions);
   });
 
   setUp(() => SharedPreferences.setMockInitialValues({}));
@@ -133,6 +141,31 @@ void main() {
             child: TargetCoverageCard(targetSlug: 'pct', targetVersionId: 'v1'),
           ));
       expect(find.byKey(const Key('target-coverage-card')), findsOneWidget);
+      await meetsAll(tester);
+      handle.dispose();
+    });
+
+    testWidgets('companion plan meets guidelines ($name)', (tester) async {
+      final handle = tester.ensureSemantics();
+      tester.view.physicalSize = const Size(400, 900);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(ProviderScope(
+        overrides: [
+          ...overrides(),
+          externalCompanionEnabledProvider.overrideWithValue(true),
+          externalCompanionLibraryProvider.overrideWith((ref) async => companions),
+          companionPlanLibraryProvider.overrideWith((ref) async => plans),
+        ],
+        child: MaterialApp(
+          theme: makeTheme(),
+          home: CompanionPlanScreen(plan: plans.forBridge('bridge-percent-change')!),
+        ),
+      ));
+      await tester.pumpAndSettle();
+      await meetsAll(tester);
+      await tester.tap(find.byKey(const Key('companion-plan-part-pa-1')));
+      await tester.pumpAndSettle();
       await meetsAll(tester);
       handle.dispose();
     });

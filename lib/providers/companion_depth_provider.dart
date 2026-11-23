@@ -3,7 +3,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 /// How much of an outside resource's companion the learner wants (master
 /// plan v2.6 §9.2, levels 0–2; the Bridge itself is the level-3 companion
-/// micro-lesson). Device-local, learner-controlled, never sent anywhere.
+/// micro-lesson, and a companion plan is level 4). Device-local,
+/// learner-controlled, never sent anywhere.
 enum CompanionDepth {
   /// Level 0: the link only.
   link('Just the link'),
