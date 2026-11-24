@@ -3,7 +3,7 @@
 
 Produces the comprehensive, 10-element compliant curriculum manifest with:
 - 13 College Board Domains with reconciled decimal weights summing to 1.000
-- Comprehensive instructional modules with OpenStax Psychology 2e citations
+- Comprehensive instructional modules with OpenStax Psychology 1e citations
 - 10 structural elements per lesson (Title, Objective, Terms, Exposition, Case, Schema, Misconceptions, Check, Rationales, Citation)
 - Complete 95-question Haladyna-compliant assessment simulation pool matching official domain quotas
 - Flashcards for spaced retrieval practice
@@ -80,10 +80,11 @@ def build_manifest() -> dict:
                 "license": "College Board Proprietary (Educational Reference Blueprint)",
                 "license_name": "Proprietary Examination Blueprint",
                 "rights_note": "Referenced under fair use for educational curriculum architecture and objective alignment. CLEP and College Board are registered trademarks of the College Board.",
-                "sha256": "b45a6c1e95632b85d38f8cf2e4389ab9213bc54784a621e25e9d3d3a77a94f01",
                 "metadata": {
                     "role": "blueprint_authority",
                     "bank": "simulation_exam",
+                    "checksum_status": "unverified_remote_document",
+                    "checksum_verification_note": "Online exam description page. No archived artifact is pinned; the earlier sha256 value was a placeholder and was removed (ingestion plan D-6, 2026-11-24).",
                     "total_domains": 13,
                     "exam_code": "CLEP-PSYC",
                     "passing_score": 50,
@@ -98,18 +99,20 @@ def build_manifest() -> dict:
                 },
             },
             {
-                "id": "openstax-psychology-2e",
+                "id": "openstax-psychology-1e",
                 "publisher": "OpenStax / Rice University",
-                "title": "Psychology 2e",
-                "version": "2nd Edition (2020)",
-                "source_url": "https://openstax.org/details/books/psychology-2e",
-                "retrieved_at": "2026-11-07T00:00:00Z",
+                "title": "Psychology (OpenStax 1st Edition)",
+                "version": "1st Edition (2014)",
+                "source_url": "https://openstax.org/books/psychology/pages/preface",
+                "retrieved_at": "2026-11-20T00:00:00Z",
                 "license": "Creative Commons Attribution 4.0 International (CC BY 4.0)",
                 "license_name": "CC BY 4.0",
-                "rights_note": "Senior Contributing Authors: Rose M. Spielman, William J. Jenkins, Marilyn D. Lovett. Open-access instructional foundation for concepts, empirical research summaries, and pedagogical explanations.",
-                "sha256": "7f8c12b4e95632b85d38f8cf2e4389ab9213bc54784a621e25e9d3d3a77a94f02",
+                "rights_note": "Senior Contributing Authors: Rose M. Spielman (Content Lead), Kathryn Dumper, William Jenkins, Arlene Lacombe, Marilyn Lovett, Marion Perlmutter (OpenStax, Rice University; from the 1st-edition preface). Instructional reference for concepts and section alignment. Re-pointed from Psychology 2e (CC BY-NC-SA 4.0) to the 1st edition by owner decision D-5 on 2026-11-24. Section citations keep their numbers; each cited 1e section was checked against its lesson topic, but lesson text was not re-verified line by line against 1e.",
                 "metadata": {
                     "role": "instructional_reference",
+                    "edition": "1st Edition",
+                    "checksum_status": "unverified_remote_document",
+                    "checksum_verification_note": "Online textbook. No archived artifact is pinned; the earlier sha256 value was a placeholder and was removed (ingestion plan D-6, 2026-11-24).",
                 },
             },
         ],
@@ -118,7 +121,7 @@ def build_manifest() -> dict:
             "title": "CLEP Introductory Psychology",
             "version_code": "2026",
             "version_title": "CLEP Introductory Psychology (2026 Official Blueprint Edition)",
-            "version_description": "Authoritative, psychometrically grounded curriculum covering all 13 official College Board domains for the CLEP Introductory Psychology examination. Grounded in College Board blueprints and OpenStax Psychology 2e open educational resources.",
+            "version_description": "Authoritative, psychometrically grounded curriculum covering all 13 official College Board domains for the CLEP Introductory Psychology examination. Grounded in College Board blueprints and OpenStax Psychology 1e open educational resources.",
         },
         "stimuli": [
             {

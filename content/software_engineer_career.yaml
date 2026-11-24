@@ -13,8 +13,9 @@ source_releases:
     license: "Copyright IEEE (Educational Reference)"
     license_name: "Proprietary Educational Reference"
     rights_note: "Referenced for curriculum taxonomy and occupational competence structure under educational fair use."
-    sha256: "9b71d224bd62f3785d96d46ad3ea3d73319bfbc2890caadae2dff72519673ca7"
     metadata:
+      checksum_status: "unverified_remote_document"
+      checksum_verification_note: "Online guide page. No archived artifact is pinned; the earlier sha256 value was a placeholder and was removed (ingestion plan D-6, 2026-11-24)."
       standard: "ISO/IEC TR 19759:2015"
   - id: "bls-soc-2018"
     publisher: "U.S. Bureau of Labor Statistics"
@@ -25,8 +26,9 @@ source_releases:
     license: "Public Domain (U.S. Government Work)"
     license_name: "Public Domain"
     rights_note: "U.S. Government work under 17 U.S.C. 105; unrestricted public domain."
-    sha256: "4c52089b2db95cfeb1412586f1e2f7fb7058df553bb89c670868f00dbbe155d8"
     metadata:
+      checksum_status: "unverified_remote_document"
+      checksum_verification_note: "Online classification page. No archived artifact is pinned; the earlier sha256 value was a placeholder and was removed (ingestion plan D-6, 2026-11-24)."
       soc_code: "15-1252"
       soc_title: "Software Developers"
 

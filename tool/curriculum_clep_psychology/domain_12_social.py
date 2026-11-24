@@ -23,14 +23,14 @@ DOMAIN_12 = {
                     "name": "Attribution Theory and Cognitive Dissonance",
                     "short_definition": "How individuals explain causes of behavior (dispositional vs. situational, FAE) and resolve internal conflict between actions and beliefs.",
                     "description": "The fundamental attribution error underestimates situational pressures in others; cognitive dissonance drives attitude alignment with behavior.",
-                    "citation": "OpenStax Psychology 2e, Section 12.1 & 12.2",
+                    "citation": "OpenStax Psychology 1e, Section 12.1 & 12.2",
                 },
                 {
                     "slug": "psyc-conformity-obedience",
                     "name": "Conformity, Compliance, and Milgram Obedience",
                     "short_definition": "Social pressure paradigms including Asch line conformity, normative/informational influence, and Milgram's destructive obedience.",
                     "description": "Asch demonstrated visual judgment conformity; Milgram demonstrated that 65% of participants obey legitimate authority commands to deliver lethal shocks.",
-                    "citation": "OpenStax Psychology 2e, Section 12.3",
+                    "citation": "OpenStax Psychology 1e, Section 12.3",
                     "prerequisites": ["psyc-attribution-dissonance"],
                 },
             ],
@@ -44,7 +44,7 @@ DOMAIN_12 = {
                         "psyc-attribution-dissonance",
                         "psyc-conformity-obedience",
                     ],
-                    "citation": "OpenStax Psychology 2e, Chapter 12: Social Psychology",
+                    "citation": "OpenStax Psychology 1e, Chapter 12: Social Psychology",
                     "blocks": [
                         {
                             "sort_order": 1,
@@ -141,7 +141,7 @@ DOMAIN_12 = {
                             "explanation": "The fundamental attribution error occurs when observers attribute another person's actions to internal, enduring personality traits (laziness) while completely overlooking environmental situational constraints (traffic, mechanical breakdown).",
                             "difficulty": "beginner",
                             "cognitive_level": "application",
-                            "citation": "OpenStax Psychology 2e, Section 12.1",
+                            "citation": "OpenStax Psychology 1e, Section 12.1",
                             "concept_slugs": ["psyc-attribution-dissonance"],
                         },
                         {
@@ -159,7 +159,7 @@ DOMAIN_12 = {
                             "explanation": "In Asch's conformity experiments, naive participants conformed to the confederates' unanimously erroneous visual judgments on approximately 37% of all critical trials, demonstrating the power of normative social influence.",
                             "difficulty": "intermediate",
                             "cognitive_level": "recall",
-                            "citation": "OpenStax Psychology 2e, Section 12.3",
+                            "citation": "OpenStax Psychology 1e, Section 12.3",
                             "concept_slugs": ["psyc-conformity-obedience"],
                         },
                         {
@@ -177,7 +177,7 @@ DOMAIN_12 = {
                             "explanation": "In Milgram's baseline obedience study, 65% (26 out of 40) of participants administered the final 450-volt electrical shock, despite the learner screaming in agony and subsequently going silent.",
                             "difficulty": "beginner",
                             "cognitive_level": "recall",
-                            "citation": "OpenStax Psychology 2e, Section 12.3",
+                            "citation": "OpenStax Psychology 1e, Section 12.3",
                             "concept_slugs": ["psyc-conformity-obedience"],
                         },
                         {
@@ -195,7 +195,7 @@ DOMAIN_12 = {
                             "explanation": "Milgram discovered that the presence of defiant peer role models who openly refused to obey orders shattered the perceived legitimacy and authority pressure, causing participant obedience to drop from 65% down to just 10%.",
                             "difficulty": "intermediate",
                             "cognitive_level": "comprehension",
-                            "citation": "OpenStax Psychology 2e, Section 12.3",
+                            "citation": "OpenStax Psychology 1e, Section 12.3",
                             "concept_slugs": ["psyc-conformity-obedience"],
                         },
                         {
@@ -213,7 +213,7 @@ DOMAIN_12 = {
                             "explanation": "Participants paid $20 had sufficient external justification for lying ('I lied because I got paid twenty dollars'). Participants paid only $1 experienced severe cognitive dissonance ('I lied for a trivial dollar'), forcing them to resolve the dissonance by internally convincing themselves the task was actually interesting.",
                             "difficulty": "advanced",
                             "cognitive_level": "analysis",
-                            "citation": "OpenStax Psychology 2e, Section 12.2",
+                            "citation": "OpenStax Psychology 1e, Section 12.2",
                             "concept_slugs": ["psyc-attribution-dissonance"],
                         },
                     ],
@@ -245,14 +245,14 @@ DOMAIN_12 = {
                     "name": "Group Polarization, Groupthink, and Social Loafing",
                     "short_definition": "Collective social phenomena altering individual performance (social facilitation/loafing) and group decisions (polarization/groupthink).",
                     "description": "Social loafing reduces individual effort in unmonitored groups; groupthink prioritizes consensus over critical appraisal, risking catastrophic errors.",
-                    "citation": "OpenStax Psychology 2e, Section 12.4",
+                    "citation": "OpenStax Psychology 1e, Section 12.4",
                 },
                 {
                     "slug": "psyc-prejudice-altruism",
                     "name": "Prejudice, Ingroup Bias, and the Bystander Effect",
                     "short_definition": "Social relations spanning stereotypes, ingroup/outgroup bias, scapegoating, and bystander apathy via diffusion of responsibility.",
                     "description": "Darley and Latané proved that emergency intervention decreases as bystander group size increases due to pluralistic ignorance and diffused responsibility.",
-                    "citation": "OpenStax Psychology 2e, Section 12.5 & 12.6",
+                    "citation": "OpenStax Psychology 1e, Section 12.5 & 12.6",
                     "prerequisites": ["psyc-group-dynamics"],
                 },
             ],
@@ -266,7 +266,7 @@ DOMAIN_12 = {
                         "psyc-group-dynamics",
                         "psyc-prejudice-altruism",
                     ],
-                    "citation": "OpenStax Psychology 2e, Section 12.4, 12.5, & 12.6",
+                    "citation": "OpenStax Psychology 1e, Section 12.4, 12.5, & 12.6",
                     "blocks": [
                         {
                             "sort_order": 1,
@@ -363,7 +363,7 @@ DOMAIN_12 = {
                             "explanation": "The bystander effect describes the phenomenon where individuals are less likely to offer help in an emergency when other bystanders are present. It is driven by diffusion of responsibility (each person assumes another witness will act) and pluralistic ignorance.",
                             "difficulty": "beginner",
                             "cognitive_level": "application",
-                            "citation": "OpenStax Psychology 2e, Section 12.6",
+                            "citation": "OpenStax Psychology 1e, Section 12.6",
                             "concept_slugs": ["psyc-prejudice-altruism"],
                         },
                         {
@@ -381,7 +381,7 @@ DOMAIN_12 = {
                             "explanation": "Groupthink (identified by Irving Janis) occurs in cohesive, isolated groups where the desire for consensus and harmony overrides the critical, objective appraisal of alternative courses of action.",
                             "difficulty": "beginner",
                             "cognitive_level": "comprehension",
-                            "citation": "OpenStax Psychology 2e, Section 12.4",
+                            "citation": "OpenStax Psychology 1e, Section 12.4",
                             "concept_slugs": ["psyc-group-dynamics"],
                         },
                         {
@@ -399,7 +399,7 @@ DOMAIN_12 = {
                             "explanation": "Social loafing is the tendency for individuals to exert less physical or mental effort when their contributions are pooled into a group project where individual accountability and evaluation are diminished.",
                             "difficulty": "beginner",
                             "cognitive_level": "application",
-                            "citation": "OpenStax Psychology 2e, Section 12.4",
+                            "citation": "OpenStax Psychology 1e, Section 12.4",
                             "concept_slugs": ["psyc-group-dynamics"],
                         },
                         {
@@ -417,7 +417,7 @@ DOMAIN_12 = {
                             "explanation": "Group polarization describes the tendency for discussions among like-minded individuals to strengthen and amplify the group's preexisting attitudes and shared opinions, making their collective stance significantly more extreme.",
                             "difficulty": "intermediate",
                             "cognitive_level": "application",
-                            "citation": "OpenStax Psychology 2e, Section 12.4",
+                            "citation": "OpenStax Psychology 1e, Section 12.4",
                             "concept_slugs": ["psyc-group-dynamics"],
                         },
                     ],

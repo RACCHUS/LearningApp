@@ -66,7 +66,7 @@ The per-lesson counts are the same in every row: 3 teach blocks, 2 call-outs, 2 
 
 | Curriculum | Source posture | Note |
 |---|---|---|
-| CLEP Introductory Psychology | OpenStax Psychology 2e (**now CC BY-NC-SA**, file says CC BY) | Open owner decision: re-point to Psychology 1st edition (CC BY) |
+| CLEP Introductory Psychology | OpenStax Psychology 1st edition (CC BY; adapt and redistribute approved) | Re-pointed from 2e on 2026-11-24 (owner decision D-5); check research-heavy sections against the current CLEP outline before relying on them |
 | CompTIA Security+ SY0-701 | CompTIA objectives (proprietary, reference) | Write all text in-house |
 | Software Engineer career | SWEBOK (proprietary, reference); BLS (public domain) | BLS text may be quoted or adapted |
 | B.S. Computer Science | ACM/IEEE CS2023 (license unknown, reference) | Confirm the license before quoting |

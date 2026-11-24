@@ -71,10 +71,10 @@
         "checked_at": "2026-11-20",
         "statement": "Prealgebra is licensed under a Creative Commons Attribution 4.0 International (CC BY) license"
       },
-      "allowed_uses": ["link", "reference", "quote", "adapt", "ai_transform"],
+      "allowed_uses": ["link", "reference", "quote", "adapt", "redistribute", "ai_transform"],
       "attribution": "Adapted from {title}, OpenStax, Rice University, {section_url}, licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/). Changes: {changes}.",
       "status": "approved",
-      "decided_by": "owner 2026-11-20 (approved adapting the CC BY 1st editions)",
+      "decided_by": "owner 2026-11-20 (approved adapting the CC BY 1st editions); owner 2026-11-24 (D-7: approved redistribute, since imported reading blocks stay close to the book text)",
       "notes": "Best adaptable source for prerequisite numeracy Bridges. Do not use OpenStax names or logos (trademarks are outside the CC license)."
     },
     {
@@ -105,10 +105,10 @@
         "checked_at": "2026-11-20",
         "statement": "College Algebra is licensed under a Creative Commons Attribution 4.0 International (CC BY) license"
       },
-      "allowed_uses": ["link", "reference", "quote", "adapt", "ai_transform"],
+      "allowed_uses": ["link", "reference", "quote", "adapt", "redistribute", "ai_transform"],
       "attribution": "Adapted from {title}, OpenStax, Rice University, {section_url}, licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/). Changes: {changes}.",
       "status": "approved",
-      "decided_by": "owner 2026-11-20 (approved adapting the CC BY 1st editions)",
+      "decided_by": "owner 2026-11-20 (approved adapting the CC BY 1st editions); owner 2026-11-24 (D-7: approved redistribute, since imported reading blocks stay close to the book text)",
       "notes": "Cited by content/clep_college_algebra.yaml. Prefer this edition over 2e for adapted content."
     },
     {
@@ -156,10 +156,10 @@
         "checked_at": "2026-11-20",
         "statement": "Psychology is licensed under a Creative Commons Attribution 4.0 International (CC BY) license"
       },
-      "allowed_uses": ["link", "reference", "quote", "adapt", "ai_transform"],
+      "allowed_uses": ["link", "reference", "quote", "adapt", "redistribute", "ai_transform"],
       "attribution": "Adapted from {title}, OpenStax, Rice University, {section_url}, licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/). Changes: {changes}.",
       "status": "approved",
-      "decided_by": "owner 2026-11-20 (approved adapting the CC BY 1st editions)",
+      "decided_by": "owner 2026-11-20 (approved adapting the CC BY 1st editions); owner 2026-11-24 (D-7: approved redistribute, since imported reading blocks stay close to the book text)",
       "notes": "CC BY alternative for the CLEP Introductory Psychology program."
     },
     {
@@ -176,8 +176,7 @@
       "allowed_uses": ["link", "reference"],
       "attribution": "{title}, OpenStax, Rice University, {section_url}, CC BY-NC-SA 4.0.",
       "status": "approved",
-      "decided_by": "default for CC BY-NC-SA until the owner decides on non-commercial status",
-      "open_issue": "content/clep_introductory_psychology.yaml records this source as CC BY 4.0. OpenStax moved the library to CC BY-NC-SA for new and updated versions (announced 2026-04-22). Owner decision: re-point the program to Psychology (1st edition, CC BY 4.0), or keep 2e and treat derived lessons as CC BY-NC-SA. Until then, do not adapt more text from 2e."
+      "decided_by": "default for CC BY-NC-SA until the owner decides on non-commercial status; owner 2026-11-24 (D-5: CLEP Psychology re-pointed to the 1st edition, so 2e stays link and reference only)"
     },
     {
       "id": "microsoft-support",

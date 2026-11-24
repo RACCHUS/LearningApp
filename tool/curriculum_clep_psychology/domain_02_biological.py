@@ -23,14 +23,14 @@ DOMAIN_02 = {
                     "name": "Neuron Structure and Action Potential Dynamics",
                     "short_definition": "Electrochemical signaling mechanism whereby neurons transmit information via all-or-none electrical impulses down the axon.",
                     "description": "Neurons maintain a resting potential of -70 mV and fire an all-or-none action potential when depolarization reaches the excitation threshold (-55 mV).",
-                    "citation": "OpenStax Psychology 2e, Section 3.2",
+                    "citation": "OpenStax Psychology 1e, Section 3.2",
                 },
                 {
                     "slug": "psyc-neurotransmitters",
                     "name": "Neurotransmitters and Neuromodulation",
                     "short_definition": "Chemical messengers released across the synaptic cleft that bind to postsynaptic receptors to produce excitatory or inhibitory potentials.",
                     "description": "Key neurotransmitters include acetylcholine, dopamine, serotonin, norepinephrine, GABA, and glutamate, modulated by pharmacological agonists and antagonists.",
-                    "citation": "OpenStax Psychology 2e, Section 3.2",
+                    "citation": "OpenStax Psychology 1e, Section 3.2",
                     "prerequisites": ["psyc-neuron-structure"],
                 },
             ],
@@ -44,7 +44,7 @@ DOMAIN_02 = {
                         "psyc-neuron-structure",
                         "psyc-neurotransmitters",
                     ],
-                    "citation": "OpenStax Psychology 2e, Section 3.2: Cells of the Nervous System",
+                    "citation": "OpenStax Psychology 1e, Section 3.2: Cells of the Nervous System",
                     "blocks": [
                         {
                             "sort_order": 1,
@@ -148,7 +148,7 @@ DOMAIN_02 = {
                             "explanation": "Depolarization is caused by the rapid opening of voltage-gated sodium channels once threshold (-55 mV) is reached, allowing positively charged sodium ions (Na+) to flood into the intracellular fluid along both concentration and electrical gradients.",
                             "difficulty": "intermediate",
                             "cognitive_level": "recall",
-                            "citation": "OpenStax Psychology 2e, Section 3.2",
+                            "citation": "OpenStax Psychology 1e, Section 3.2",
                             "concept_slugs": ["psyc-neuron-structure"],
                         },
                         {
@@ -166,7 +166,7 @@ DOMAIN_02 = {
                             "explanation": "Multiple sclerosis is an autoimmune condition in which the body's immune system attacks and degrades the myelin sheath, slowing or halting neural impulse transmission along motor and sensory pathways.",
                             "difficulty": "beginner",
                             "cognitive_level": "recall",
-                            "citation": "OpenStax Psychology 2e, Section 3.2",
+                            "citation": "OpenStax Psychology 1e, Section 3.2",
                             "concept_slugs": ["psyc-neuron-structure"],
                         },
                         {
@@ -184,7 +184,7 @@ DOMAIN_02 = {
                             "explanation": "Parkinson's disease results from the degeneration of dopamine-producing neurons in the substantia nigra, impairing motor planning and basal ganglia communication. Dopamine precursors (such as L-DOPA) are administered to alleviate motor symptoms.",
                             "difficulty": "beginner",
                             "cognitive_level": "comprehension",
-                            "citation": "OpenStax Psychology 2e, Section 3.2",
+                            "citation": "OpenStax Psychology 1e, Section 3.2",
                             "concept_slugs": ["psyc-neurotransmitters"],
                         },
                         {
@@ -202,7 +202,7 @@ DOMAIN_02 = {
                             "explanation": "GABA (gamma-aminobutyric acid) is the primary inhibitory neurotransmitter in the brain. By opening chloride ion channels and hyperpolarizing postsynaptic membranes, it reduces the probability that a neuron will fire an action potential.",
                             "difficulty": "beginner",
                             "cognitive_level": "recall",
-                            "citation": "OpenStax Psychology 2e, Section 3.2",
+                            "citation": "OpenStax Psychology 1e, Section 3.2",
                             "concept_slugs": ["psyc-neurotransmitters"],
                         },
                     ],
@@ -234,14 +234,14 @@ DOMAIN_02 = {
                     "name": "Cerebral Structures and Cortical Lobes",
                     "short_definition": "Functional specialization of subcortical centers and the four cerebral cortex lobes (frontal, parietal, occipital, temporal).",
                     "description": "Cortical organization localizes motor planning in frontal lobes, somatosensory processing in parietal, visual analysis in occipital, and auditory/language in temporal lobes.",
-                    "citation": "OpenStax Psychology 2e, Section 3.4",
+                    "citation": "OpenStax Psychology 1e, Section 3.4",
                 },
                 {
                     "slug": "psyc-hemispheric-specialization",
                     "name": "Hemispheric Lateralization and Autonomic Nervous System",
                     "short_definition": "Division of labor between cerebral hemispheres connected by the corpus callosum, alongside sympathetic/parasympathetic autonomic control.",
                     "description": "Split-brain experiments reveal left-hemisphere specialization for verbal speech and right-hemisphere specialization for visuospatial processing.",
-                    "citation": "OpenStax Psychology 2e, Section 3.4",
+                    "citation": "OpenStax Psychology 1e, Section 3.4",
                     "prerequisites": ["psyc-brain-structures"],
                 },
             ],
@@ -255,7 +255,7 @@ DOMAIN_02 = {
                         "psyc-brain-structures",
                         "psyc-hemispheric-specialization",
                     ],
-                    "citation": "OpenStax Psychology 2e, Section 3.4: The Brain and Spinal Cord",
+                    "citation": "OpenStax Psychology 1e, Section 3.4: The Brain and Spinal Cord",
                     "blocks": [
                         {
                             "sort_order": 1,
@@ -357,7 +357,7 @@ DOMAIN_02 = {
                             "explanation": "Damage to the prefrontal cortex (as famously documented in the historical case of Phineas Gage) impairs executive functions, emotional inhibition, foresight, and moral judgment without eliminating primary motor or vital autonomic functions.",
                             "difficulty": "intermediate",
                             "cognitive_level": "application",
-                            "citation": "OpenStax Psychology 2e, Section 3.4",
+                            "citation": "OpenStax Psychology 1e, Section 3.4",
                             "concept_slugs": ["psyc-brain-structures"],
                         },
                         {
@@ -375,7 +375,7 @@ DOMAIN_02 = {
                             "explanation": "The thalamus serves as the sensory routing hub of the brain, receiving sensory signals from the visual, auditory, gustatory, and somatosensory systems and relaying them to specialized cortical areas. Olfactory signals bypass the thalamus directly to the olfactory bulb.",
                             "difficulty": "beginner",
                             "cognitive_level": "recall",
-                            "citation": "OpenStax Psychology 2e, Section 3.4",
+                            "citation": "OpenStax Psychology 1e, Section 3.4",
                             "concept_slugs": ["psyc-brain-structures"],
                         },
                         {
@@ -393,7 +393,7 @@ DOMAIN_02 = {
                             "explanation": "Broca's area, located in the frontal lobe of the dominant (usually left) hemisphere, controls speech production and muscle movements involved in articulation. Damage produces expressive aphasia characterized by non-fluent, halting speech.",
                             "difficulty": "intermediate",
                             "cognitive_level": "application",
-                            "citation": "OpenStax Psychology 2e, Section 3.4",
+                            "citation": "OpenStax Psychology 1e, Section 3.4",
                             "concept_slugs": ["psyc-brain-structures"],
                         },
                         {
@@ -411,7 +411,7 @@ DOMAIN_02 = {
                             "explanation": "Stimuli in the left visual field project to the right cerebral hemisphere, which controls the left hand. Because the severed corpus callosum prevents transmission to the verbal left hemisphere, the patient cannot name the object verbally, but can easily retrieve it with the left hand.",
                             "difficulty": "advanced",
                             "cognitive_level": "analysis",
-                            "citation": "OpenStax Psychology 2e, Section 3.4",
+                            "citation": "OpenStax Psychology 1e, Section 3.4",
                             "concept_slugs": ["psyc-hemispheric-specialization"],
                         },
                         {
@@ -429,7 +429,7 @@ DOMAIN_02 = {
                             "explanation": "The sympathetic division of the autonomic nervous system mobilizes physiological resources during emergency or stress situations (the 'fight-or-flight' response), elevating heart rate, dilating bronchioles, dilating pupils, and inhibiting gastrointestinal motility.",
                             "difficulty": "beginner",
                             "cognitive_level": "comprehension",
-                            "citation": "OpenStax Psychology 2e, Section 3.4",
+                            "citation": "OpenStax Psychology 1e, Section 3.4",
                             "concept_slugs": ["psyc-hemispheric-specialization"],
                         },
                     ],

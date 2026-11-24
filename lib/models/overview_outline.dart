@@ -711,9 +711,9 @@ const OverviewOutline clepPsychologyOverviewOutline = OverviewOutline(
     blueprintSummary:
         'Based on College Board’s published CLEP Introductory Psychology exam topic outline (13 topic areas; published percentage ranges sum to 95–108%).',
     openTextbookAttribution:
-        'Adapted from OpenStax Psychology 2e by Rose M. Spielman, William J. Jenkins, and Marilyn D. Lovett (Rice University). Access for free at https://openstax.org/books/psychology-2e/pages/1-introduction',
+        'Adapted from OpenStax Psychology 1e (1st edition) by Rose M. Spielman, Kathryn Dumper, William Jenkins, Arlene Lacombe, Marilyn Lovett and Marion Perlmutter (Rice University). Access for free at https://openstax.org/books/psychology/pages/preface',
     openTextbookLicense: 'Creative Commons Attribution 4.0 International (CC BY 4.0)',
-    openTextbookUrl: 'https://openstax.org/books/psychology-2e/pages/1-introduction',
+    openTextbookUrl: 'https://openstax.org/books/psychology/pages/preface',
     verificationLevel: SourceVerificationLevel.unverifiedPlaceholder,
     verificationDisclosure:
         'Topic structure and published weight ranges are reviewed against the public CLEP Introductory Psychology outline. Raw source archive SHA-256 digests in the curriculum manifest are currently marked hash_unavailable / unverified_placeholder pending byte-level archive capture.',

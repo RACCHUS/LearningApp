@@ -11,7 +11,7 @@ source_releases:
   license_name: CC BY 4.0
   rights_note: Adapted under CC BY 4.0 (owner-approved, data/content_sources.json). OpenStax and Rice University names and logos are not covered by the license; no endorsement implied. Imported automatically; not reviewed by a person.
   metadata:
-    use: adapt
+    use: redistribute
     imported_by: tool/import_open_textbook.py
     chapters:
     - 1

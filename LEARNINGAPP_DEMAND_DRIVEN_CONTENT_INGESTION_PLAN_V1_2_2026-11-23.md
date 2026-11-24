@@ -608,7 +608,11 @@ CLI tools, research files and CI checks are not runtime features. They are contr
 
 IN-1 and IN-2 can run at the same time once the IN-0 baseline is done. IN-3 and IN-4 should share fixtures and proceed in small changes. Do not wait for a comprehensive source directory or admin UI before improving the existing importer. Rights remediation (Psychology, manifest pins, D-7) is independent of acquisition expansion and can start earlier. If the selected opportunity does not need an adapter, defer it without removing it from the roadmap.
 
-**Suggested PR slices** (adjust to actual repository dependencies; no implementation is authorized yet):
+**Suggested PR slices** (adjust to actual repository dependencies).
+
+**Progress:** slices 1 and 2 are combined in the first implementation PR (2026-11-24). It covers D-5 (Psychology re-pointed to the 1st edition in the generator, regenerated manifest, overview attribution and docs), D-6 (placeholder pins removed from all authored manifests, misleading license labels corrected, CI rule 5 in `tool/ci/verify_content_sources.py` rejecting placeholder pins), D-7 (`redistribute` approved for the three CC BY 1st editions; the importer requires it and open-textbook manifests declare it) and the runbook scope fix.
+
+Slices:
 
 1. Audit and docs only. Includes the runbook scope fix and the Psychology doc reconciliation once D-5 is decided.
 2. Manifest pin and license audit, plus the CI placeholder check (warnings first, then fail closed for new manifests).

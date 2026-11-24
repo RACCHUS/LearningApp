@@ -109,7 +109,7 @@ The repeatable workflow for producing publishable CLEP courseware:
 ### Stage A — Source Collection & Attribution Standards
 - Collect trusted, openly licensed reference material for each domain.
 - **Primary Source Foundation for Introductory Psychology**:
-  - **OpenStax Psychology 2e** (Rice University, CC BY 4.0; Senior Authors Rose M. Spielman, William J. Jenkins, Marilyn D. Lovett).
+  - **OpenStax Psychology, 1st edition** (Rice University, CC BY 4.0; Senior Contributing Authors Rose M. Spielman (Content Lead), Kathryn Dumper, William Jenkins, Arlene Lacombe, Marilyn Lovett, Marion Perlmutter). Psychology 2e is CC BY-NC-SA 4.0 and is used for links only (owner decision D-5, 2026-11-24).
   - **American Psychological Association (APA)** Standards & Guidelines.
   - **DSM-5** Diagnostic Criteria for psychological disorders.
 - Record source publisher, edition, license URL, and section citations in `source_releases`.

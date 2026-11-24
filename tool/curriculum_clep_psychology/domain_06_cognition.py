@@ -23,14 +23,14 @@ DOMAIN_06 = {
                     "name": "Atkinson-Shiffrin Model and Working Memory",
                     "short_definition": "Three-stage memory processing model comprising sensory registers, short-term/working memory, and permanent long-term storage.",
                     "description": "Information passes through iconic/echoic sensory registers into working memory (Baddeley's phonological loop, visuospatial sketchpad, central executive) before LTM encoding.",
-                    "citation": "OpenStax Psychology 2e, Section 8.1",
+                    "citation": "OpenStax Psychology 1e, Section 8.1",
                 },
                 {
                     "slug": "psyc-memory-systems-forgetting",
                     "name": "Explicit vs. Implicit Memory and Interference",
                     "short_definition": "Subsystems of long-term memory (episodic, semantic, procedural) and forgetting mechanisms (proactive/retroactive interference and amnesia).",
                     "description": "Explicit memory requires hippocampus/cortex; implicit memory relies on cerebellum/basal ganglia. Forgetting is driven by interference and constructive distortion.",
-                    "citation": "OpenStax Psychology 2e, Section 8.2 & 8.3",
+                    "citation": "OpenStax Psychology 1e, Section 8.2 & 8.3",
                     "prerequisites": ["psyc-memory-models"],
                 },
             ],
@@ -44,7 +44,7 @@ DOMAIN_06 = {
                         "psyc-memory-models",
                         "psyc-memory-systems-forgetting",
                     ],
-                    "citation": "OpenStax Psychology 2e, Chapter 8: Memory",
+                    "citation": "OpenStax Psychology 1e, Chapter 8: Memory",
                     "blocks": [
                         {
                             "sort_order": 1,
@@ -147,7 +147,7 @@ DOMAIN_06 = {
                             "explanation": "Retroactive interference occurs when newly acquired information (the new apartment's zip code) impairs and disrupts the retrieval of previously stored older information (the former residence's zip code).",
                             "difficulty": "intermediate",
                             "cognitive_level": "application",
-                            "citation": "OpenStax Psychology 2e, Section 8.3",
+                            "citation": "OpenStax Psychology 1e, Section 8.3",
                             "concept_slugs": ["psyc-memory-systems-forgetting"],
                         },
                         {
@@ -165,7 +165,7 @@ DOMAIN_06 = {
                             "explanation": "Procedural memory is an implicit/nondeclarative memory system governed primarily by the cerebellum and basal ganglia. Because the hippocampus mediates explicit/declarative memory, Patient H.M. could acquire new motor skills (implicit) without any conscious recollection (explicit).",
                             "difficulty": "intermediate",
                             "cognitive_level": "analysis",
-                            "citation": "OpenStax Psychology 2e, Section 8.2",
+                            "citation": "OpenStax Psychology 1e, Section 8.2",
                             "concept_slugs": ["psyc-memory-systems-forgetting"],
                         },
                         {
@@ -183,7 +183,7 @@ DOMAIN_06 = {
                             "explanation": "The misinformation effect occurs when misleading post-event information presented in leading questions alters and reconstructs an individual's original memory trace of an observed event.",
                             "difficulty": "beginner",
                             "cognitive_level": "comprehension",
-                            "citation": "OpenStax Psychology 2e, Section 8.3",
+                            "citation": "OpenStax Psychology 1e, Section 8.3",
                             "concept_slugs": ["psyc-memory-systems-forgetting"],
                         },
                         {
@@ -201,7 +201,7 @@ DOMAIN_06 = {
                             "explanation": "The serial position effect describes the tendency to recall the first items (primacy effect, transferred to LTM) and last items (recency effect, still in working memory) better than the middle items in a sequence.",
                             "difficulty": "beginner",
                             "cognitive_level": "recall",
-                            "citation": "OpenStax Psychology 2e, Section 8.1",
+                            "citation": "OpenStax Psychology 1e, Section 8.1",
                             "concept_slugs": ["psyc-memory-models"],
                         },
                         {
@@ -219,7 +219,7 @@ DOMAIN_06 = {
                             "explanation": "In Baddeley's multicomponent model of working memory, the central executive acts as the supervisory attentional controller, allocating cognitive resources and coordinating the phonological loop, visuospatial sketchpad, and episodic buffer.",
                             "difficulty": "intermediate",
                             "cognitive_level": "recall",
-                            "citation": "OpenStax Psychology 2e, Section 8.1",
+                            "citation": "OpenStax Psychology 1e, Section 8.1",
                             "concept_slugs": ["psyc-memory-models"],
                         },
                     ],
@@ -251,14 +251,14 @@ DOMAIN_06 = {
                     "name": "Heuristics, Algorithms, and Cognitive Biases",
                     "short_definition": "Decision-making rules-of-thumb (heuristics) vs. step-by-step procedures (algorithms) and systematic cognitive biases.",
                     "description": "Heuristics trade speed for accuracy; obstacles include functional fixedness, mental set, confirmation bias, and the availability/representativeness heuristics.",
-                    "citation": "OpenStax Psychology 2e, Section 7.2 & 7.3",
+                    "citation": "OpenStax Psychology 1e, Section 7.2 & 7.3",
                 },
                 {
                     "slug": "psyc-language-development",
                     "name": "Language Acquisition and Psycholinguistics",
                     "short_definition": "Structure of language (phonemes, morphemes, syntax) and developmental theories (Chomsky's universal grammar vs. Skinner's reinforcement).",
                     "description": "Language acquisition unfolds through babbling, one-word, and telegraphic speech stages, supported by innate neural language acquisition mechanisms.",
-                    "citation": "OpenStax Psychology 2e, Section 7.4",
+                    "citation": "OpenStax Psychology 1e, Section 7.4",
                     "prerequisites": ["psyc-problem-solving-biases"],
                 },
             ],
@@ -272,7 +272,7 @@ DOMAIN_06 = {
                         "psyc-problem-solving-biases",
                         "psyc-language-development",
                     ],
-                    "citation": "OpenStax Psychology 2e, Section 7.2, 7.3, & 7.4",
+                    "citation": "OpenStax Psychology 1e, Section 7.2, 7.3, & 7.4",
                     "blocks": [
                         {
                             "sort_order": 1,
@@ -375,7 +375,7 @@ DOMAIN_06 = {
                             "explanation": "The availability heuristic operates when individuals evaluate the probability of events based on how readily vivid examples come to mind. Sensationalized media coverage makes plane crashes easily retrievable in memory, causing people to overestimate their frequency relative to automobile accidents.",
                             "difficulty": "intermediate",
                             "cognitive_level": "application",
-                            "citation": "OpenStax Psychology 2e, Section 7.2",
+                            "citation": "OpenStax Psychology 1e, Section 7.2",
                             "concept_slugs": ["psyc-problem-solving-biases"],
                         },
                         {
@@ -393,7 +393,7 @@ DOMAIN_06 = {
                             "explanation": "Functional fixedness is the cognitive inability to view familiar tools or objects as having utility beyond their traditional designed purpose (in this case, failing to recognize that a heavy steel wrench can pound a nail just like a hammer).",
                             "difficulty": "beginner",
                             "cognitive_level": "application",
-                            "citation": "OpenStax Psychology 2e, Section 7.2",
+                            "citation": "OpenStax Psychology 1e, Section 7.2",
                             "concept_slugs": ["psyc-problem-solving-biases"],
                         },
                         {
@@ -411,7 +411,7 @@ DOMAIN_06 = {
                             "explanation": "A morpheme is the smallest unit of language carrying meaning. The word 'unbreakable' consists of three distinct morphemes: the prefix 'un-' (meaning not), the root word 'break', and the suffix '-able' (meaning capable of).",
                             "difficulty": "intermediate",
                             "cognitive_level": "analysis",
-                            "citation": "OpenStax Psychology 2e, Section 7.4",
+                            "citation": "OpenStax Psychology 1e, Section 7.4",
                             "concept_slugs": ["psyc-language-development"],
                         },
                         {
@@ -429,7 +429,7 @@ DOMAIN_06 = {
                             "explanation": "Noam Chomsky championed the nativist theory of language acquisition, asserting that humans possess an innate biological predisposition—termed the Language Acquisition Device (LAD) and Universal Grammar—that enables children to deduce grammatical rules spontaneously from exposure to speech.",
                             "difficulty": "beginner",
                             "cognitive_level": "recall",
-                            "citation": "OpenStax Psychology 2e, Section 7.4",
+                            "citation": "OpenStax Psychology 1e, Section 7.4",
                             "concept_slugs": ["psyc-language-development"],
                         },
                     ],

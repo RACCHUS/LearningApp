@@ -159,6 +159,19 @@ class SourceGateTests(unittest.TestCase):
             with self.assertRaises(t.ImportProblem):
                 t.check_source(sid)
 
+    def test_adapt_alone_is_not_enough(self):
+        # Reading blocks stay close to the book text, so the importer needs
+        # redistribute as well as adapt (owner decision D-7).
+        import json
+        from unittest import mock
+        registry = json.loads(t.REGISTRY.read_text(encoding="utf-8"))
+        for s in registry["sources"]:
+            if s["id"] == "openstax-college-algebra-1e":
+                s["allowed_uses"].remove("redistribute")
+        with mock.patch.object(t.Path, "read_text", return_value=json.dumps(registry)):
+            with self.assertRaises(t.ImportProblem):
+                t.check_source("openstax-college-algebra-1e")
+
 
 if __name__ == "__main__":
     unittest.main()
