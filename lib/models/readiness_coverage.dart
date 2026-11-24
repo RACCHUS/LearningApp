@@ -26,6 +26,11 @@ class ReadinessCoverage {
   /// True when domain weights were missing and domains shared equally.
   final bool weightsEditorial;
 
+  /// Who reviewed the counted held-out checks: 'human', 'ai', 'mixed', or
+  /// null when none count (decision D-16). Never shown as a person's review
+  /// unless it is 'human'.
+  final String? reviewBasis;
+
   const ReadinessCoverage({
     required this.state,
     required this.coveredWeight,
@@ -34,6 +39,7 @@ class ReadinessCoverage {
     this.minHeldOutItems = 6,
     this.provisionalThreshold = 0.6,
     this.weightsEditorial = false,
+    this.reviewBasis,
   });
 
   /// Coverage could not be read while the gate is on: fail closed, so an
@@ -45,7 +51,8 @@ class ReadinessCoverage {
         objectivesCovered = 0,
         minHeldOutItems = 6,
         provisionalThreshold = 0.6,
-        weightsEditorial = false;
+        weightsEditorial = false,
+        reviewBasis = null;
 
   bool get isUnavailable => coveredWeight == null;
 
@@ -69,8 +76,17 @@ class ReadinessCoverage {
       minHeldOutItems: asInt(json['min_held_out_items'], 6),
       provisionalThreshold: asDouble(json['provisional_threshold']) ?? 0.6,
       weightsEditorial: json['weights_editorial'] == true,
+      reviewBasis: switch (json['review_basis']) {
+        'human' => 'human',
+        'ai' => 'ai',
+        'mixed' => 'mixed',
+        _ => null,
+      },
     );
   }
+
+  /// True when some counted checks were reviewed by AI rather than a person.
+  bool get aiReviewed => reviewBasis == 'ai' || reviewBasis == 'mixed';
 
   /// Whole-number percentage of blueprint weight covered, for display.
   int get coveredPercent => ((coveredWeight ?? 0) * 100).floor();

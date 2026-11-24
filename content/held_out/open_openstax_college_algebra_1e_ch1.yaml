@@ -5,17 +5,22 @@
 # LearningApp (not copied from the book's exercises); OpenStax sections are
 # cited only as alignment references.
 #
-# Status: AI-drafted, NOT yet reviewed by a person. An item counts toward
-# readiness only after a DIFFERENT, qualified person approves it. Record the
-# approval on the item, then ingest with
+# Status: AI-drafted, not yet reviewed. An item counts toward readiness only
+# after an INDEPENDENT review approves it (decision D-16): an AI reviewer
+# that is a different model, or a fresh session, from the author, working
+# through the AI review checklist with its own SymPy check; or a person. The
+# app tells learners which kind of review the checks had. Record the approval
+# on the item, then ingest with
 # `dart run tool/ingest_curriculum.dart --held-out <this file>`, which sends
 # approved items only:
 #
 #   review:
-#     reviewer_ref: <handle, not the author>
-#     reviewer_qualification: <why this person can judge the math>
+#     reviewer_kind: ai            # or human
+#     reviewer_model: <model id>   # required for ai
+#     reviewer_ref: <handle, never the author>
+#     reviewer_qualification: <for ai: checklist version + method; for a person: qualification>
 #     reviewed_on: YYYY-MM-DD
-#     review_status: approved
+#     review_status: approved      # or pending / rejected
 #     rights_review_status: approved
 #
 # See docs/content_intelligence/HELD_OUT_CHECKS_DESIGN.md.

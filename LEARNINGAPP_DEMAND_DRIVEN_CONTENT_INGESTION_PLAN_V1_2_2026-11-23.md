@@ -1,6 +1,6 @@
 # LearningApp — Demand-Driven Content Ingestion & Educational Optimization
 
-**Implementation plan v1.2 — accepted by the owner 2026-11-24**
+**Implementation plan v1.2 — accepted by the owner 2026-11-24; amended the same day by the owner's operating model (D-16, §0B)**
 **Date:** 2026-11-23 (US Eastern). v1.1 merged in #372; v1.2 adds the readiness and motivation half (§0A, §8.5–§8.9, §9.2, §16.4) and recommendations for every owner decision (§18).
 **Status:** **Accepted.** The owner accepted all §18 recommendations (D-1 to D-15) as written on 2026-11-24. Implementation proceeds in the PR slices of §14. Each production run (ingestion, migration, deployment) and each feature-switch activation still needs its own owner approval.
 **Scope:** Path B of [Content Intelligence v2.6](LEARNINGAPP_CONTENT_INTELLIGENCE_AND_GAP_RESCUE_MASTER_PLAN_V2_6_2026-11-11.md) (§8), with interfaces to Path A (AI-assisted generation, §5) and Path C (external-resource companionship, §9).
@@ -70,6 +70,26 @@ v1.1 was strong on **supply and trust**: rights, provenance, fidelity, gates and
 
 ---
 
+## 0B. Operating model (D-16, owner instruction 2026-11-24)
+
+The owner set the conditions every decision in this plan must fit:
+
+- **One person runs LearningApp.** AI (Claude and other models) does most of the building and the reviewing.
+- **Nothing costs money.** The app has no paid services, so nothing in it may create a cost.
+- **Paid things may come later.** The app must be built as if they will never be needed, yet be ready to add them easily if the owner ever chooses to.
+
+What this changes:
+
+1. **"A different, qualified person" is no longer a requirement.** Wherever this plan or its designs required independent human review, an **independent AI review** now satisfies it: a different model, or a fresh session without the author's context, working through a written checklist, with its own deterministic check where one exists. A person's review remains a stronger, optional upgrade in the same place (§9, §9.2).
+2. **Honest labels stay absolute.** Nothing reviewed only by AI is ever shown or recorded as reviewed by a person. Records carry `reviewer_kind` (`ai` or `human`), and learner-facing labels say which (for example, the readiness card's "reviewed by AI, not by a person").
+3. **The owner's time is the scarce resource.** Owner touch is batch approval of production runs and decisions, not item-by-item review.
+4. **High-stakes content is where AI review is not enough** (T3: regulated, licensing, health, safety, legal). It stays link-only or teaching-only until a person's review is available, which is an extension slot, not a requirement to ship anything else.
+5. **Every paid or people-dependent capability is an optional extension** (§1.2).
+
+Applied so far: held-out check approvals accept `reviewer_kind: ai` (migration `20261124030000`), and the coverage function reports `review_basis` so the app labels AI-reviewed checks.
+
+---
+
 ## 1. Executive decision
 
 LearningApp should not try to ingest all educational content. Its advantage should be helping learners reach worthwhile outcomes more efficiently, reliably and affordably than they could by navigating existing resources alone.
@@ -87,6 +107,7 @@ The current work should improve supply and its quality, not maximize content cou
 
 ### 1.1 Constraints that remain binding
 
+- **(D-16)** One owner, AI does most building and reviewing, zero spend. Design every workflow so it completes with the owner plus AI alone, and record honestly what reviewed what (§0B).
 - Zero operator-paid AI inference, and no mandatory paid human-review program. No new paid data API, subscription, storage tier or worker without explicit owner approval. Existing hosting and CI have finite free quotas, so cost controls must be real, not merely aspirational.
 - No removal of existing or planned functionality to simplify this initiative. Preserve personal import, manual AI, Bridges, companions, contribution and feature controls. BYOK stays behind the existing disabled release latch. This plan activates no new AI provider. `ai.managed` remains a separate owner decision.
 - All provenance, licensing, privacy, assessment isolation, moderation and controlled-deployment requirements in the existing plans remain in force. Nothing here relaxes them.
@@ -96,6 +117,29 @@ The current work should improve supply and its quality, not maximize content cou
 - **(v1.1)** Migrations are append-only and are deployed only through `tool/guarded_supabase_deploy.dart` (or `.ps1`). Never repair versions to pass a check. If a feature owner moves, update `docs/engineering/CODEBASE_MAP.md` in the same PR.
 
 ---
+
+### 1.2 Zero-cost by default, ready to extend (D-16)
+
+Every capability that would cost money or need other people follows the same pattern, so it can be switched on later without redesign:
+
+| Rule | What it means |
+|---|---|
+| A working no-cost path | The app works fully without the capability, with a free fallback (manual AI chat, AI review, free tiers, links) |
+| A feature switch, default OFF | Registered in `site_feature_keys.dart` and seeded OFF; the server enforces it |
+| A provider seam | Code calls an interface or adapter, not a vendor directly, so a paid provider is a new implementation, not a rewrite |
+| Usage and cost metering hooks | Requests and units are counted even at zero cost, so a budget cap can be enforced the day money is spent |
+| Honest labels | Paid or human work is labelled as such; free or AI work is never presented as it |
+| Owner approval to activate | Turning on anything with a cost is an explicit owner decision, never a default |
+
+Current extension slots:
+
+| Capability | Free path today | Ready-to-extend slot |
+|---|---|---|
+| AI generation | Manual AI chat (learner's own), on-device AI, `ai.managed` on a provider free tier with daily caps | BYOK (release latch OFF), paid managed provider behind the same provider interface |
+| Content review | Deterministic checks plus independent AI review | `reviewer_kind: human` in the same records; paid or volunteer reviewers when available |
+| Demand and source data | Official free datasets, research files in the repo | Paid data APIs as new adapters behind the research-file contract (§4.1) |
+| Hosting and jobs | Existing free tiers, bounded batches, CI | Larger tiers or workers behind the batch limits and quotas in §13 |
+| Revenue | None | `marketing.*` and `support.donations` switches, all OFF |
 
 ## 2. Current foundation and actual gaps
 
@@ -485,6 +529,15 @@ G8 is a post-pilot gate for claims and scaling. It is not a prerequisite for all
 
 For deterministic checks, validate semantic results, not just valid syntax. Sample extraction across representative source layouts, and record the sampling method and what was not checked. For higher-risk claims, use authoritative references and qualified review where needed. If no qualified volunteer capacity exists, limit that release's role and keep the rest of the product available.
 
+**Review levels (D-16).** Record the highest level an item or slice actually reached, and label it as exactly that:
+
+| Level | Who | Requirements |
+|---|---|---|
+| R0 Deterministic | Tools | Schema, recomputed answers (e.g. SymPy), fidelity and rights checks |
+| R1 Independent AI review | An AI that did not author the content: a different model, or a fresh session without the author's context | Written checklist; its own deterministic check where possible; findings recorded per item; `reviewer_kind: ai` and the model named |
+| R2 Owner sign-off | The owner | Batch decision on R1 results, with spot checks; never item-by-item by default |
+| R3 Person's review (extension) | A qualified person, volunteer or paid | `reviewer_kind: human`; optional; required only for T3 before anything beyond link or teaching-only |
+
 ### 9.1 Assessment integrity and independent evidence
 
 Use the existing protected scoring infrastructure for assessments that count toward readiness. Verify the latest non-EXM and EXM implementation instead of relying on historical specs. Never ship protected scoring keys in public asset bundles, DTOs, debug logs, downloadable curricula or accessible database columns. Practice feedback and answer-reveal exercises remain explicitly formative. Keep source-derived practice separate from held-out assessments, with versioned exposure and similarity checks (the parametric-practice exposure limits are the existing pattern). Do not grade recalled answer keys as transfer.
@@ -502,8 +555,8 @@ Applying every gate with equal weight to everything would make a one-operator te
 | Tier | Examples | How G3–G6 are satisfied | Label | Owner touch |
 |---|---|---|---|---|
 | **T1 Fast lane** | Teaching and formative practice from approved CC BY or public-domain sources, or original; V0/V1 volatility; deterministic math or Excel answers | Automatic fidelity checks, deterministic answer recomputation, sampled spot-check (record the sample size) | "Source-attributed · automatically checked · not reviewed by a person" | One approval per batch in the ingestion workflow |
-| **T2 Standard** | Readiness-contributing check items, mock-exam pools, conceptual non-math content (psychology), contributed content | All T1 checks, plus item review against the source, distractor justification, and item statistics before an item counts toward readiness | "Automatically checked; items calibrated" once statistics exist | Batch approval plus review of each held-out item set |
-| **T3 High stakes** | Regulated or licensing content, health, safety, legal requirements, V3/V4 volatility | All T2 checks, plus corroboration against an authoritative source and qualified review where available; otherwise link only | As reviewed, or link only | Explicit owner decision per release |
+| **T2 Standard** | Readiness-contributing check items, mock-exam pools, conceptual non-math content (psychology), contributed content | All T1 checks, plus an **independent AI review (R1)** against the source: correctness, single best answer, distractor justification, clarity. Item statistics later flag weak items (§16.4); they don't gate first use **(D-16)** | "Automatically checked · reviewed by AI" (or "reviewed by a person" only after R3) | Batch approval of the R1 results for each held-out set |
+| **T3 High stakes** | Regulated or licensing content, health, safety, legal requirements, V3/V4 volatility | All T2 checks, plus corroboration against an authoritative source. AI review alone is not enough: **link-only or teaching-only until a person's review (R3) is available** | As reviewed, or link only | Explicit owner decision per release |
 
 The tier is recorded per slice, and a slice takes the highest tier of anything in it. Teaching parts may ship at T1 while their check items wait at T2: that is the teaching-only path in §7.1.
 
@@ -782,6 +835,12 @@ Accepting a decision does not by itself run anything in production. In particula
 | D-10 | Prioritization model | Accept the §4.3 model, but **score by hand in the research file**. Build no scoring code until roughly 10 or more candidates compete for the same capacity | Below that scale, the formula costs more than it decides |
 | D-14 **(v1.2)** | Bank depth and readiness display thresholds (§8.6) | Accept the starting values: 10 practice and 6 held-out items per objective; readiness shown at 60% (provisional) and 90% (full) blueprint-weight coverage. Recalibrate after item statistics exist | Prevents readiness numbers built on a handful of memorizable items; thresholds are tunable |
 | D-15 **(v1.2)** | Risk tiers (§9.2) | Accept T1/T2/T3, with T1 publishing after automatic checks and one owner approval per batch | Without a fast lane, throughput is set by the strictest content type |
+
+**Owner instruction (2026-11-24)**
+
+| # | Decision | As stated | Effect |
+|---|---|---|---|
+| D-16 | Operating model | One person runs the app; AI does most building and reviewing; nothing costs money; paid capabilities may come later and must be easy to add | Independent AI review replaces required human review except for T3; honest `reviewer_kind` labels; every cost-bearing capability follows §1.2. See §0B |
 
 ### Definition of done for this initiative
 
