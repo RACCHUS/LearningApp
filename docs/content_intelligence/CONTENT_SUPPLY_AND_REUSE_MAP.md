@@ -23,7 +23,7 @@ Counts come from the files as of 2026-11-20.
 **Gaps:**
 - There's only one lesson, so most Excel skills are uncovered: cell references, AVERAGE/COUNT, sorting and filtering, charts, IF.
 - There are no independent check items, so readiness can't be shown for this target (plan D-14).
-- **Prepared for ingestion 2026-11-24 (D-13):**
+- **Published to production 2026-11-24 (D-13).** Changes made to prepare it:
   - the sample data is now typed into the lesson (the CSV it used to point to was never downloadable in the app);
   - the call-out uses the field names the renderer reads;
   - the practice prompt has a worked answer (=SUM(C2:C9), total 440);
