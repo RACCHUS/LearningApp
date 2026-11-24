@@ -48,7 +48,7 @@ REGISTRY = REPO / "data" / "content_sources.json"
 # Bump when importer output changes for the same book version, so the
 # corrected lessons publish as a new target version (published versions are
 # immutable). Publish it with retire_previous to replace the old one.
-IMPORT_REVISION = 4
+IMPORT_REVISION = 5
 
 # Topic tags per section, so "Learning help" offers the Bridges for that
 # topic (content/bridges/*.bridge.json `applies_to_tags`). A section that
