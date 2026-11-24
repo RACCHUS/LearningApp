@@ -1,6 +1,6 @@
 # Held-out checks for general targets: design note
 
-**Status:** owner chose **option B** on 2026-11-24. Built in migration `20261124020000_held_out_item_reviews` (not yet deployed). Decisions 2 to 4 below are still open.
+**Status:** owner chose **option B** on 2026-11-24. Built in migration `20261124020000_held_out_item_reviews`, deployed to production 2026-11-24 (guarded path, 160/160); no approvals recorded yet. Decisions 2 to 4 below are still open.
 **Context:** [ingestion plan v1.2](../../LEARNINGAPP_DEMAND_DRIVEN_CONTENT_INGESTION_PLAN_V1_2_2026-11-23.md) §8.6 and D-14; readiness coverage gate (migration `20261124010000`, switch `learning.readiness_coverage_gate`, OFF).
 
 ## The problem
