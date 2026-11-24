@@ -44,6 +44,8 @@ abstract final class SiteFeatureKeys {
   static const String contentWantedBoard = 'content.wanted_board';
   static const String contentParametricPractice = 'content.parametric_practice';
   static const String contentFeedbackChips = 'content.feedback_chips';
+  static const String learningReadinessCoverageGate =
+      'learning.readiness_coverage_gate';
 
   static const Set<String> all = {
     telFast,
@@ -83,5 +85,6 @@ abstract final class SiteFeatureKeys {
     contentWantedBoard,
     contentParametricPractice,
     contentFeedbackChips,
+    learningReadinessCoverageGate,
   };
 }

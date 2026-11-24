@@ -1,9 +1,58 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../models/governance/site_feature_keys.dart';
+import '../models/readiness_coverage.dart';
 import '../models/user_concept_state.dart';
 import '../services/concept_evidence_service.dart';
+import '../services/governance/site_feature_service.dart';
 import '../services/target_readiness_service.dart';
 import 'learning_context_provider.dart';
+import 'site_feature_provider.dart';
+
+/// Reads aggregate held-out check coverage for a target version (D-14).
+abstract class ReadinessCoverageApi {
+  Future<Map<String, dynamic>?> fetch(String targetVersionId);
+}
+
+class SupabaseReadinessCoverageApi implements ReadinessCoverageApi {
+  @override
+  Future<Map<String, dynamic>?> fetch(String targetVersionId) async {
+    final res = await Supabase.instance.client.rpc(
+      'get_target_readiness_coverage',
+      params: {'p_target_version_id': targetVersionId},
+    );
+    return res == null ? null : Map<String, dynamic>.from(res as Map);
+  }
+}
+
+final readinessCoverageApiProvider = Provider<ReadinessCoverageApi>(
+  (ref) => SupabaseReadinessCoverageApi(),
+);
+
+/// Switch `learning.readiness_coverage_gate` (default OFF).
+final readinessCoverageGateEnabledProvider = Provider<bool>((ref) {
+  return isSiteFeatureEnabled(
+    ref.watch(siteFeatureSnapshotProvider).valueOrNull,
+    SiteFeatureKeys.learningReadinessCoverageGate,
+    runtimeReady: SiteFeatureRuntime.snapshotEnabled,
+  );
+});
+
+/// Null while the gate is off: readiness shows exactly as before and nothing
+/// is fetched. With the gate on, a failed read fails closed (readiness hidden).
+final readinessCoverageProvider =
+    FutureProvider.family<ReadinessCoverage?, String>((ref, targetVersionId) async {
+  if (!ref.watch(readinessCoverageGateEnabledProvider) || targetVersionId.isEmpty) {
+    return null;
+  }
+  try {
+    final json = await ref.watch(readinessCoverageApiProvider).fetch(targetVersionId);
+    if (json == null) return const ReadinessCoverage.unavailable();
+    return ReadinessCoverage.fromJson(json);
+  } catch (_) {
+    return const ReadinessCoverage.unavailable();
+  }
+});
 
 final conceptEvidenceServiceProvider = Provider<ConceptEvidenceService>((ref) {
   return ConceptEvidenceService();
