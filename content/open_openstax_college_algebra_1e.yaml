@@ -6,7 +6,7 @@ source_releases:
   title: College Algebra
   version: ebc5beb (archive 20260604.144757)
   source_url: https://openstax.org/books/college-algebra/pages/preface
-  retrieved_at: '2026-11-24T19:02:17Z'
+  retrieved_at: '2026-11-24T23:36:51Z'
   license: Creative Commons Attribution 4.0 International (CC BY 4.0)
   license_name: CC BY 4.0
   rights_note: Adapted under CC BY 4.0 (owner-approved, data/content_sources.json). OpenStax and Rice University names and logos are not covered by the license; no endorsement implied. Imported automatically; not reviewed by a person.
@@ -18,7 +18,7 @@ source_releases:
 target:
   slug: open-openstax-college-algebra-1e
   title: College Algebra (open textbook)
-  version_code: OPENSTAX-EBC5BEB-R5
+  version_code: OPENSTAX-EBC5BEB-R6
   version_title: College Algebra by OpenStax, CC BY 4.0
   version_description: Open textbook sections imported as LearningApp lessons.
   volatility_class: V0
@@ -1999,6 +1999,8 @@ domains:
             **Changes:** converted to LearningApp lesson format; math converted from MathML; Try It exercises turned into practice prompts with answers from the book's answer key; images and end-of-section exercise sets omitted (see the original section). OpenStax and Rice University do not endorse LearningApp.
 
             **Review:** imported automatically; not reviewed by a person.
+
+            **Extra practice:** 1 original LearningApp practice question(s) were added to this section. They are not from the book; they were checked automatically and approved by an independent AI review.
       terms:
       - term: base
         definition: in exponential notation, the expression that is being multiplied
@@ -2173,6 +2175,22 @@ domains:
         difficulty: intermediate
         cognitive_level: application
         citation: College Algebra (OpenStax), Section 1.2, answer key, https://openstax.org/books/college-algebra/pages/1-2-exponents-and-scientific-notation
+        concept_slugs:
+        - open-openstax-college-algebra-1e-1-2
+      - id: ca1e-pr-1-2-a
+        interaction_type: numeric_entry
+        prompt: |
+          Evaluate $3^{-2} \cdot 3^{4}$.
+
+          Answer with a number.
+        scoring_spec:
+          correct_value: 9
+          tolerance: 0
+        explanation: 'Same base, so add the exponents: $-2 + 4 = 2$, and $3^2 = 9$.'
+        difficulty: intermediate
+        cognitive_level: application
+        citation: College Algebra (OpenStax 1e), Section 1.2, https://openstax.org/books/college-algebra/pages/1-2-exponents-and-scientific-notation (alignment only; original item)
+        response_spec: {}
         concept_slugs:
         - open-openstax-college-algebra-1e-1-2
       concept_slugs:
@@ -2874,6 +2892,8 @@ domains:
             **Changes:** converted to LearningApp lesson format; math converted from MathML; Try It exercises turned into practice prompts with answers from the book's answer key; images and end-of-section exercise sets omitted (see the original section). OpenStax and Rice University do not endorse LearningApp.
 
             **Review:** imported automatically; not reviewed by a person.
+
+            **Extra practice:** 3 original LearningApp practice question(s) were added to this section. They are not from the book; they were checked automatically and approved by an independent AI review.
       terms:
       - term: index
         definition: the number above the radical sign indicating the nth root
@@ -3014,6 +3034,55 @@ domains:
         citation: College Algebra (OpenStax), Section 1.3, answer key, https://openstax.org/books/college-algebra/pages/1-3-radicals-and-rational-exponents
         concept_slugs:
         - open-openstax-college-algebra-1e-1-3
+      - id: ca1e-pr-1-3-a
+        interaction_type: numeric_entry
+        prompt: |
+          Evaluate $\sqrt{400} - \sqrt{324}$.
+
+          Answer with a number.
+        scoring_spec:
+          correct_value: 2
+          tolerance: 0
+        explanation: $\sqrt{400} = 20$ because $20^2 = 400$, and $\sqrt{324} = 18$ because $18^2 = 324$. The difference is $20 - 18 = 2$.
+        difficulty: intermediate
+        cognitive_level: application
+        citation: College Algebra (OpenStax 1e), Section 1.3, https://openstax.org/books/college-algebra/pages/1-3-radicals-and-rational-exponents (alignment only; original item)
+        response_spec: {}
+        concept_slugs:
+        - open-openstax-college-algebra-1e-1-3
+      - id: ca1e-pr-1-3-b
+        interaction_type: numeric_entry
+        prompt: |
+          Evaluate $32^{3/5}$.
+
+          Answer with a number.
+        scoring_spec:
+          correct_value: 8
+          tolerance: 0
+        explanation: 'Take the fifth root first: $\sqrt[5]{32} = 2$. Then cube it: $2^3 = 8$.'
+        difficulty: intermediate
+        cognitive_level: application
+        citation: College Algebra (OpenStax 1e), Section 1.3, https://openstax.org/books/college-algebra/pages/1-3-radicals-and-rational-exponents (alignment only; original item)
+        response_spec: {}
+        concept_slugs:
+        - open-openstax-college-algebra-1e-1-3
+      - id: ca1e-pr-1-3-c
+        interaction_type: single_choice
+        prompt: Write $\sqrt{48}$ in simplest radical form.
+        response_spec:
+          options:
+          - $2\sqrt{12}$
+          - $4\sqrt{3}$
+          - $3\sqrt{4}$
+          - $16\sqrt{3}$
+        scoring_spec:
+          correct_index: 1
+        explanation: $48 = 16 \cdot 3$ and $16$ is the largest perfect-square factor, so $\sqrt{48} = \sqrt{16}\sqrt{3} = 4\sqrt{3}$. $2\sqrt{12}$ has the same value but isn't simplest form, because $12$ still has the square factor $4$.
+        difficulty: intermediate
+        cognitive_level: application
+        citation: College Algebra (OpenStax 1e), Section 1.3, https://openstax.org/books/college-algebra/pages/1-3-radicals-and-rational-exponents (alignment only; original item)
+        concept_slugs:
+        - open-openstax-college-algebra-1e-1-3
       concept_slugs:
       - open-openstax-college-algebra-1e-1-3
   - code: '1.4'
@@ -3039,7 +3108,6 @@ domains:
       - cc-by-4.0
       - algebra
       - math
-      - teaching-only
       - unreviewed
       citation: College Algebra (OpenStax), Section 1.4, https://openstax.org/books/college-algebra/pages/1-4-polynomials, CC BY 4.0
       source_release_id: openstax-college-algebra-1e
@@ -3585,12 +3653,6 @@ domains:
         block_type: callout
         content:
           type: info
-          title: No graded questions yet
-          body: This section's exercises have answers written as expressions or in other forms that LearningApp can't grade fairly yet, so there are no graded questions here. Use the practice prompts and compare your work with the book's answer. Finishing this section doesn't count toward exam readiness.
-      - sort_order: 40
-        block_type: callout
-        content:
-          type: info
           title: Source and license
           body: |
             Adapted from *College Algebra* by OpenStax, Rice University, Section 1.4 ([https://openstax.org/books/college-algebra/pages/1-4-polynomials](https://openstax.org/books/college-algebra/pages/1-4-polynomials)), licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
@@ -3598,6 +3660,8 @@ domains:
             **Changes:** converted to LearningApp lesson format; math converted from MathML; Try It exercises turned into practice prompts with answers from the book's answer key; images and end-of-section exercise sets omitted (see the original section). OpenStax and Rice University do not endorse LearningApp.
 
             **Review:** imported automatically; not reviewed by a person.
+
+            **Extra practice:** 10 original LearningApp practice question(s) were added to this section. They are not from the book; they were checked automatically and approved by an independent AI review.
       terms:
       - term: binomial
         definition: a polynomial containing two terms
@@ -3619,7 +3683,174 @@ domains:
         definition: a polynomial containing three terms
       - term: constant
         definition: a quantity that does not change value
-      assessment_items: []
+      assessment_items:
+      - id: ca1e-pr-1-4-a
+        interaction_type: numeric_entry
+        prompt: |
+          What is the leading coefficient of $5 - 2x + 9x^4 - x^3$?
+
+          Answer with a number.
+        scoring_spec:
+          correct_value: 9
+          tolerance: 0
+        explanation: The term with the highest power of $x$ is $9x^4$, so the leading coefficient is $9$. The order the terms are written in doesn't matter.
+        difficulty: intermediate
+        cognitive_level: application
+        citation: College Algebra (OpenStax 1e), Section 1.4, https://openstax.org/books/college-algebra/pages/1-4-polynomials (alignment only; original item)
+        response_spec: {}
+        concept_slugs:
+        - open-openstax-college-algebra-1e-1-4
+      - id: ca1e-pr-1-4-b
+        interaction_type: numeric_entry
+        prompt: |
+          What is the degree of the polynomial $6x^3 - x^7 + 2x$?
+
+          Answer with a number.
+        scoring_spec:
+          correct_value: 7
+          tolerance: 0
+        explanation: The degree is the highest power of $x$ that appears, which is $7$ (from $-x^7$).
+        difficulty: intermediate
+        cognitive_level: application
+        citation: College Algebra (OpenStax 1e), Section 1.4, https://openstax.org/books/college-algebra/pages/1-4-polynomials (alignment only; original item)
+        response_spec: {}
+        concept_slugs:
+        - open-openstax-college-algebra-1e-1-4
+      - id: ca1e-pr-1-4-c
+        interaction_type: single_choice
+        prompt: 'Add: $(4x^2 - 3x + 5) + (2x^2 + 7x - 8)$.'
+        response_spec:
+          options:
+          - $6x^2 - 10x - 3$
+          - $2x^2 + 4x - 3$
+          - $6x^2 + 4x - 3$
+          - $6x^2 + 4x + 13$
+        scoring_spec:
+          correct_index: 2
+        explanation: 'Combine like terms: $4x^2 + 2x^2 = 6x^2$, $-3x + 7x = 4x$, and $5 - 8 = -3$.'
+        difficulty: intermediate
+        cognitive_level: application
+        citation: College Algebra (OpenStax 1e), Section 1.4, https://openstax.org/books/college-algebra/pages/1-4-polynomials (alignment only; original item)
+        concept_slugs:
+        - open-openstax-college-algebra-1e-1-4
+      - id: ca1e-pr-1-4-d
+        interaction_type: single_choice
+        prompt: 'Subtract: $(5x^3 + x - 4) - (2x^3 - 3x + 1)$.'
+        response_spec:
+          options:
+          - $3x^3 - 2x - 3$
+          - $3x^3 + 4x - 5$
+          - $3x^3 + 4x - 3$
+          - $7x^3 + 4x - 5$
+        scoring_spec:
+          correct_index: 1
+        explanation: 'Change the sign of every term in the second polynomial and add: $5x^3 - 2x^3 = 3x^3$, $x + 3x = 4x$, $-4 - 1 = -5$.'
+        difficulty: intermediate
+        cognitive_level: application
+        citation: College Algebra (OpenStax 1e), Section 1.4, https://openstax.org/books/college-algebra/pages/1-4-polynomials (alignment only; original item)
+        concept_slugs:
+        - open-openstax-college-algebra-1e-1-4
+      - id: ca1e-pr-1-4-e
+        interaction_type: single_choice
+        prompt: 'Multiply: $(x + 6)(x - 2)$.'
+        response_spec:
+          options:
+          - $x^2 + 4x - 12$
+          - $x^2 - 4x - 12$
+          - $x^2 + 4x + 12$
+          - $x^2 - 12$
+        scoring_spec:
+          correct_index: 0
+        explanation: 'FOIL: $x \cdot x = x^2$, outer $-2x$, inner $6x$, last $-12$. The middle terms give $4x$, so the product is $x^2 + 4x - 12$.'
+        difficulty: intermediate
+        cognitive_level: application
+        citation: College Algebra (OpenStax 1e), Section 1.4, https://openstax.org/books/college-algebra/pages/1-4-polynomials (alignment only; original item)
+        concept_slugs:
+        - open-openstax-college-algebra-1e-1-4
+      - id: ca1e-pr-1-4-f
+        interaction_type: single_choice
+        prompt: 'Multiply: $(3x - 4)(2x + 1)$.'
+        response_spec:
+          options:
+          - $6x^2 + 5x - 4$
+          - $6x^2 - 11x - 4$
+          - $6x^2 - 4$
+          - $6x^2 - 5x - 4$
+        scoring_spec:
+          correct_index: 3
+        explanation: First $6x^2$, outer $3x$, inner $-8x$, last $-4$. The middle terms give $3x - 8x = -5x$.
+        difficulty: intermediate
+        cognitive_level: application
+        citation: College Algebra (OpenStax 1e), Section 1.4, https://openstax.org/books/college-algebra/pages/1-4-polynomials (alignment only; original item)
+        concept_slugs:
+        - open-openstax-college-algebra-1e-1-4
+      - id: ca1e-pr-1-4-g
+        interaction_type: single_choice
+        prompt: Expand $(2x + 5)^2$.
+        response_spec:
+          options:
+          - $4x^2 + 25$
+          - $4x^2 + 20x + 25$
+          - $4x^2 + 10x + 25$
+          - $2x^2 + 20x + 25$
+        scoring_spec:
+          correct_index: 1
+        explanation: 'Square of a sum: $(a + b)^2 = a^2 + 2ab + b^2$ with $a = 2x$ and $b = 5$ gives $4x^2 + 20x + 25$. Leaving out the middle term $2ab$ is the common mistake.'
+        difficulty: intermediate
+        cognitive_level: application
+        citation: College Algebra (OpenStax 1e), Section 1.4, https://openstax.org/books/college-algebra/pages/1-4-polynomials (alignment only; original item)
+        concept_slugs:
+        - open-openstax-college-algebra-1e-1-4
+      - id: ca1e-pr-1-4-h
+        interaction_type: single_choice
+        prompt: 'Multiply: $(5x + 3)(5x - 3)$.'
+        response_spec:
+          options:
+          - $25x^2 + 9$
+          - $25x^2 - 30x - 9$
+          - $25x^2 - 9$
+          - $10x^2 - 9$
+        scoring_spec:
+          correct_index: 2
+        explanation: 'A sum times a difference of the same terms is a difference of squares: $(5x)^2 - 3^2 = 25x^2 - 9$.'
+        difficulty: intermediate
+        cognitive_level: application
+        citation: College Algebra (OpenStax 1e), Section 1.4, https://openstax.org/books/college-algebra/pages/1-4-polynomials (alignment only; original item)
+        concept_slugs:
+        - open-openstax-college-algebra-1e-1-4
+      - id: ca1e-pr-1-4-i
+        interaction_type: numeric_entry
+        prompt: |
+          Evaluate $2x^2 - 5x + 1$ when $x = -2$.
+
+          Answer with a number.
+        scoring_spec:
+          correct_value: 19
+          tolerance: 0
+        explanation: 'Substitute $x = -2$: $2(4) - 5(-2) + 1 = 8 + 10 + 1 = 19$.'
+        difficulty: intermediate
+        cognitive_level: application
+        citation: College Algebra (OpenStax 1e), Section 1.4, https://openstax.org/books/college-algebra/pages/1-4-polynomials (alignment only; original item)
+        response_spec: {}
+        concept_slugs:
+        - open-openstax-college-algebra-1e-1-4
+      - id: ca1e-pr-1-4-j
+        interaction_type: single_choice
+        prompt: 'Multiply: $(x + 2)(x^2 - x + 3)$.'
+        response_spec:
+          options:
+          - $x^3 - x^2 + 3x + 6$
+          - $x^3 + x^2 + 5x + 6$
+          - $x^3 + 2x^2 + x + 6$
+          - $x^3 + x^2 + x + 6$
+        scoring_spec:
+          correct_index: 3
+        explanation: 'Multiply each term of $x + 2$ by the trinomial: $x^3 - x^2 + 3x$ plus $2x^2 - 2x + 6$. Combining gives $x^3 + x^2 + x + 6$.'
+        difficulty: intermediate
+        cognitive_level: application
+        citation: College Algebra (OpenStax 1e), Section 1.4, https://openstax.org/books/college-algebra/pages/1-4-polynomials (alignment only; original item)
+        concept_slugs:
+        - open-openstax-college-algebra-1e-1-4
       concept_slugs:
       - open-openstax-college-algebra-1e-1-4
   - code: '1.5'
@@ -3645,7 +3876,6 @@ domains:
       - cc-by-4.0
       - algebra
       - math
-      - teaching-only
       - unreviewed
       citation: College Algebra (OpenStax), Section 1.5, https://openstax.org/books/college-algebra/pages/1-5-factoring-polynomials, CC BY 4.0
       source_release_id: openstax-college-algebra-1e
@@ -4223,12 +4453,6 @@ domains:
         block_type: callout
         content:
           type: info
-          title: No graded questions yet
-          body: This section's exercises have answers written as expressions or in other forms that LearningApp can't grade fairly yet, so there are no graded questions here. Use the practice prompts and compare your work with the book's answer. Finishing this section doesn't count toward exam readiness.
-      - sort_order: 44
-        block_type: callout
-        content:
-          type: info
           title: Source and license
           body: |
             Adapted from *College Algebra* by OpenStax, Rice University, Section 1.5 ([https://openstax.org/books/college-algebra/pages/1-5-factoring-polynomials](https://openstax.org/books/college-algebra/pages/1-5-factoring-polynomials)), licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
@@ -4236,6 +4460,8 @@ domains:
             **Changes:** converted to LearningApp lesson format; math converted from MathML; Try It exercises turned into practice prompts with answers from the book's answer key; images and end-of-section exercise sets omitted (see the original section). OpenStax and Rice University do not endorse LearningApp.
 
             **Review:** imported automatically; not reviewed by a person.
+
+            **Extra practice:** 10 original LearningApp practice question(s) were added to this section. They are not from the book; they were checked automatically and approved by an independent AI review.
       terms:
       - term: greatest common factor
         definition: the largest polynomial that divides evenly into each polynomial
@@ -4257,7 +4483,176 @@ domains:
         definition: the trinomial that results when a binomial is squared
       - term: polynomial
         definition: a sum of terms each consisting of a variable raised to a nonnegative integer power
-      assessment_items: []
+      assessment_items:
+      - id: ca1e-pr-1-5-a
+        interaction_type: single_choice
+        prompt: Factor $x^2 + 9x + 14$.
+        response_spec:
+          options:
+          - $(x + 2)(x + 7)$
+          - $(x + 1)(x + 14)$
+          - $(x - 2)(x - 7)$
+          - $(x + 2)(x + 9)$
+        scoring_spec:
+          correct_index: 0
+        explanation: 'Find two numbers that multiply to $14$ and add to $9$: $2$ and $7$. So $x^2 + 9x + 14 = (x + 2)(x + 7)$.'
+        difficulty: intermediate
+        cognitive_level: application
+        citation: College Algebra (OpenStax 1e), Section 1.5, https://openstax.org/books/college-algebra/pages/1-5-factoring-polynomials (alignment only; original item)
+        concept_slugs:
+        - open-openstax-college-algebra-1e-1-5
+      - id: ca1e-pr-1-5-b
+        interaction_type: single_choice
+        prompt: Factor $x^2 - 2x - 24$.
+        response_spec:
+          options:
+          - $(x + 6)(x - 4)$
+          - $(x - 6)(x + 4)$
+          - $(x - 8)(x + 3)$
+          - $(x - 12)(x + 2)$
+        scoring_spec:
+          correct_index: 1
+        explanation: 'Find two numbers that multiply to $-24$ and add to $-2$: $-6$ and $4$. So the factors are $(x - 6)(x + 4)$.'
+        difficulty: intermediate
+        cognitive_level: application
+        citation: College Algebra (OpenStax 1e), Section 1.5, https://openstax.org/books/college-algebra/pages/1-5-factoring-polynomials (alignment only; original item)
+        concept_slugs:
+        - open-openstax-college-algebra-1e-1-5
+      - id: ca1e-pr-1-5-c
+        interaction_type: single_choice
+        prompt: 'Factor out the greatest common factor: $15x^4 + 10x^2$.'
+        response_spec:
+          options:
+          - $5x(3x^3 + 2x)$
+          - $x^2(15x^2 + 10)$
+          - $5x^2(3x^2 + 2)$
+          - $5x^2(3x^2 + 10)$
+        scoring_spec:
+          correct_index: 2
+        explanation: 'The greatest common factor of $15$ and $10$ is $5$, and of $x^4$ and $x^2$ is $x^2$, so the GCF is $5x^2$: $5x^2(3x^2 + 2)$. The first two options are equal in value but don''t take out the greatest common factor.'
+        difficulty: intermediate
+        cognitive_level: application
+        citation: College Algebra (OpenStax 1e), Section 1.5, https://openstax.org/books/college-algebra/pages/1-5-factoring-polynomials (alignment only; original item)
+        concept_slugs:
+        - open-openstax-college-algebra-1e-1-5
+      - id: ca1e-pr-1-5-d
+        interaction_type: single_choice
+        prompt: Factor $16x^2 - 49$.
+        response_spec:
+          options:
+          - $(4x - 7)^2$
+          - $(8x - 7)(2x + 7)$
+          - $(4x + 7)^2$
+          - $(4x - 7)(4x + 7)$
+        scoring_spec:
+          correct_index: 3
+        explanation: This is a difference of squares, $(4x)^2 - 7^2$, so it factors as $(4x - 7)(4x + 7)$.
+        difficulty: intermediate
+        cognitive_level: application
+        citation: College Algebra (OpenStax 1e), Section 1.5, https://openstax.org/books/college-algebra/pages/1-5-factoring-polynomials (alignment only; original item)
+        concept_slugs:
+        - open-openstax-college-algebra-1e-1-5
+      - id: ca1e-pr-1-5-e
+        interaction_type: single_choice
+        prompt: Factor $x^2 + 12x + 36$.
+        response_spec:
+          options:
+          - $(x + 6)(x - 6)$
+          - $(x + 6)^2$
+          - $(x + 4)(x + 9)$
+          - $(x + 12)(x + 3)$
+        scoring_spec:
+          correct_index: 1
+        explanation: 'It''s a perfect square trinomial: $36 = 6^2$ and $12x = 2 \cdot 6 \cdot x$, so it equals $(x + 6)^2$.'
+        difficulty: intermediate
+        cognitive_level: application
+        citation: College Algebra (OpenStax 1e), Section 1.5, https://openstax.org/books/college-algebra/pages/1-5-factoring-polynomials (alignment only; original item)
+        concept_slugs:
+        - open-openstax-college-algebra-1e-1-5
+      - id: ca1e-pr-1-5-f
+        interaction_type: single_choice
+        prompt: 'Factor by grouping: $x^3 + 3x^2 + 2x + 6$.'
+        response_spec:
+          options:
+          - $(x + 2)(x^2 + 3)$
+          - $(x + 3)(x^2 - 2)$
+          - $(x + 3)(x^2 + 2)$
+          - $(x - 3)(x^2 + 2)$
+        scoring_spec:
+          correct_index: 2
+        explanation: 'Group in pairs: $x^2(x + 3) + 2(x + 3)$. The common factor $x + 3$ comes out, leaving $(x + 3)(x^2 + 2)$.'
+        difficulty: intermediate
+        cognitive_level: application
+        citation: College Algebra (OpenStax 1e), Section 1.5, https://openstax.org/books/college-algebra/pages/1-5-factoring-polynomials (alignment only; original item)
+        concept_slugs:
+        - open-openstax-college-algebra-1e-1-5
+      - id: ca1e-pr-1-5-g
+        interaction_type: single_choice
+        prompt: Factor $3x^2 + 10x + 8$.
+        response_spec:
+          options:
+          - $(3x + 2)(x + 4)$
+          - $(3x + 8)(x + 1)$
+          - $(3x - 4)(x - 2)$
+          - $(3x + 4)(x + 2)$
+        scoring_spec:
+          correct_index: 3
+        explanation: '$a \cdot c = 24$; the factors of $24$ that add to $10$ are $4$ and $6$. Split: $3x^2 + 6x + 4x + 8 = 3x(x + 2) + 4(x + 2) = (3x + 4)(x + 2)$.'
+        difficulty: intermediate
+        cognitive_level: application
+        citation: College Algebra (OpenStax 1e), Section 1.5, https://openstax.org/books/college-algebra/pages/1-5-factoring-polynomials (alignment only; original item)
+        concept_slugs:
+        - open-openstax-college-algebra-1e-1-5
+      - id: ca1e-pr-1-5-h
+        interaction_type: single_choice
+        prompt: Factor the sum of cubes $x^3 + 27$.
+        response_spec:
+          options:
+          - $(x + 3)(x^2 - 3x + 9)$
+          - $(x + 3)(x^2 + 3x + 9)$
+          - $(x - 3)(x^2 + 3x + 9)$
+          - $(x + 3)^3$
+        scoring_spec:
+          correct_index: 0
+        explanation: 'Use $a^3 + b^3 = (a + b)(a^2 - ab + b^2)$ with $a = x$ and $b = 3$: $(x + 3)(x^2 - 3x + 9)$.'
+        difficulty: intermediate
+        cognitive_level: application
+        citation: College Algebra (OpenStax 1e), Section 1.5, https://openstax.org/books/college-algebra/pages/1-5-factoring-polynomials (alignment only; original item)
+        concept_slugs:
+        - open-openstax-college-algebra-1e-1-5
+      - id: ca1e-pr-1-5-i
+        interaction_type: numeric_entry
+        prompt: |
+          $x^2 + 5x - 36$ factors as $(x + a)(x - b)$, where $a$ and $b$ are positive whole numbers. What is $b$?
+
+          Answer with a number.
+        scoring_spec:
+          correct_value: 4
+          tolerance: 0
+        explanation: Two numbers that multiply to $-36$ and add to $5$ are $9$ and $-4$, so $x^2 + 5x - 36 = (x + 9)(x - 4)$ and $b = 4$.
+        difficulty: intermediate
+        cognitive_level: application
+        citation: College Algebra (OpenStax 1e), Section 1.5, https://openstax.org/books/college-algebra/pages/1-5-factoring-polynomials (alignment only; original item)
+        response_spec: {}
+        concept_slugs:
+        - open-openstax-college-algebra-1e-1-5
+      - id: ca1e-pr-1-5-j
+        interaction_type: single_choice
+        prompt: 'Factor completely: $2x^2 - 18$.'
+        response_spec:
+          options:
+          - $2(x - 3)^2$
+          - $(2x - 6)(x + 3)$
+          - $2(x - 3)(x + 3)$
+          - $2(x - 9)(x + 9)$
+        scoring_spec:
+          correct_index: 2
+        explanation: 'Take out the common factor $2$: $2(x^2 - 9)$. Then $x^2 - 9$ is a difference of squares, giving $2(x - 3)(x + 3)$. $(2x - 6)(x + 3)$ has the same value but isn''t factored completely, because $2x - 6$ still has the factor $2$.'
+        difficulty: intermediate
+        cognitive_level: application
+        citation: College Algebra (OpenStax 1e), Section 1.5, https://openstax.org/books/college-algebra/pages/1-5-factoring-polynomials (alignment only; original item)
+        concept_slugs:
+        - open-openstax-college-algebra-1e-1-5
       concept_slugs:
       - open-openstax-college-algebra-1e-1-5
   - code: '1.6'
@@ -4730,6 +5125,8 @@ domains:
             **Changes:** converted to LearningApp lesson format; math converted from MathML; Try It exercises turned into practice prompts with answers from the book's answer key; images and end-of-section exercise sets omitted (see the original section). OpenStax and Rice University do not endorse LearningApp.
 
             **Review:** imported automatically; not reviewed by a person.
+
+            **Extra practice:** 9 original LearningApp practice question(s) were added to this section. They are not from the book; they were checked automatically and approved by an independent AI review.
       terms:
       - term: least common denominator
         definition: the smallest multiple that two denominators have in common
@@ -4754,6 +5151,157 @@ domains:
         difficulty: intermediate
         cognitive_level: application
         citation: College Algebra (OpenStax), Section 1.6, answer key, https://openstax.org/books/college-algebra/pages/1-6-rational-expressions
+        concept_slugs:
+        - open-openstax-college-algebra-1e-1-6
+      - id: ca1e-pr-1-6-a
+        interaction_type: single_choice
+        prompt: Simplify $\dfrac{x^2 - 9}{x^2 + 5x + 6}$.
+        response_spec:
+          options:
+          - $\dfrac{x + 3}{x + 2}$
+          - $\dfrac{x - 3}{x + 2}$
+          - $\dfrac{x - 3}{x + 3}$
+          - $\dfrac{-9}{5x + 6}$
+        scoring_spec:
+          correct_index: 1
+        explanation: 'Factor both: $\dfrac{(x - 3)(x + 3)}{(x + 2)(x + 3)}$. Cancel the common factor $x + 3$ to get $\dfrac{x - 3}{x + 2}$. You can only cancel factors, not terms.'
+        difficulty: intermediate
+        cognitive_level: application
+        citation: College Algebra (OpenStax 1e), Section 1.6, https://openstax.org/books/college-algebra/pages/1-6-rational-expressions (alignment only; original item)
+        concept_slugs:
+        - open-openstax-college-algebra-1e-1-6
+      - id: ca1e-pr-1-6-b
+        interaction_type: single_choice
+        prompt: 'Multiply and simplify: $\dfrac{x + 3}{x - 5} \cdot \dfrac{x^2 - 25}{2x + 6}$.'
+        response_spec:
+          options:
+          - $\dfrac{x - 5}{2}$
+          - $x + 5$
+          - $\dfrac{x + 5}{x + 3}$
+          - $\dfrac{x + 5}{2}$
+        scoring_spec:
+          correct_index: 3
+        explanation: 'Factor: $x^2 - 25 = (x - 5)(x + 5)$ and $2x + 6 = 2(x + 3)$. Cancelling $x - 5$ and $x + 3$ leaves $\dfrac{x + 5}{2}$.'
+        difficulty: intermediate
+        cognitive_level: application
+        citation: College Algebra (OpenStax 1e), Section 1.6, https://openstax.org/books/college-algebra/pages/1-6-rational-expressions (alignment only; original item)
+        concept_slugs:
+        - open-openstax-college-algebra-1e-1-6
+      - id: ca1e-pr-1-6-c
+        interaction_type: single_choice
+        prompt: 'Divide and simplify: $\dfrac{4x}{x + 3} \div \dfrac{8x^2}{x^2 - 9}$.'
+        response_spec:
+          options:
+          - $\dfrac{x - 3}{2x}$
+          - $\dfrac{x + 3}{2x}$
+          - $\dfrac{x - 3}{2}$
+          - $2x(x - 3)$
+        scoring_spec:
+          correct_index: 0
+        explanation: 'Multiply by the reciprocal: $\dfrac{4x}{x + 3} \cdot \dfrac{(x - 3)(x + 3)}{8x^2}$. Cancel $x + 3$ and $4x$ to get $\dfrac{x - 3}{2x}$.'
+        difficulty: intermediate
+        cognitive_level: application
+        citation: College Algebra (OpenStax 1e), Section 1.6, https://openstax.org/books/college-algebra/pages/1-6-rational-expressions (alignment only; original item)
+        concept_slugs:
+        - open-openstax-college-algebra-1e-1-6
+      - id: ca1e-pr-1-6-d
+        interaction_type: single_choice
+        prompt: 'Add: $\dfrac{3}{x - 2} + \dfrac{5}{x - 2}$.'
+        response_spec:
+          options:
+          - $\dfrac{8}{2x - 4}$
+          - $\dfrac{8}{x - 2}$
+          - $\dfrac{15}{x - 2}$
+          - $\dfrac{8}{(x - 2)^2}$
+        scoring_spec:
+          correct_index: 1
+        explanation: 'The denominators are already the same, so add the numerators and keep the denominator: $\dfrac{3 + 5}{x - 2} = \dfrac{8}{x - 2}$.'
+        difficulty: intermediate
+        cognitive_level: application
+        citation: College Algebra (OpenStax 1e), Section 1.6, https://openstax.org/books/college-algebra/pages/1-6-rational-expressions (alignment only; original item)
+        concept_slugs:
+        - open-openstax-college-algebra-1e-1-6
+      - id: ca1e-pr-1-6-e
+        interaction_type: single_choice
+        prompt: 'Subtract: $\dfrac{5}{x} - \dfrac{2}{x + 3}$.'
+        response_spec:
+          options:
+          - $\dfrac{3}{x(x + 3)}$
+          - $\dfrac{3x + 15}{x + 3}$
+          - $\dfrac{3x + 15}{x(x + 3)}$
+          - $\dfrac{7x + 15}{x(x + 3)}$
+        scoring_spec:
+          correct_index: 2
+        explanation: 'Use the common denominator $x(x + 3)$: $\dfrac{5(x + 3) - 2x}{x(x + 3)} = \dfrac{3x + 15}{x(x + 3)}$.'
+        difficulty: intermediate
+        cognitive_level: application
+        citation: College Algebra (OpenStax 1e), Section 1.6, https://openstax.org/books/college-algebra/pages/1-6-rational-expressions (alignment only; original item)
+        concept_slugs:
+        - open-openstax-college-algebra-1e-1-6
+      - id: ca1e-pr-1-6-f
+        interaction_type: numeric_entry
+        prompt: |
+          Which value of $x$ must be excluded from the domain of $\dfrac{x - 2}{3x + 12}$?
+
+          Answer with a number.
+        scoring_spec:
+          correct_value: -4
+          tolerance: 0
+        explanation: 'The expression is undefined where the denominator is zero: $3x + 12 = 0$ gives $x = -4$.'
+        difficulty: intermediate
+        cognitive_level: application
+        citation: College Algebra (OpenStax 1e), Section 1.6, https://openstax.org/books/college-algebra/pages/1-6-rational-expressions (alignment only; original item)
+        response_spec: {}
+        concept_slugs:
+        - open-openstax-college-algebra-1e-1-6
+      - id: ca1e-pr-1-6-g
+        interaction_type: numeric_entry
+        prompt: |
+          Simplify $\dfrac{x^2 + 6x + 9}{x + 3}$, then evaluate the result at $x = 5$.
+
+          Answer with a number.
+        scoring_spec:
+          correct_value: 8
+          tolerance: 0
+        explanation: $x^2 + 6x + 9 = (x + 3)^2$, so the expression simplifies to $x + 3$, which is $8$ at $x = 5$.
+        difficulty: intermediate
+        cognitive_level: application
+        citation: College Algebra (OpenStax 1e), Section 1.6, https://openstax.org/books/college-algebra/pages/1-6-rational-expressions (alignment only; original item)
+        response_spec: {}
+        concept_slugs:
+        - open-openstax-college-algebra-1e-1-6
+      - id: ca1e-pr-1-6-h
+        interaction_type: single_choice
+        prompt: Simplify the complex fraction $\dfrac{1 + \frac{1}{x}}{\frac{1}{x}}$.
+        response_spec:
+          options:
+          - $\dfrac{x + 1}{x}$
+          - $x$
+          - $1$
+          - $x + 1$
+        scoring_spec:
+          correct_index: 3
+        explanation: 'Multiply the top and bottom by $x$: the numerator becomes $x + 1$ and the denominator becomes $1$, so the result is $x + 1$.'
+        difficulty: intermediate
+        cognitive_level: application
+        citation: College Algebra (OpenStax 1e), Section 1.6, https://openstax.org/books/college-algebra/pages/1-6-rational-expressions (alignment only; original item)
+        concept_slugs:
+        - open-openstax-college-algebra-1e-1-6
+      - id: ca1e-pr-1-6-i
+        interaction_type: single_choice
+        prompt: 'Multiply and simplify: $\dfrac{2x}{x^2 - 1} \cdot \dfrac{x + 1}{4}$.'
+        response_spec:
+          options:
+          - $\dfrac{x}{2(x + 1)}$
+          - $\dfrac{x}{2(x - 1)}$
+          - $\dfrac{2x}{x - 1}$
+          - $\dfrac{x}{2}$
+        scoring_spec:
+          correct_index: 1
+        explanation: Factor $x^2 - 1 = (x - 1)(x + 1)$. Cancel $x + 1$, and $\dfrac{2x}{4} = \dfrac{x}{2}$, leaving $\dfrac{x}{2(x - 1)}$.
+        difficulty: intermediate
+        cognitive_level: application
+        citation: College Algebra (OpenStax 1e), Section 1.6, https://openstax.org/books/college-algebra/pages/1-6-rational-expressions (alignment only; original item)
         concept_slugs:
         - open-openstax-college-algebra-1e-1-6
       concept_slugs:

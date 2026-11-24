@@ -185,6 +185,61 @@ class TeachingOnlyTests(unittest.TestCase):
         self.assertEqual(len(lesson["blocks"]), 2)
 
 
+class PracticeMergeTests(unittest.TestCase):
+    """Original practice items (ingestion plan v1.2 §8.6): approved only."""
+
+    def write(self, d, items, source="openstax-college-algebra-1e"):
+        import yaml
+        path = Path(d) / f"open_{source.replace('-', '_')}.yaml"
+        path.write_text(yaml.safe_dump({"source_release_id": source, "items": items}), encoding="utf-8")
+
+    def item(self, iid, status, kind="numeric_entry"):
+        it = {"id": iid, "objective": "1.4", "interaction_type": kind, "prompt": "Evaluate it.",
+              "scoring_spec": {"correct_value": 3, "tolerance": 0}, "explanation": "e",
+              "citation": "c", "verify": {"expression": "3"}}
+        if status:
+            it["review"] = {"review_status": status, "reviewer_kind": "ai"}
+        return it
+
+    def test_only_approved_items_are_used_without_their_checks(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as d:
+            self.write(d, [self.item("a", "approved"), self.item("b", "pending"), self.item("c", None)])
+            got = t.approved_practice("openstax-college-algebra-1e", Path(d))
+        self.assertEqual([q["id"] for q in got["1.4"]], ["a"])
+        q = got["1.4"][0]
+        self.assertTrue(q["prompt"].endswith(t.NUMERIC_SUFFIX))
+        self.assertEqual(q["response_spec"], {})
+        self.assertNotIn("verify", q)
+        self.assertNotIn("review", q)
+        self.assertNotIn("objective", q)
+
+    def test_no_file_means_no_practice_and_a_wrong_file_is_refused(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as d:
+            self.assertEqual(t.approved_practice("openstax-college-algebra-1e", Path(d)), {})
+            self.write(d, [], source="openstax-prealgebra-1e")
+            (Path(d) / "open_openstax_prealgebra_1e.yaml").rename(Path(d) / "open_openstax_college_algebra_1e.yaml")
+            with self.assertRaises(t.ImportProblem):
+                t.approved_practice("openstax-college-algebra-1e", Path(d))
+
+    def test_added_practice_is_graded_and_credited(self):
+        lesson, _ = t.section_lesson(SECTION, META, {}, {})
+        item = {k: v for k, v in self.item("a", None).items() if k in t.PRACTICE_KEYS}
+        t.add_practice(lesson, [{**item, "_review_kind": "ai"}])
+        self.assertEqual([q["id"] for q in lesson["assessment_items"]], ["a"])
+        self.assertNotIn("_review_kind", lesson["assessment_items"][0])
+        self.assertIn("1 original LearningApp practice question(s)", lesson["blocks"][-1]["content"]["body"])
+        self.assertIn("independent AI review", lesson["blocks"][-1]["content"]["body"])
+        self.assertFalse(t.mark_teaching_only(lesson) and not lesson["assessment_items"])
+
+    def test_the_real_practice_file_is_for_its_book(self):
+        got = t.approved_practice("openstax-college-algebra-1e")
+        for items in got.values():
+            for q in items:
+                self.assertTrue(q["id"].startswith("ca1e-pr-"))
+
+
 class SourceGateTests(unittest.TestCase):
     def test_only_approved_cc_by_sources_can_be_imported(self):
         t.check_source("openstax-college-algebra-1e")
