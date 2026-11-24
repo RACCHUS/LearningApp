@@ -60,7 +60,7 @@ python tool/import_open_textbook.py --source openstax-college-algebra-1e --chapt
 
 **Pilot (2026-11-20):**
 - College Algebra chapter 1: 4 lessons, 27 graded questions. 1.4 Polynomials and 1.5 Factoring were left out because none of their answers is a single number.
-- **R4 (2026-11-24, not yet published):** 1.4 and 1.5 return as teaching-only lessons (8 practice prompts each, no graded questions); the other four lessons are unchanged. Publish with `retire_previous: true` and `replace_reason: "IMPORT_REVISION 4: sections 1.4 and 1.5 kept as teaching-only instead of dropped"`.
+- **R4 published to production 2026-11-24** (workflow run 45306386606, owner-approved): 1.4 and 1.5 return as teaching-only lessons (8 practice prompts each, no graded questions); the other four lessons are unchanged. R3 was retired in the same step, with the replace decision "IMPORT_REVISION 4: sections 1.4 and 1.5 kept as teaching-only instead of dropped".
 - Prealgebra chapter 6 (Percents): 5 lessons, 49 graded questions.
 - Both published to production 2026-11-20 through the ingestion workflow; revision R2 fixed figure captions (repeated numbers) and replaced R1.
 
