@@ -187,6 +187,7 @@ jobs:
           set -euo pipefail
           python3 -m pip install --quiet 'sympy==1.14.0'
           python3 tool/verify_held_out_items.py
+          python3 tool/verify_practice_items.py
           dart run tool/ingest_curriculum.dart --target "$SLUG" --version "$VERSION" --held-out "$HELD_OUT"
           echo "- Held-out checks: approved items added from \`$HELD_OUT\`" >> "$GITHUB_STEP_SUMMARY"
 

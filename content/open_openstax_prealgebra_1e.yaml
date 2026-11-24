@@ -6,7 +6,7 @@ source_releases:
   title: Prealgebra
   version: eb2e29d (archive 20260604.144757)
   source_url: https://openstax.org/books/prealgebra/pages/preface
-  retrieved_at: '2026-11-24T19:49:54Z'
+  retrieved_at: '2026-11-24T23:36:54Z'
   license: Creative Commons Attribution 4.0 International (CC BY 4.0)
   license_name: CC BY 4.0
   rights_note: Adapted under CC BY 4.0 (owner-approved, data/content_sources.json). OpenStax and Rice University names and logos are not covered by the license; no endorsement implied. Imported automatically; not reviewed by a person.
@@ -18,7 +18,7 @@ source_releases:
 target:
   slug: open-openstax-prealgebra-1e
   title: Prealgebra (open textbook)
-  version_code: OPENSTAX-EB2E29D-R5
+  version_code: OPENSTAX-EB2E29D-R6
   version_title: Prealgebra by OpenStax, CC BY 4.0
   version_description: Open textbook sections imported as LearningApp lessons.
   volatility_class: V0
@@ -2655,6 +2655,8 @@ domains:
             **Changes:** converted to LearningApp lesson format; math converted from MathML; Try It exercises turned into practice prompts with answers from the book's answer key; images and end-of-section exercise sets omitted (see the original section). OpenStax and Rice University do not endorse LearningApp.
 
             **Review:** imported automatically; not reviewed by a person.
+
+            **Extra practice:** 6 original LearningApp practice question(s) were added to this section. They are not from the book; they were checked automatically and approved by an independent AI review.
       terms:
       - term: commission
         definition: A commission is a percentage of total sales as determined by the rate of commission.
@@ -2727,6 +2729,102 @@ domains:
         difficulty: intermediate
         cognitive_level: application
         citation: Prealgebra (OpenStax), Section 6.3, answer key, https://openstax.org/books/prealgebra/pages/6-3-solve-sales-tax-commission-and-discount-applications
+        concept_slugs:
+        - open-openstax-prealgebra-1e-6-3
+      - id: pa1e-pr-6-3-a
+        interaction_type: numeric_entry
+        prompt: |
+          A bicycle costs $\text{\textdollar}260$ and the sales tax rate is 8.5%. How much is the sales tax, in dollars?
+
+          Answer with a number.
+        scoring_spec:
+          correct_value: 22.1
+          tolerance: 0
+        explanation: 'Sales tax = rate × price: $0.085 \times 260 = 22.10$, so the tax is 22.10 dollars.'
+        difficulty: intermediate
+        cognitive_level: application
+        citation: Prealgebra (OpenStax 1e), Section 6.3, https://openstax.org/books/prealgebra/pages/6-3-solve-sales-tax-commission-and-discount-applications (alignment only; original item)
+        response_spec: {}
+        concept_slugs:
+        - open-openstax-prealgebra-1e-6-3
+      - id: pa1e-pr-6-3-b
+        interaction_type: numeric_entry
+        prompt: |
+          A $\text{\textdollar}1,200$ laptop has $\text{\textdollar}84$ of sales tax. What is the sales tax rate, as a percent? Enter the number without the % sign.
+
+          Answer with a number.
+        scoring_spec:
+          correct_value: 7
+          tolerance: 0
+        explanation: 'Rate = tax ÷ price: $84 \div 1200 = 0.07$, which is 7%.'
+        difficulty: intermediate
+        cognitive_level: application
+        citation: Prealgebra (OpenStax 1e), Section 6.3, https://openstax.org/books/prealgebra/pages/6-3-solve-sales-tax-commission-and-discount-applications (alignment only; original item)
+        response_spec: {}
+        concept_slugs:
+        - open-openstax-prealgebra-1e-6-3
+      - id: pa1e-pr-6-3-c
+        interaction_type: numeric_entry
+        prompt: |
+          A real estate agent earns 3% commission on a $\text{\textdollar}215,000$ home sale. How much commission is that, in dollars?
+
+          Answer with a number.
+        scoring_spec:
+          correct_value: 6450
+          tolerance: 0
+        explanation: 'Commission = rate × sale: $0.03 \times 215{,}000 = 6{,}450$.'
+        difficulty: intermediate
+        cognitive_level: application
+        citation: Prealgebra (OpenStax 1e), Section 6.3, https://openstax.org/books/prealgebra/pages/6-3-solve-sales-tax-commission-and-discount-applications (alignment only; original item)
+        response_spec: {}
+        concept_slugs:
+        - open-openstax-prealgebra-1e-6-3
+      - id: pa1e-pr-6-3-d
+        interaction_type: numeric_entry
+        prompt: |
+          Priya earned $\text{\textdollar}378$ commission on sales of $\text{\textdollar}6,300$. What is her commission rate, as a percent? Enter the number without the % sign.
+
+          Answer with a number.
+        scoring_spec:
+          correct_value: 6
+          tolerance: 0
+        explanation: 'Rate = commission ÷ sales: $378 \div 6300 = 0.06$, which is 6%.'
+        difficulty: intermediate
+        cognitive_level: application
+        citation: Prealgebra (OpenStax 1e), Section 6.3, https://openstax.org/books/prealgebra/pages/6-3-solve-sales-tax-commission-and-discount-applications (alignment only; original item)
+        response_spec: {}
+        concept_slugs:
+        - open-openstax-prealgebra-1e-6-3
+      - id: pa1e-pr-6-3-e
+        interaction_type: numeric_entry
+        prompt: |
+          A coat originally priced at $\text{\textdollar}140$ is discounted 35%. What is the sale price, in dollars?
+
+          Answer with a number.
+        scoring_spec:
+          correct_value: 91
+          tolerance: 0
+        explanation: 'Discount = $0.35 \times 140 = 49$. Sale price = $140 - 49 = 91$. (Or pay 65%: $0.65 \times 140 = 91$.)'
+        difficulty: intermediate
+        cognitive_level: application
+        citation: Prealgebra (OpenStax 1e), Section 6.3, https://openstax.org/books/prealgebra/pages/6-3-solve-sales-tax-commission-and-discount-applications (alignment only; original item)
+        response_spec: {}
+        concept_slugs:
+        - open-openstax-prealgebra-1e-6-3
+      - id: pa1e-pr-6-3-f
+        interaction_type: numeric_entry
+        prompt: |
+          A store buys a chair for $\text{\textdollar}64$ and marks the price up 25%. What is the list price, in dollars?
+
+          Answer with a number.
+        scoring_spec:
+          correct_value: 80
+          tolerance: 0
+        explanation: Markup = $0.25 \times 64 = 16$. List price = $64 + 16 = 80$.
+        difficulty: intermediate
+        cognitive_level: application
+        citation: Prealgebra (OpenStax 1e), Section 6.3, https://openstax.org/books/prealgebra/pages/6-3-solve-sales-tax-commission-and-discount-applications (alignment only; original item)
+        response_spec: {}
         concept_slugs:
         - open-openstax-prealgebra-1e-6-3
       concept_slugs:
@@ -3223,6 +3321,8 @@ domains:
             **Changes:** converted to LearningApp lesson format; math converted from MathML; Try It exercises turned into practice prompts with answers from the book's answer key; images and end-of-section exercise sets omitted (see the original section). OpenStax and Rice University do not endorse LearningApp.
 
             **Review:** imported automatically; not reviewed by a person.
+
+            **Extra practice:** 6 original LearningApp practice question(s) were added to this section. They are not from the book; they were checked automatically and approved by an independent AI review.
       terms: []
       assessment_items:
       - id: openstax-prealgebra-1e-6-4-q1
@@ -3287,6 +3387,102 @@ domains:
         difficulty: intermediate
         cognitive_level: application
         citation: Prealgebra (OpenStax), Section 6.4, answer key, https://openstax.org/books/prealgebra/pages/6-4-solve-simple-interest-applications
+        concept_slugs:
+        - open-openstax-prealgebra-1e-6-4
+      - id: pa1e-pr-6-4-a
+        interaction_type: numeric_entry
+        prompt: |
+          Find the simple interest, in dollars, earned on $\text{\textdollar}3,000$ at 4% per year for 5 years.
+
+          Answer with a number.
+        scoring_spec:
+          correct_value: 600
+          tolerance: 0
+        explanation: $I = Prt = 3000 \times 0.04 \times 5 = 600$.
+        difficulty: intermediate
+        cognitive_level: application
+        citation: Prealgebra (OpenStax 1e), Section 6.4, https://openstax.org/books/prealgebra/pages/6-4-solve-simple-interest-applications (alignment only; original item)
+        response_spec: {}
+        concept_slugs:
+        - open-openstax-prealgebra-1e-6-4
+      - id: pa1e-pr-6-4-b
+        interaction_type: numeric_entry
+        prompt: |
+          A loan of $\text{\textdollar}2,500$ is charged 6% simple interest per year for 4 years. What is the total amount to pay back, in dollars?
+
+          Answer with a number.
+        scoring_spec:
+          correct_value: 3100
+          tolerance: 0
+        explanation: Interest $= 2500 \times 0.06 \times 4 = 600$. Total = principal + interest $= 2500 + 600 = 3100$.
+        difficulty: intermediate
+        cognitive_level: application
+        citation: Prealgebra (OpenStax 1e), Section 6.4, https://openstax.org/books/prealgebra/pages/6-4-solve-simple-interest-applications (alignment only; original item)
+        response_spec: {}
+        concept_slugs:
+        - open-openstax-prealgebra-1e-6-4
+      - id: pa1e-pr-6-4-c
+        interaction_type: numeric_entry
+        prompt: |
+          A principal of $\text{\textdollar}4,000$ earned $\text{\textdollar}480$ simple interest in 2 years. What was the annual interest rate, as a percent? Enter the number without the % sign.
+
+          Answer with a number.
+        scoring_spec:
+          correct_value: 6
+          tolerance: 0
+        explanation: $r = \dfrac{I}{Pt} = \dfrac{480}{4000 \times 2} = 0.06$, which is 6%.
+        difficulty: intermediate
+        cognitive_level: application
+        citation: Prealgebra (OpenStax 1e), Section 6.4, https://openstax.org/books/prealgebra/pages/6-4-solve-simple-interest-applications (alignment only; original item)
+        response_spec: {}
+        concept_slugs:
+        - open-openstax-prealgebra-1e-6-4
+      - id: pa1e-pr-6-4-d
+        interaction_type: numeric_entry
+        prompt: |
+          An account earned $\text{\textdollar}300$ simple interest in 5 years at 3% per year. What was the principal, in dollars?
+
+          Answer with a number.
+        scoring_spec:
+          correct_value: 2000
+          tolerance: 0
+        explanation: $P = \dfrac{I}{rt} = \dfrac{300}{0.03 \times 5} = \dfrac{300}{0.15} = 2000$.
+        difficulty: intermediate
+        cognitive_level: application
+        citation: Prealgebra (OpenStax 1e), Section 6.4, https://openstax.org/books/prealgebra/pages/6-4-solve-simple-interest-applications (alignment only; original item)
+        response_spec: {}
+        concept_slugs:
+        - open-openstax-prealgebra-1e-6-4
+      - id: pa1e-pr-6-4-e
+        interaction_type: numeric_entry
+        prompt: |
+          How many years does it take $\text{\textdollar}1,200$ to earn $\text{\textdollar}180$ simple interest at 5% per year?
+
+          Answer with a number.
+        scoring_spec:
+          correct_value: 3
+          tolerance: 0
+        explanation: Each year earns $1200 \times 0.05 = 60$. Then $t = 180 \div 60 = 3$ years.
+        difficulty: intermediate
+        cognitive_level: application
+        citation: Prealgebra (OpenStax 1e), Section 6.4, https://openstax.org/books/prealgebra/pages/6-4-solve-simple-interest-applications (alignment only; original item)
+        response_spec: {}
+        concept_slugs:
+        - open-openstax-prealgebra-1e-6-4
+      - id: pa1e-pr-6-4-f
+        interaction_type: numeric_entry
+        prompt: |
+          Find the simple interest, in dollars, on $\text{\textdollar}1,800$ at 4% per year for 9 months.
+
+          Answer with a number.
+        scoring_spec:
+          correct_value: 54
+          tolerance: 0
+        explanation: 'Time must be in years: 9 months is $\tfrac{9}{12} = 0.75$ year. $I = 1800 \times 0.04 \times 0.75 = 54$.'
+        difficulty: intermediate
+        cognitive_level: application
+        citation: Prealgebra (OpenStax 1e), Section 6.4, https://openstax.org/books/prealgebra/pages/6-4-solve-simple-interest-applications (alignment only; original item)
+        response_spec: {}
         concept_slugs:
         - open-openstax-prealgebra-1e-6-4
       concept_slugs:

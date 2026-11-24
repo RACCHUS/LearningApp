@@ -1,6 +1,7 @@
 # Excel pilot curriculum. Prepared for ingestion 2026-11-24 (ingestion plan v1.2, D-13).
-# Study material with practice questions and flashcards. It has no independent
-# (held-out) check items, so readiness must not be shown for this target yet (D-14).
+# Study material with 10 practice questions (4 original items reviewed in
+# content/practice/excel_fundamentals.yaml) and flashcards. Its independent
+# held-out checks are in content/held_out/excel_fundamentals.yaml (D-14).
 # No Excel application is recreated inside LearningApp.
 source_release:
   id: "microsoft-excel-support-2026-11"
@@ -18,7 +19,7 @@ source_release:
 target:
   slug: "software-excel-fundamentals"
   title: "Microsoft Excel Fundamentals"
-  version_code: "EXCEL-PILOT-2"
+  version_code: "EXCEL-PILOT-3"
   version_title: "Spreadsheet Basics and Budget Totals"
   version_description: "Guided practice in the real Microsoft Excel application: one lesson on cell references and summing a range. Not a software replica or a professional credential."
   # Plan v2.6 §7.1: software documentation changes, so review every 9 months (V2).
@@ -222,3 +223,51 @@ domains:
                 explanation: "A typed number is not connected to the cells above it, so it does not update. A formula such as =SUM(C2:C9) would show 445."
                 concept_slugs: ["spreadsheet-range-summation"]
                 citation: "Microsoft Support — SUM function"
+              - id: "xl-pr-1-1-a"
+                question_text: "In the Budget worksheet, C2 through C9 hold 20, 30, 40, 50, 60, 70, 80 and 90. What value does =SUM(C2:C5) show?"
+                options:
+                  - "90"
+                  - "200"
+                  - "140"
+                  - "440"
+                correct_answer: 2
+                type: "mcq"
+                explanation: "C2:C5 covers C2, C3, C4 and C5: 20 + 30 + 40 + 50 = 140. 90 adds only the two end cells, and 440 is the whole column."
+                concept_slugs: ["spreadsheet-range-summation"]
+                citation: "Microsoft Support - SUM function (reference only; original item)"
+              - id: "xl-pr-1-1-b"
+                question_text: "In the Budget worksheet, C2 through C9 hold the eight amounts. Which formula gives the same total as =SUM(C2:C9)?"
+                options:
+                  - "=C2+C9"
+                  - "=SUM(C2:C5)+SUM(C6:C9)"
+                  - "=SUM(C2,C9)"
+                  - "=SUM(C3:C9)"
+                correct_answer: 1
+                type: "mcq"
+                explanation: "C2:C5 and C6:C9 together cover every cell from C2 to C9 exactly once, so their sums add up to the same total. =C2+C9 and =SUM(C2,C9) add only two cells, and C3:C9 leaves out C2."
+                concept_slugs: ["spreadsheet-range-summation"]
+                citation: "Microsoft Support - SUM function (reference only; original item)"
+              - id: "xl-pr-1-1-c"
+                question_text: "C10 contains =SUM(C2:C9) and shows 440. You change the Shipping amount in C6 from 60 to 75. What does C10 show now?"
+                options:
+                  - "455"
+                  - "440"
+                  - "515"
+                  - "75"
+                correct_answer: 0
+                type: "mcq"
+                explanation: "The formula recalculates from its cells. C6 went up by 15, so the total goes up by 15: 440 + 15 = 455."
+                concept_slugs: ["spreadsheet-range-summation"]
+                citation: "Microsoft Support - SUM function (reference only; original item)"
+              - id: "xl-pr-1-1-d"
+                question_text: "The Budget table, headings included, fills A1 through C9. How many cells does the range A1:C9 contain?"
+                options:
+                  - "9"
+                  - "3"
+                  - "24"
+                  - "27"
+                correct_answer: 3
+                type: "mcq"
+                explanation: "A1:C9 covers 3 columns (A, B, C) and 9 rows (1 to 9), so it has 3 × 9 = 27 cells."
+                concept_slugs: ["spreadsheet-range-summation"]
+                citation: "Microsoft Support - SUM function (reference only; original item)"

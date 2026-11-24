@@ -1,0 +1,688 @@
+[
+ {
+  "id": "ca1e-pr-1-2-a",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_answer": "pass",
+   "clear": "pass",
+   "explanation": "pass",
+   "aligned": "pass",
+   "original": "pass",
+   "distractors": "pass"
+  },
+  "notes": ""
+ },
+ {
+  "id": "ca1e-pr-1-3-a",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_answer": "pass",
+   "clear": "pass",
+   "explanation": "pass",
+   "aligned": "pass",
+   "original": "pass",
+   "distractors": "pass"
+  },
+  "notes": "Approved. Suggestion: the lesson's exercise list contains sqrt(196) alone; consider sqrt(169)-sqrt(49) to avoid reusing that radicand."
+ },
+ {
+  "id": "ca1e-pr-1-3-b",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_answer": "pass",
+   "clear": "pass",
+   "explanation": "pass",
+   "aligned": "pass",
+   "original": "pass",
+   "distractors": "pass"
+  },
+  "notes": ""
+ },
+ {
+  "id": "ca1e-pr-1-3-c",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_answer": "pass",
+   "clear": "pass",
+   "explanation": "pass",
+   "aligned": "pass",
+   "original": "pass",
+   "distractors": "pass"
+  },
+  "notes": "2*sqrt(12) equals the value but wording 'simplest radical form' makes 4*sqrt(3) unique."
+ },
+ {
+  "id": "ca1e-pr-1-4-a",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_answer": "pass",
+   "clear": "pass",
+   "explanation": "pass",
+   "aligned": "pass",
+   "original": "pass",
+   "distractors": "pass"
+  },
+  "notes": ""
+ },
+ {
+  "id": "ca1e-pr-1-4-b",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_answer": "pass",
+   "clear": "pass",
+   "explanation": "pass",
+   "aligned": "pass",
+   "original": "pass",
+   "distractors": "pass"
+  },
+  "notes": ""
+ },
+ {
+  "id": "ca1e-pr-1-4-c",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_answer": "pass",
+   "clear": "pass",
+   "explanation": "pass",
+   "aligned": "pass",
+   "original": "pass",
+   "distractors": "pass"
+  },
+  "notes": ""
+ },
+ {
+  "id": "ca1e-pr-1-4-d",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_answer": "pass",
+   "clear": "pass",
+   "explanation": "pass",
+   "aligned": "pass",
+   "original": "pass",
+   "distractors": "pass"
+  },
+  "notes": ""
+ },
+ {
+  "id": "ca1e-pr-1-4-e",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_answer": "pass",
+   "clear": "pass",
+   "explanation": "pass",
+   "aligned": "pass",
+   "original": "pass",
+   "distractors": "pass"
+  },
+  "notes": ""
+ },
+ {
+  "id": "ca1e-pr-1-4-f",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_answer": "pass",
+   "clear": "pass",
+   "explanation": "pass",
+   "aligned": "pass",
+   "original": "pass",
+   "distractors": "pass"
+  },
+  "notes": ""
+ },
+ {
+  "id": "ca1e-pr-1-4-g",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_answer": "pass",
+   "clear": "pass",
+   "explanation": "pass",
+   "aligned": "pass",
+   "original": "pass",
+   "distractors": "pass"
+  },
+  "notes": ""
+ },
+ {
+  "id": "ca1e-pr-1-4-h",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_answer": "pass",
+   "clear": "pass",
+   "explanation": "pass",
+   "aligned": "pass",
+   "original": "pass",
+   "distractors": "pass"
+  },
+  "notes": ""
+ },
+ {
+  "id": "ca1e-pr-1-4-i",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_answer": "pass",
+   "clear": "pass",
+   "explanation": "pass",
+   "aligned": "pass",
+   "original": "pass",
+   "distractors": "pass"
+  },
+  "notes": ""
+ },
+ {
+  "id": "ca1e-pr-1-4-j",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_answer": "pass",
+   "clear": "pass",
+   "explanation": "pass",
+   "aligned": "pass",
+   "original": "pass",
+   "distractors": "pass"
+  },
+  "notes": ""
+ },
+ {
+  "id": "ca1e-pr-1-5-a",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_answer": "pass",
+   "clear": "pass",
+   "explanation": "pass",
+   "aligned": "pass",
+   "original": "pass",
+   "distractors": "pass"
+  },
+  "notes": ""
+ },
+ {
+  "id": "ca1e-pr-1-5-b",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_answer": "pass",
+   "clear": "pass",
+   "explanation": "pass",
+   "aligned": "pass",
+   "original": "pass",
+   "distractors": "pass"
+  },
+  "notes": ""
+ },
+ {
+  "id": "ca1e-pr-1-5-c",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_answer": "pass",
+   "clear": "pass",
+   "explanation": "pass",
+   "aligned": "pass",
+   "original": "pass",
+   "distractors": "pass"
+  },
+  "notes": "Equal-valued distractors acceptable: wording says greatest common factor."
+ },
+ {
+  "id": "ca1e-pr-1-5-d",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_answer": "pass",
+   "clear": "pass",
+   "explanation": "pass",
+   "aligned": "pass",
+   "original": "pass",
+   "distractors": "pass"
+  },
+  "notes": ""
+ },
+ {
+  "id": "ca1e-pr-1-5-e",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_answer": "pass",
+   "clear": "pass",
+   "explanation": "pass",
+   "aligned": "pass",
+   "original": "pass",
+   "distractors": "pass"
+  },
+  "notes": ""
+ },
+ {
+  "id": "ca1e-pr-1-5-f",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_answer": "pass",
+   "clear": "pass",
+   "explanation": "pass",
+   "aligned": "pass",
+   "original": "pass",
+   "distractors": "pass"
+  },
+  "notes": ""
+ },
+ {
+  "id": "ca1e-pr-1-5-g",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_answer": "pass",
+   "clear": "pass",
+   "explanation": "pass",
+   "aligned": "pass",
+   "original": "pass",
+   "distractors": "pass"
+  },
+  "notes": ""
+ },
+ {
+  "id": "ca1e-pr-1-5-h",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_answer": "pass",
+   "clear": "pass",
+   "explanation": "pass",
+   "aligned": "pass",
+   "original": "pass",
+   "distractors": "pass"
+  },
+  "notes": ""
+ },
+ {
+  "id": "ca1e-pr-1-5-i",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_answer": "pass",
+   "clear": "pass",
+   "explanation": "pass",
+   "aligned": "pass",
+   "original": "pass",
+   "distractors": "pass"
+  },
+  "notes": ""
+ },
+ {
+  "id": "ca1e-pr-1-5-j",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_answer": "pass",
+   "clear": "pass",
+   "explanation": "pass",
+   "aligned": "pass",
+   "original": "pass",
+   "distractors": "pass"
+  },
+  "notes": "(2x-6)(x+3) is equal-valued but 'completely' makes keyed option unique."
+ },
+ {
+  "id": "ca1e-pr-1-6-a",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_answer": "pass",
+   "clear": "pass",
+   "explanation": "pass",
+   "aligned": "pass",
+   "original": "pass",
+   "distractors": "pass"
+  },
+  "notes": ""
+ },
+ {
+  "id": "ca1e-pr-1-6-b",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_answer": "pass",
+   "clear": "pass",
+   "explanation": "pass",
+   "aligned": "pass",
+   "original": "pass",
+   "distractors": "pass"
+  },
+  "notes": ""
+ },
+ {
+  "id": "ca1e-pr-1-6-c",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_answer": "pass",
+   "clear": "pass",
+   "explanation": "pass",
+   "aligned": "pass",
+   "original": "pass",
+   "distractors": "pass"
+  },
+  "notes": ""
+ },
+ {
+  "id": "ca1e-pr-1-6-d",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_answer": "pass",
+   "clear": "pass",
+   "explanation": "pass",
+   "aligned": "pass",
+   "original": "pass",
+   "distractors": "pass"
+  },
+  "notes": ""
+ },
+ {
+  "id": "ca1e-pr-1-6-e",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_answer": "pass",
+   "clear": "pass",
+   "explanation": "pass",
+   "aligned": "pass",
+   "original": "pass",
+   "distractors": "pass"
+  },
+  "notes": ""
+ },
+ {
+  "id": "ca1e-pr-1-6-f",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_answer": "pass",
+   "clear": "pass",
+   "explanation": "pass",
+   "aligned": "pass",
+   "original": "pass",
+   "distractors": "pass"
+  },
+  "notes": ""
+ },
+ {
+  "id": "ca1e-pr-1-6-g",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_answer": "pass",
+   "clear": "pass",
+   "explanation": "pass",
+   "aligned": "pass",
+   "original": "pass",
+   "distractors": "pass"
+  },
+  "notes": ""
+ },
+ {
+  "id": "ca1e-pr-1-6-h",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_answer": "pass",
+   "clear": "pass",
+   "explanation": "pass",
+   "aligned": "pass",
+   "original": "pass",
+   "distractors": "pass"
+  },
+  "notes": ""
+ },
+ {
+  "id": "ca1e-pr-1-6-i",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_answer": "pass",
+   "clear": "pass",
+   "explanation": "pass",
+   "aligned": "pass",
+   "original": "pass",
+   "distractors": "pass"
+  },
+  "notes": ""
+ },
+ {
+  "id": "pa1e-pr-6-3-a",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_answer": "pass",
+   "clear": "pass",
+   "explanation": "pass",
+   "aligned": "pass",
+   "original": "pass",
+   "distractors": "pass"
+  },
+  "notes": "Answer 22.1 exact; entering 22.10 parses equal."
+ },
+ {
+  "id": "pa1e-pr-6-3-b",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_answer": "pass",
+   "clear": "pass",
+   "explanation": "pass",
+   "aligned": "pass",
+   "original": "pass",
+   "distractors": "pass"
+  },
+  "notes": ""
+ },
+ {
+  "id": "pa1e-pr-6-3-c",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_answer": "pass",
+   "clear": "pass",
+   "explanation": "pass",
+   "aligned": "pass",
+   "original": "pass",
+   "distractors": "pass"
+  },
+  "notes": ""
+ },
+ {
+  "id": "pa1e-pr-6-3-d",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_answer": "pass",
+   "clear": "pass",
+   "explanation": "pass",
+   "aligned": "pass",
+   "original": "pass",
+   "distractors": "pass"
+  },
+  "notes": ""
+ },
+ {
+  "id": "pa1e-pr-6-3-e",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_answer": "pass",
+   "clear": "pass",
+   "explanation": "pass",
+   "aligned": "pass",
+   "original": "pass",
+   "distractors": "pass"
+  },
+  "notes": ""
+ },
+ {
+  "id": "pa1e-pr-6-3-f",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_answer": "pass",
+   "clear": "pass",
+   "explanation": "pass",
+   "aligned": "pass",
+   "original": "pass",
+   "distractors": "pass"
+  },
+  "notes": ""
+ },
+ {
+  "id": "pa1e-pr-6-4-a",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_answer": "pass",
+   "clear": "pass",
+   "explanation": "pass",
+   "aligned": "pass",
+   "original": "pass",
+   "distractors": "pass"
+  },
+  "notes": ""
+ },
+ {
+  "id": "pa1e-pr-6-4-b",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_answer": "pass",
+   "clear": "pass",
+   "explanation": "pass",
+   "aligned": "pass",
+   "original": "pass",
+   "distractors": "pass"
+  },
+  "notes": ""
+ },
+ {
+  "id": "pa1e-pr-6-4-c",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_answer": "pass",
+   "clear": "pass",
+   "explanation": "pass",
+   "aligned": "pass",
+   "original": "pass",
+   "distractors": "pass"
+  },
+  "notes": ""
+ },
+ {
+  "id": "pa1e-pr-6-4-d",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_answer": "pass",
+   "clear": "pass",
+   "explanation": "pass",
+   "aligned": "pass",
+   "original": "pass",
+   "distractors": "pass"
+  },
+  "notes": ""
+ },
+ {
+  "id": "pa1e-pr-6-4-e",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_answer": "pass",
+   "clear": "pass",
+   "explanation": "pass",
+   "aligned": "pass",
+   "original": "pass",
+   "distractors": "pass"
+  },
+  "notes": ""
+ },
+ {
+  "id": "pa1e-pr-6-4-f",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_answer": "pass",
+   "clear": "pass",
+   "explanation": "pass",
+   "aligned": "pass",
+   "original": "pass",
+   "distractors": "pass"
+  },
+  "notes": ""
+ },
+ {
+  "id": "xl-pr-1-1-a",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_answer": "pass",
+   "clear": "pass",
+   "explanation": "pass",
+   "aligned": "pass",
+   "original": "pass",
+   "distractors": "pass"
+  },
+  "notes": ""
+ },
+ {
+  "id": "xl-pr-1-1-b",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_answer": "pass",
+   "clear": "pass",
+   "explanation": "pass",
+   "aligned": "pass",
+   "original": "pass",
+   "distractors": "pass"
+  },
+  "notes": ""
+ },
+ {
+  "id": "xl-pr-1-1-c",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_answer": "pass",
+   "clear": "pass",
+   "explanation": "pass",
+   "aligned": "pass",
+   "original": "pass",
+   "distractors": "pass"
+  },
+  "notes": ""
+ },
+ {
+  "id": "xl-pr-1-1-d",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_answer": "pass",
+   "clear": "pass",
+   "explanation": "pass",
+   "aligned": "pass",
+   "original": "pass",
+   "distractors": "pass"
+  },
+  "notes": ""
+ }
+]

@@ -1,0 +1,166 @@
+# Original practice questions for Microsoft Excel Fundamentals.
+#
+# Ingestion plan v1.2 §8.6 / D-14: at least 10 practice questions per
+# objective. These are ORIGINAL items written for LearningApp (not copied from
+# the source); the cited sections or pages are alignment references only. They are
+# lesson practice: never reuse one as a held-out check (content/held_out/).
+#
+# Status: AI-drafted (Claude Opus 5.5); all items approved 2026-11-24 by an
+# independent AI review (Claude Sonnet 5.5), evidence in content/practice/reviews/.
+# Approved items are copied into the hand-authored manifest's questions (the verifier checks they match). Only items whose `review` is
+# approved by an INDEPENDENT reviewer (D-16; same block as held-out checks)
+# are used. tool/verify_practice_items.py checks every item with sympy and
+# confirms the target manifest holds each approved item.
+target_slug: software-excel-fundamentals
+manifest: content/excel_fundamentals.yaml
+min_practice_per_objective: 10
+author_ref: ai-drafted-by-claude
+ai_drafted: true
+items:
+- id: xl-pr-1-1-a
+  objective: SPREADSHEET-1.1
+  citation: Microsoft Support - SUM function (reference only; original item)
+  interaction_type: single_choice
+  prompt: In the Budget worksheet, C2 through C9 hold 20, 30, 40, 50, 60, 70, 80 and 90. What value does =SUM(C2:C5) show?
+  response_spec:
+    options:
+    - '90'
+    - '200'
+    - '140'
+    - '440'
+  scoring_spec:
+    correct_index: 2
+  explanation: 'C2:C5 covers C2, C3, C4 and C5: 20 + 30 + 40 + 50 = 140. 90 adds only the two end cells, and 440 is the whole column.'
+  difficulty: beginner
+  cognitive_level: application
+  verify:
+    spreadsheet:
+      cells: &id001
+        C2: 20
+        C3: 30
+        C4: 40
+        C5: 50
+        C6: 60
+        C7: 70
+        C8: 80
+        C9: 90
+      value_of: =SUM(C2:C5)
+      formulas:
+      - =90
+      - =200
+      - =140
+      - =440
+  review:
+    reviewer_kind: ai
+    reviewer_model: claude-sonnet-5-5
+    reviewer_ref: ai-review:claude-sonnet-5-5
+    reviewer_qualification: 'AI review checklist v1 (HELD_OUT_CHECKS_DESIGN.md) applied to practice items; separate model from the author; solved independently with its own SymPy code without the author''s checks; scanned the lessons and held-out prompts for copies. Rights: original item, Microsoft Support cited as reference only. Evidence: content/practice/reviews/2026-11-24/'
+    reviewed_on: '2026-11-24'
+    review_status: approved
+    rights_review_status: approved
+- id: xl-pr-1-1-b
+  objective: SPREADSHEET-1.1
+  citation: Microsoft Support - SUM function (reference only; original item)
+  interaction_type: single_choice
+  prompt: In the Budget worksheet, C2 through C9 hold the eight amounts. Which formula gives the same total as =SUM(C2:C9)?
+  response_spec:
+    options:
+    - =C2+C9
+    - =SUM(C2:C5)+SUM(C6:C9)
+    - =SUM(C2,C9)
+    - =SUM(C3:C9)
+  scoring_spec:
+    correct_index: 1
+  explanation: C2:C5 and C6:C9 together cover every cell from C2 to C9 exactly once, so their sums add up to the same total. =C2+C9 and =SUM(C2,C9) add only two cells, and C3:C9 leaves out C2.
+  difficulty: intermediate
+  cognitive_level: analysis
+  verify:
+    spreadsheet:
+      cells: *id001
+      value_of: =SUM(C2:C9)
+      formulas:
+      - =C2+C9
+      - =SUM(C2:C5)+SUM(C6:C9)
+      - =SUM(C2,C9)
+      - =SUM(C3:C9)
+  review:
+    reviewer_kind: ai
+    reviewer_model: claude-sonnet-5-5
+    reviewer_ref: ai-review:claude-sonnet-5-5
+    reviewer_qualification: 'AI review checklist v1 (HELD_OUT_CHECKS_DESIGN.md) applied to practice items; separate model from the author; solved independently with its own SymPy code without the author''s checks; scanned the lessons and held-out prompts for copies. Rights: original item, Microsoft Support cited as reference only. Evidence: content/practice/reviews/2026-11-24/'
+    reviewed_on: '2026-11-24'
+    review_status: approved
+    rights_review_status: approved
+- id: xl-pr-1-1-c
+  objective: SPREADSHEET-1.1
+  citation: Microsoft Support - SUM function (reference only; original item)
+  interaction_type: single_choice
+  prompt: C10 contains =SUM(C2:C9) and shows 440. You change the Shipping amount in C6 from 60 to 75. What does C10 show now?
+  response_spec:
+    options:
+    - '455'
+    - '440'
+    - '515'
+    - '75'
+  scoring_spec:
+    correct_index: 0
+  explanation: 'The formula recalculates from its cells. C6 went up by 15, so the total goes up by 15: 440 + 15 = 455.'
+  difficulty: beginner
+  cognitive_level: application
+  verify:
+    spreadsheet:
+      cells:
+        C2: 20
+        C3: 30
+        C4: 40
+        C5: 50
+        C6: 75
+        C7: 70
+        C8: 80
+        C9: 90
+      value_of: =SUM(C2:C9)
+      formulas:
+      - =455
+      - =440
+      - =515
+      - =75
+  review:
+    reviewer_kind: ai
+    reviewer_model: claude-sonnet-5-5
+    reviewer_ref: ai-review:claude-sonnet-5-5
+    reviewer_qualification: 'AI review checklist v1 (HELD_OUT_CHECKS_DESIGN.md) applied to practice items; separate model from the author; solved independently with its own SymPy code without the author''s checks; scanned the lessons and held-out prompts for copies. Rights: original item, Microsoft Support cited as reference only. Evidence: content/practice/reviews/2026-11-24/'
+    reviewed_on: '2026-11-24'
+    review_status: approved
+    rights_review_status: approved
+- id: xl-pr-1-1-d
+  objective: SPREADSHEET-1.1
+  citation: Microsoft Support - SUM function (reference only; original item)
+  interaction_type: single_choice
+  prompt: The Budget table, headings included, fills A1 through C9. How many cells does the range A1:C9 contain?
+  response_spec:
+    options:
+    - '9'
+    - '3'
+    - '24'
+    - '27'
+  scoring_spec:
+    correct_index: 3
+  explanation: A1:C9 covers 3 columns (A, B, C) and 9 rows (1 to 9), so it has 3 × 9 = 27 cells.
+  difficulty: beginner
+  cognitive_level: application
+  verify:
+    spreadsheet:
+      cell_count_of: A1:C9
+      formulas:
+      - =9
+      - =3
+      - =24
+      - =27
+  review:
+    reviewer_kind: ai
+    reviewer_model: claude-sonnet-5-5
+    reviewer_ref: ai-review:claude-sonnet-5-5
+    reviewer_qualification: 'AI review checklist v1 (HELD_OUT_CHECKS_DESIGN.md) applied to practice items; separate model from the author; solved independently with its own SymPy code without the author''s checks; scanned the lessons and held-out prompts for copies. Rights: original item, Microsoft Support cited as reference only. Evidence: content/practice/reviews/2026-11-24/'
+    reviewed_on: '2026-11-24'
+    review_status: approved
+    rights_review_status: approved

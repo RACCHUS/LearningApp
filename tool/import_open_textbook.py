@@ -19,6 +19,10 @@ What each section becomes:
   * glossary terms the section defines, with the book's definitions;
   * a closing credit block (title, publisher, link, license, changes,
     "not reviewed by a person");
+  * approved ORIGINAL practice questions from content/practice/<book>.yaml
+    (written for LearningApp, independently reviewed, checked by
+    tool/verify_practice_items.py) are added to the matching section's
+    graded questions, and the credit says so (ingestion plan v1.2 §8.6);
   * a section with nothing that can be graded automatically is kept as a
     teaching-only lesson (tag ``teaching-only`` and a "No graded questions
     yet" note) instead of being dropped (ingestion plan v1.2 §7.4).
@@ -45,10 +49,11 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
 REGISTRY = REPO / "data" / "content_sources.json"
+PRACTICE = REPO / "content" / "practice"
 # Bump when importer output changes for the same book version, so the
 # corrected lessons publish as a new target version (published versions are
 # immutable). Publish it with retire_previous to replace the old one.
-IMPORT_REVISION = 5
+IMPORT_REVISION = 6
 
 # Topic tags per section, so "Learning help" offers the Bridges for that
 # topic (content/bridges/*.bridge.json `applies_to_tags`). A section that
@@ -669,6 +674,53 @@ def mark_teaching_only(lesson: dict) -> bool:
     return True
 
 
+PRACTICE_KEYS = ("id", "interaction_type", "prompt", "response_spec", "scoring_spec",
+                 "explanation", "difficulty", "cognitive_level", "citation")
+NUMERIC_SUFFIX = "\n\nAnswer with a number."
+PRACTICE_NOTE = ("\n\n**Extra practice:** {n} original LearningApp practice question(s) were added "
+                 "to this section. They are not from the book; they were checked automatically and "
+                 "approved by an independent {kind} review.")
+
+
+def approved_practice(source_id: str, practice_dir: Path = PRACTICE) -> dict[str, list[dict]]:
+    """Approved original practice items for the book, by section number.
+
+    Only items whose review is approved are used, so a draft never reaches
+    learners. A numeric item gets the importer's "Answer with a number." line.
+    """
+    path = practice_dir / f"open_{source_id.replace('-', '_')}.yaml"
+    if not path.exists():
+        return {}
+    import yaml
+
+    data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    if data.get("source_release_id") != source_id:
+        raise ImportProblem(f"{path.name} is not for {source_id}")
+    out: dict[str, list[dict]] = {}
+    for item in data.get("items") or []:
+        review = item.get("review") or {}
+        if review.get("review_status") != "approved":
+            continue
+        q = {k: item[k] for k in PRACTICE_KEYS if k in item}
+        q.setdefault("response_spec", {})  # required by the manifest schema, empty for numeric entry
+        if q["interaction_type"] == "numeric_entry" and not q["prompt"].endswith(NUMERIC_SUFFIX):
+            q["prompt"] += NUMERIC_SUFFIX
+        q["_review_kind"] = review.get("reviewer_kind", "")
+        out.setdefault(str(item["objective"]), []).append(q)
+    return out
+
+
+def add_practice(lesson: dict, items: list[dict]) -> None:
+    """Append approved practice items and note them in the credit block."""
+    if not items:
+        return
+    kinds = {q.pop("_review_kind", "") for q in items}
+    kind = "AI" if kinds == {"ai"} else "human" if kinds == {"human"} else "AI and human"
+    lesson["assessment_items"] = [*lesson["assessment_items"], *items]
+    credit = lesson["blocks"][-1]["content"]
+    credit["body"] += PRACTICE_NOTE.format(n=len(items), kind=kind)
+
+
 def import_book(source_id: str, chapters: set[int], delay: float) -> tuple[dict, list[str]]:
     source, book = check_source(source_id)
     meta = fetch(f"{ARCHIVE}{book['book']}.json")
@@ -676,6 +728,7 @@ def import_book(source_id: str, chapters: set[int], delay: float) -> tuple[dict,
     if reported != source["license"]:
         raise ImportProblem(f"archive reports {reported}, registry says {source['license']}")
     tree = meta["tree"]["contents"]
+    practice = approved_practice(source_id)
     answer_key = next((c for c in tree if c.get("slug") == "answer-key"), None)
     all_warnings: list[str] = []
     left_out: list[str] = []
@@ -714,6 +767,7 @@ def import_book(source_id: str, chapters: set[int], delay: float) -> tuple[dict,
             }
             lesson, warnings = section_lesson(page["content"], info, answers, terms)
             all_warnings += [f"{sec_number}: {w}" for w in sorted(set(warnings))]
+            add_practice(lesson, practice.pop(sec_number, []))
             if not lesson["assessment_items"]:
                 if not mark_teaching_only(lesson):
                     left_out.append(f"{sec_number} {sec_title}")
@@ -753,6 +807,8 @@ def import_book(source_id: str, chapters: set[int], delay: float) -> tuple[dict,
         })
     if not domains:
         raise ImportProblem(f"no chapters {sorted(chapters)} found")
+    for sec in practice:
+        all_warnings.append(f"practice items for {sec} were not used: that section wasn't imported")
     lic_full, lic_short, _ = LICENSE_TEXT[source["license"]]
     manifest = {
         "source_releases": [{
