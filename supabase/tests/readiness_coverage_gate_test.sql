@@ -165,7 +165,7 @@ select is((select result->>'weights_editorial' from coverage_fixture where label
 select is((select array_agg(k order by k) from coverage_fixture f, jsonb_object_keys(f.result) k
            where f.label = 'full'),
   array['covered_weight','enabled','full_threshold','min_held_out_items','objectives_covered',
-        'objectives_total','provisional_threshold','state','weights_editorial'],
+        'objectives_total','provisional_threshold','review_basis','state','weights_editorial'],
   'only aggregate fields are returned');
 
 select * from finish();

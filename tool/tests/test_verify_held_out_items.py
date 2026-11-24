@@ -57,7 +57,7 @@ class ReviewTests(unittest.TestCase):
     def approved(self, **changes):
         review = {"reviewer_ref": "reviewer-001", "reviewer_qualification": "Certified math teacher",
                   "reviewed_on": "2026-11-20", "review_status": "approved",
-                  "rights_review_status": "approved", **changes}
+                  "rights_review_status": "approved", "reviewer_kind": "human", **changes}
         it = item("ca1e-ho-1-1-a")
         it["review"] = review
         return v.check_review(it, "ai-drafted-by-claude")
@@ -76,6 +76,17 @@ class ReviewTests(unittest.TestCase):
         self.assertTrue(any("rights_review_status" in p for p in self.approved(rights_review_status="pending")))
         self.assertTrue(any("YYYY-MM-DD" in p for p in self.approved(reviewed_on="last week")))
         self.assertTrue(any("future" in p for p in self.approved(reviewed_on="2999-01-01")))
+
+
+class AiReviewTests(ReviewTests):
+    def test_an_ai_review_needs_its_model(self):
+        self.assertTrue(any("reviewer_model" in p for p in self.approved(reviewer_kind="ai")))
+        self.assertEqual(self.approved(reviewer_kind="ai", reviewer_model="claude-sonnet-5-5",
+                                       reviewer_ref="ai-review:claude-sonnet-5-5"), [])
+
+    def test_the_kind_is_required(self):
+        self.assertTrue(any("reviewer_kind" in p for p in self.approved(reviewer_kind=None)))
+        self.assertTrue(any("reviewer_kind" in p for p in self.approved(reviewer_kind="robot")))
 
 
 class FileTests(unittest.TestCase):

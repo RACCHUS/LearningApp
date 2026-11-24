@@ -1520,6 +1520,8 @@ List<Map<String, Object>> _lessonTags(Map<String, dynamic> manifest) {
         'author_ref': author,
         'ai_drafted': aiDrafted,
         'reviewer_ref': review['reviewer_ref'],
+        'reviewer_kind': review['reviewer_kind'],
+        if (review['reviewer_model'] != null) 'reviewer_model': review['reviewer_model'],
         'reviewer_qualification': review['reviewer_qualification'],
         'reviewed_on': review['reviewed_on']?.toString(),
         'review_status': 'approved',

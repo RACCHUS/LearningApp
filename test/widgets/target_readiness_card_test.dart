@@ -86,7 +86,7 @@ void main() {
       return api;
     }
 
-    Map<String, dynamic> coverage(String state, double covered) => {
+    Map<String, dynamic> coverage(String state, double covered, {String? basis}) => {
           'enabled': true,
           'state': state,
           'covered_weight': covered,
@@ -96,6 +96,7 @@ void main() {
           'provisional_threshold': 0.6,
           'full_threshold': 0.9,
           'weights_editorial': false,
+          'review_basis': basis,
         };
 
     testWidgets('gate off: readiness unchanged and nothing fetched', (tester) async {
@@ -124,6 +125,17 @@ void main() {
       await pump(tester, gate: true, response: coverage('full', 0.95));
       expect(find.text('Strong Coverage'), findsOneWidget);
       expect(find.byKey(const Key('readiness_coverage_message')), findsNothing);
+    });
+
+    testWidgets('AI-reviewed checks are labelled as AI-reviewed (D-16)', (tester) async {
+      await pump(tester, gate: true, response: coverage('full', 1.0, basis: 'ai'));
+      expect(find.text('Strong Coverage'), findsOneWidget);
+      expect(find.textContaining('reviewed by AI, not by a person'), findsOneWidget);
+    });
+
+    testWidgets('human-reviewed checks carry no AI note', (tester) async {
+      await pump(tester, gate: true, response: coverage('full', 1.0, basis: 'human'));
+      expect(find.byKey(const Key('readiness_review_basis_note')), findsNothing);
     });
 
     testWidgets('read failure fails closed: band hidden', (tester) async {

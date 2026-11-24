@@ -29,8 +29,10 @@ void main() {
     final file = load();
     final items = (file['items'] as List).cast<Map<String, dynamic>>();
     items.first['review'] = {
-      'reviewer_ref': 'reviewer-001',
-      'reviewer_qualification': 'Certified math teacher',
+      'reviewer_ref': 'ai-review:claude-sonnet-5-5',
+      'reviewer_kind': 'ai',
+      'reviewer_model': 'claude-sonnet-5-5',
+      'reviewer_qualification': 'AI review checklist v1 + independent SymPy check',
       'reviewed_on': '2026-11-20',
       'review_status': 'approved',
       'rights_review_status': 'approved',
@@ -44,6 +46,8 @@ void main() {
     expect(sent['concept_slugs'], ['open-openstax-college-algebra-1e-1-1']);
     expect((sent['review'] as Map)['author_ref'], 'ai-drafted-by-claude');
     expect((sent['review'] as Map)['ai_drafted'], isTrue);
+    expect((sent['review'] as Map)['reviewer_kind'], 'ai');
+    expect((sent['review'] as Map)['reviewer_model'], 'claude-sonnet-5-5');
     expect(sent.containsKey('verify'), isFalse, reason: 'the sympy block stays in the repository');
   });
 

@@ -87,6 +87,16 @@ class TargetReadinessCard extends ConsumerWidget {
                     style: theme.textTheme.bodySmall,
                   ),
                 ],
+                if (coverage != null && !hideBand && coverage.aiReviewed) ...[
+                  const SizedBox(height: DesignTokens.space1),
+                  Text(
+                    readinessReviewNote(coverage),
+                    key: const Key('readiness_review_basis_note'),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
                 const SizedBox(height: DesignTokens.space2),
                 Text(
                   readiness.totalCoreConcepts > 0
@@ -171,6 +181,11 @@ String readinessCoverageMessage(ReadinessCoverage coverage) {
     ReadinessCoverageState.full => '',
   };
 }
+
+/// Says who reviewed the independent checks behind the estimate (D-16).
+String readinessReviewNote(ReadinessCoverage coverage) => coverage.reviewBasis == 'mixed'
+    ? 'Some of the independent checks behind this estimate were reviewed by AI, not by a person.'
+    : 'The independent checks behind this estimate were written and reviewed by AI, not by a person.';
 
 class _NotEnoughChecksBadge extends StatelessWidget {
   const _NotEnoughChecksBadge();

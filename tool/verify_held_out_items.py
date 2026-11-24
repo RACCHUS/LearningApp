@@ -5,7 +5,9 @@ Checks every file in content/held_out/:
   * authoring: author_ref and ai_drafted at file level, and an
     objective_concepts map matching the published manifest's concepts;
   * reviews: an approved `review` names a reviewer who is not the author,
-    their qualification, a past YYYY-MM-DD date and rights approval;
+    whether that reviewer is ai or human (and the model, for AI), their
+    qualification or review method, a past YYYY-MM-DD date and rights
+    approval (decision D-16);
   * structure: ids unique and slug-shaped, known objectives, supported
     interaction types, a keyed answer, an explanation and a citation;
   * depth: at least ``min_items_per_objective`` items for every objective of
@@ -148,8 +150,13 @@ def check_review(item: dict, author: str) -> list[str]:
         problems.append(f"{iid}: reviewer_ref is required")
     elif reviewer.lower() == author.strip().lower():
         problems.append(f"{iid}: the reviewer cannot be the author")
+    kind = review.get("reviewer_kind")
+    if kind not in ("ai", "human"):
+        problems.append(f"{iid}: reviewer_kind must be ai or human (D-16)")
+    if kind == "ai" and not 2 <= len(str(review.get("reviewer_model") or "").strip()) <= 120:
+        problems.append(f"{iid}: an AI review must name reviewer_model")
     if not 3 <= len(str(review.get("reviewer_qualification") or "").strip()) <= 500:
-        problems.append(f"{iid}: reviewer_qualification is required")
+        problems.append(f"{iid}: reviewer_qualification is required (for AI, the review method)")
     if review.get("rights_review_status") != "approved":
         problems.append(f"{iid}: an approved item needs rights_review_status: approved")
     on = review.get("reviewed_on")

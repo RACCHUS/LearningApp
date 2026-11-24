@@ -40,7 +40,8 @@ returns jsonb language sql as $$
     'review', jsonb_build_object(
       'author_ref', 'ai-drafted-by-claude', 'ai_drafted', true,
       'reviewer_ref', 'reviewer-001', 'reviewer_qualification', 'Fictional certified math teacher',
-      'reviewed_on', '2026-11-24', 'review_status', 'approved', 'rights_review_status', 'approved')
+      'reviewed_on', '2026-11-24', 'review_status', 'approved', 'rights_review_status', 'approved',
+      'reviewer_kind', 'human')
   ) || p_override;
 $$;
 create function pg_temp.items(p_prefix text, p_concept text, p_n int)
