@@ -1,0 +1,376 @@
+# DRAFT held-out check items for College Algebra (OpenStax 1e) chapter 1.
+#
+# Ingestion plan v1.2 §8.6 / D-14: 6 independent check items per objective,
+# none shared with lesson practice. These are ORIGINAL items written for
+# LearningApp (not copied from the book's exercises); OpenStax sections are
+# cited only as alignment references.
+#
+# Status: AI-drafted, NOT reviewed by a person. Not ingested. They do not
+# count toward readiness until a mechanism to mark them held-out exists and a
+# different, qualified person approves each one (see the design note in
+# docs/content_intelligence/HELD_OUT_CHECKS_DESIGN.md).
+#
+# Every item carries a `verify` block that tool/verify_held_out_items.py
+# checks with sympy: the keyed answer must be mathematically right, and
+# distractors must be wrong unless listed in `same_value_distractors`
+# (allowed only for "simplest form" questions, where an equal-valued option
+# in the wrong form is a deliberate distractor).
+target_slug: open-openstax-college-algebra-1e
+source_release_id: openstax-college-algebra-1e
+min_items_per_objective: 6
+items:
+  # ---------------------------------------------------------------- 1.1
+  - id: ca1e-ho-1-1-a
+    objective: "1.1"
+    interaction_type: numeric_entry
+    prompt: "Evaluate $18 - 3(4 - 6)^2 \\div 6$."
+    scoring_spec: {correct_value: 16, tolerance: 0}
+    explanation: "Parentheses first: $4 - 6 = -2$, squared is $4$. Then $3 \\cdot 4 = 12$ and $12 \\div 6 = 2$. Finally $18 - 2 = 16$."
+    difficulty: intermediate
+    cognitive_level: application
+    verify: {expression: "18 - 3*(4 - 6)**2 / 6"}
+  - id: ca1e-ho-1-1-b
+    objective: "1.1"
+    interaction_type: numeric_entry
+    prompt: "Evaluate $-2x^2 + 5x - 1$ when $x = -3$."
+    scoring_spec: {correct_value: -34, tolerance: 0}
+    explanation: "$x^2 = 9$, so $-2 \\cdot 9 = -18$; $5 \\cdot (-3) = -15$; $-18 - 15 - 1 = -34$."
+    difficulty: intermediate
+    cognitive_level: application
+    verify: {expression: "-2*x**2 + 5*x - 1", substitute: {x: -3}}
+  - id: ca1e-ho-1-1-c
+    objective: "1.1"
+    interaction_type: single_choice
+    prompt: "Which of these numbers is irrational?"
+    response_spec: {options: ["$\\sqrt{49}$", "$0.\\overline{12}$", "$-\\frac{7}{3}$", "$\\sqrt{12}$"]}
+    scoring_spec: {correct_index: 3}
+    explanation: "$\\sqrt{12} = 2\\sqrt{3}$ cannot be written as a fraction of integers. $\\sqrt{49} = 7$, a repeating decimal and a fraction are all rational."
+    difficulty: beginner
+    cognitive_level: comprehension
+    verify: {irrational_index: 3, values: ["sqrt(49)", "Rational(12, 99)", "Rational(-7, 3)", "sqrt(12)"]}
+  - id: ca1e-ho-1-1-d
+    objective: "1.1"
+    interaction_type: single_choice
+    prompt: "Simplify $4(2y - 3) - 3(y - 5)$."
+    response_spec: {options: ["$5y - 27$", "$5y + 3$", "$11y + 3$", "$5y - 3$"]}
+    scoring_spec: {correct_index: 1}
+    explanation: "$8y - 12 - 3y + 15 = 5y + 3$. The common mistake is $-3 \\cdot (-5) = -15$; it is $+15$."
+    difficulty: intermediate
+    cognitive_level: application
+    verify: {expression: "4*(2*y - 3) - 3*(y - 5)", options: ["5*y - 27", "5*y + 3", "11*y + 3", "5*y - 3"]}
+  - id: ca1e-ho-1-1-e
+    objective: "1.1"
+    interaction_type: single_choice
+    prompt: "Which property is shown by $7(a + b) = 7a + 7b$?"
+    response_spec: {options: ["Commutative property of multiplication", "Associative property of addition", "Distributive property", "Identity property of multiplication"]}
+    scoring_spec: {correct_index: 2}
+    explanation: "Multiplying a sum term by term is the distributive property."
+    difficulty: beginner
+    cognitive_level: recall
+    verify: {identity: "7*(a + b) - (7*a + 7*b)"}
+  - id: ca1e-ho-1-1-f
+    objective: "1.1"
+    interaction_type: numeric_entry
+    prompt: "Evaluate $|-8 + 3| - |2 - 9|$."
+    scoring_spec: {correct_value: -2, tolerance: 0}
+    explanation: "$|-5| = 5$ and $|-7| = 7$, so $5 - 7 = -2$."
+    difficulty: intermediate
+    cognitive_level: application
+    verify: {expression: "Abs(-8 + 3) - Abs(2 - 9)"}
+
+  # ---------------------------------------------------------------- 1.2
+  - id: ca1e-ho-1-2-a
+    objective: "1.2"
+    interaction_type: numeric_entry
+    prompt: "Evaluate $(2^3)^2 \\cdot 2^{-4}$."
+    scoring_spec: {correct_value: 4, tolerance: 0}
+    explanation: "$(2^3)^2 = 2^6$, and $2^6 \\cdot 2^{-4} = 2^2 = 4$."
+    difficulty: intermediate
+    cognitive_level: application
+    verify: {expression: "(2**3)**2 * 2**-4"}
+  - id: ca1e-ho-1-2-b
+    objective: "1.2"
+    interaction_type: single_choice
+    prompt: "Simplify $\\dfrac{(3x^2y^{-1})^2}{x^3y}$ and write it with positive exponents."
+    response_spec: {options: ["$\\dfrac{6x}{y^3}$", "$\\dfrac{9x}{y}$", "$9x^7y$", "$\\dfrac{9x}{y^3}$"]}
+    scoring_spec: {correct_index: 3}
+    explanation: "$(3x^2y^{-1})^2 = 9x^4y^{-2}$. Dividing by $x^3y$ gives $9x^{1}y^{-3} = \\dfrac{9x}{y^3}$."
+    difficulty: advanced
+    cognitive_level: application
+    verify: {expression: "(3*x**2*y**-1)**2 / (x**3*y)", options: ["6*x/y**3", "9*x/y", "9*x**7*y", "9*x/y**3"]}
+  - id: ca1e-ho-1-2-c
+    objective: "1.2"
+    interaction_type: numeric_entry
+    prompt: "Evaluate $5^0 + 4^{-1}$. Give your answer as a decimal."
+    scoring_spec: {correct_value: 1.25, tolerance: 0}
+    explanation: "$5^0 = 1$ and $4^{-1} = \\frac{1}{4} = 0.25$, so the sum is $1.25$."
+    difficulty: beginner
+    cognitive_level: application
+    verify: {expression: "5**0 + 4**-1"}
+  - id: ca1e-ho-1-2-d
+    objective: "1.2"
+    interaction_type: single_choice
+    prompt: "Write $0.000038$ in scientific notation."
+    response_spec: {options: ["$3.8 \\times 10^{5}$", "$3.8 \\times 10^{-5}$", "$38 \\times 10^{-6}$", "$3.8 \\times 10^{-4}$"]}
+    scoring_spec: {correct_index: 1}
+    explanation: "Move the decimal point 5 places right to get $3.8$, so the exponent is $-5$. $38 \\times 10^{-6}$ has the same value but isn't scientific notation, because $38$ is not between 1 and 10."
+    difficulty: beginner
+    cognitive_level: application
+    verify: {expression: "Rational(38, 1000000)", options: ["Rational(38, 10)*10**5", "Rational(38, 10)*10**-5", "38*10**-6", "Rational(38, 10)*10**-4"], same_value_distractors: [2]}
+  - id: ca1e-ho-1-2-e
+    objective: "1.2"
+    interaction_type: numeric_entry
+    prompt: "Calculate $(6 \\times 10^{4})(3 \\times 10^{-2})$. Give the answer as an ordinary number."
+    scoring_spec: {correct_value: 1800, tolerance: 0}
+    explanation: "$6 \\cdot 3 = 18$ and $10^{4} \\cdot 10^{-2} = 10^{2}$, so $18 \\times 10^{2} = 1800$."
+    difficulty: intermediate
+    cognitive_level: application
+    verify: {expression: "(6*10**4)*(3*Rational(1, 10**2))"}
+  - id: ca1e-ho-1-2-f
+    objective: "1.2"
+    interaction_type: numeric_entry
+    prompt: "Calculate $\\dfrac{8 \\times 10^{6}}{2 \\times 10^{9}}$. Give the answer as a decimal."
+    scoring_spec: {correct_value: 0.004, tolerance: 0}
+    explanation: "$8 \\div 2 = 4$ and $10^{6} \\div 10^{9} = 10^{-3}$, so $4 \\times 10^{-3} = 0.004$."
+    difficulty: intermediate
+    cognitive_level: application
+    verify: {expression: "(8*10**6) / (2*10**9)"}
+
+  # ---------------------------------------------------------------- 1.3
+  - id: ca1e-ho-1-3-a
+    objective: "1.3"
+    interaction_type: numeric_entry
+    prompt: "Evaluate $27^{2/3}$."
+    scoring_spec: {correct_value: 9, tolerance: 0}
+    explanation: "$27^{1/3} = 3$, and $3^2 = 9$."
+    difficulty: intermediate
+    cognitive_level: application
+    verify: {expression: "27**Rational(2, 3)"}
+  - id: ca1e-ho-1-3-b
+    objective: "1.3"
+    interaction_type: numeric_entry
+    prompt: "Evaluate $16^{-3/4}$. Give your answer as a decimal."
+    scoring_spec: {correct_value: 0.125, tolerance: 0}
+    explanation: "$16^{1/4} = 2$, so $16^{3/4} = 8$ and $16^{-3/4} = \\frac{1}{8} = 0.125$."
+    difficulty: advanced
+    cognitive_level: application
+    verify: {expression: "16**Rational(-3, 4)"}
+  - id: ca1e-ho-1-3-c
+    objective: "1.3"
+    interaction_type: single_choice
+    prompt: "Write $\\sqrt{72}$ in simplest radical form."
+    response_spec: {options: ["$6\\sqrt{2}$", "$2\\sqrt{18}$", "$36\\sqrt{2}$", "$3\\sqrt{8}$"]}
+    scoring_spec: {correct_index: 0}
+    explanation: "$72 = 36 \\cdot 2$, so $\\sqrt{72} = 6\\sqrt{2}$. $2\\sqrt{18}$ and $3\\sqrt{8}$ are equal in value but not simplified, because 18 and 8 still contain square factors."
+    difficulty: intermediate
+    cognitive_level: application
+    verify: {expression: "sqrt(72)", options: ["6*sqrt(2)", "2*sqrt(18)", "36*sqrt(2)", "3*sqrt(8)"], same_value_distractors: [1, 3]}
+  - id: ca1e-ho-1-3-d
+    objective: "1.3"
+    interaction_type: single_choice
+    prompt: "Simplify $\\sqrt{12} + \\sqrt{27}$."
+    response_spec: {options: ["$\\sqrt{39}$", "$5\\sqrt{3}$", "$6\\sqrt{3}$", "$13\\sqrt{3}$"]}
+    scoring_spec: {correct_index: 1}
+    explanation: "$\\sqrt{12} = 2\\sqrt{3}$ and $\\sqrt{27} = 3\\sqrt{3}$, so the sum is $5\\sqrt{3}$. Square roots of a sum are not the sum of square roots, so $\\sqrt{39}$ is wrong."
+    difficulty: intermediate
+    cognitive_level: application
+    verify: {expression: "sqrt(12) + sqrt(27)", options: ["sqrt(39)", "5*sqrt(3)", "6*sqrt(3)", "13*sqrt(3)"]}
+  - id: ca1e-ho-1-3-e
+    objective: "1.3"
+    interaction_type: single_choice
+    prompt: "Rationalize the denominator: $\\dfrac{6}{\\sqrt{3}}$."
+    response_spec: {options: ["$6\\sqrt{3}$", "$\\dfrac{\\sqrt{3}}{2}$", "$2\\sqrt{3}$", "$3\\sqrt{2}$"]}
+    scoring_spec: {correct_index: 2}
+    explanation: "Multiply by $\\frac{\\sqrt{3}}{\\sqrt{3}}$: $\\frac{6\\sqrt{3}}{3} = 2\\sqrt{3}$."
+    difficulty: intermediate
+    cognitive_level: application
+    verify: {expression: "6/sqrt(3)", options: ["6*sqrt(3)", "sqrt(3)/2", "2*sqrt(3)", "3*sqrt(2)"]}
+  - id: ca1e-ho-1-3-f
+    objective: "1.3"
+    interaction_type: numeric_entry
+    prompt: "Evaluate $\\sqrt[3]{-64}$."
+    scoring_spec: {correct_value: -4, tolerance: 0}
+    explanation: "$(-4)^3 = -64$, so the real cube root of $-64$ is $-4$."
+    difficulty: beginner
+    cognitive_level: application
+    verify: {expression: "real_root(-64, 3)"}
+
+  # ---------------------------------------------------------------- 1.4
+  - id: ca1e-ho-1-4-a
+    objective: "1.4"
+    interaction_type: numeric_entry
+    prompt: "What is the degree of the polynomial $4x^5 - 3x^2 + 7x^6 - 1$?"
+    scoring_spec: {correct_value: 6, tolerance: 0}
+    explanation: "The degree is the highest power of $x$ that appears, which is $6$ (from $7x^6$), even though that term isn't written first."
+    difficulty: beginner
+    cognitive_level: comprehension
+    verify: {degree_of: "4*x**5 - 3*x**2 + 7*x**6 - 1"}
+  - id: ca1e-ho-1-4-b
+    objective: "1.4"
+    interaction_type: single_choice
+    prompt: "Simplify $(3x^2 - 5x + 2) - (x^2 + 4x - 6)$."
+    response_spec: {options: ["$2x^2 - x - 4$", "$2x^2 - 9x + 8$", "$4x^2 - 9x - 4$", "$2x^2 - 9x - 4$"]}
+    scoring_spec: {correct_index: 1}
+    explanation: "Subtract each term: $3x^2 - x^2 = 2x^2$, $-5x - 4x = -9x$, $2 - (-6) = 8$."
+    difficulty: intermediate
+    cognitive_level: application
+    verify: {expression: "(3*x**2 - 5*x + 2) - (x**2 + 4*x - 6)", options: ["2*x**2 - x - 4", "2*x**2 - 9*x + 8", "4*x**2 - 9*x - 4", "2*x**2 - 9*x - 4"]}
+  - id: ca1e-ho-1-4-c
+    objective: "1.4"
+    interaction_type: single_choice
+    prompt: "Multiply $(2x - 3)(x + 5)$."
+    response_spec: {options: ["$2x^2 - 7x - 15$", "$2x^2 + 13x - 15$", "$2x^2 + 7x + 15$", "$2x^2 + 7x - 15$"]}
+    scoring_spec: {correct_index: 3}
+    explanation: "$2x \\cdot x = 2x^2$, $2x \\cdot 5 - 3 \\cdot x = 7x$, and $-3 \\cdot 5 = -15$."
+    difficulty: intermediate
+    cognitive_level: application
+    verify: {expression: "(2*x - 3)*(x + 5)", options: ["2*x**2 - 7*x - 15", "2*x**2 + 13*x - 15", "2*x**2 + 7*x + 15", "2*x**2 + 7*x - 15"]}
+  - id: ca1e-ho-1-4-d
+    objective: "1.4"
+    interaction_type: single_choice
+    prompt: "Expand $(x - 4)^2$."
+    response_spec: {options: ["$x^2 - 16$", "$x^2 - 8x + 16$", "$x^2 + 16$", "$x^2 - 4x + 16$"]}
+    scoring_spec: {correct_index: 1}
+    explanation: "$(x - 4)^2 = x^2 - 2 \\cdot 4x + 16 = x^2 - 8x + 16$. Squaring each term separately ($x^2 - 16$ or $x^2 + 16$) misses the middle term."
+    difficulty: beginner
+    cognitive_level: application
+    verify: {expression: "(x - 4)**2", options: ["x**2 - 16", "x**2 - 8*x + 16", "x**2 + 16", "x**2 - 4*x + 16"]}
+  - id: ca1e-ho-1-4-e
+    objective: "1.4"
+    interaction_type: numeric_entry
+    prompt: "What is the leading coefficient of $(3x^2 - 1)(2x^3 + x)$ after multiplying it out?"
+    scoring_spec: {correct_value: 6, tolerance: 0}
+    explanation: "The highest-degree term comes from $3x^2 \\cdot 2x^3 = 6x^5$, so the leading coefficient is $6$."
+    difficulty: intermediate
+    cognitive_level: analysis
+    verify: {leading_coefficient_of: "(3*x**2 - 1)*(2*x**3 + x)"}
+  - id: ca1e-ho-1-4-f
+    objective: "1.4"
+    interaction_type: numeric_entry
+    prompt: "Evaluate $x^3 - 2x^2 + 4$ when $x = 3$."
+    scoring_spec: {correct_value: 13, tolerance: 0}
+    explanation: "$27 - 18 + 4 = 13$."
+    difficulty: beginner
+    cognitive_level: application
+    verify: {expression: "x**3 - 2*x**2 + 4", substitute: {x: 3}}
+
+  # ---------------------------------------------------------------- 1.5
+  - id: ca1e-ho-1-5-a
+    objective: "1.5"
+    interaction_type: single_choice
+    prompt: "Factor $x^2 + 2x - 15$."
+    response_spec: {options: ["$(x - 5)(x + 3)$", "$(x + 5)(x - 3)$", "$(x + 15)(x - 1)$", "$(x + 3)(x + 5)$"]}
+    scoring_spec: {correct_index: 1}
+    explanation: "Find two numbers that multiply to $-15$ and add to $2$: $5$ and $-3$. So $x^2 + 2x - 15 = (x + 5)(x - 3)$."
+    difficulty: intermediate
+    cognitive_level: application
+    verify: {expression: "x**2 + 2*x - 15", options: ["(x - 5)*(x + 3)", "(x + 5)*(x - 3)", "(x + 15)*(x - 1)", "(x + 3)*(x + 5)"]}
+  - id: ca1e-ho-1-5-b
+    objective: "1.5"
+    interaction_type: single_choice
+    prompt: "Factor out the greatest common factor: $12x^3 - 18x^2$."
+    response_spec: {options: ["$6x(2x^2 - 3x)$", "$3x^2(4x - 6)$", "$6x^2(2x - 3)$", "$12x^2(x - 18)$"]}
+    scoring_spec: {correct_index: 2}
+    explanation: "The GCF of $12x^3$ and $18x^2$ is $6x^2$, leaving $2x - 3$. $6x(2x^2 - 3x)$ and $3x^2(4x - 6)$ are equal in value but didn't take out the whole GCF."
+    difficulty: intermediate
+    cognitive_level: application
+    verify: {expression: "12*x**3 - 18*x**2", options: ["6*x*(2*x**2 - 3*x)", "3*x**2*(4*x - 6)", "6*x**2*(2*x - 3)", "12*x**2*(x - 18)"], same_value_distractors: [0, 1]}
+  - id: ca1e-ho-1-5-c
+    objective: "1.5"
+    interaction_type: single_choice
+    prompt: "Factor $9y^2 - 25$."
+    response_spec: {options: ["$(3y - 5)^2$", "$(9y - 5)(y + 5)$", "It can't be factored over the integers", "$(3y + 5)(3y - 5)$"]}
+    scoring_spec: {correct_index: 3}
+    explanation: "It is a difference of squares: $(3y)^2 - 5^2 = (3y + 5)(3y - 5)$."
+    difficulty: intermediate
+    cognitive_level: application
+    verify: {expression: "9*y**2 - 25", options: ["(3*y - 5)**2", "(9*y - 5)*(y + 5)", null, "(3*y + 5)*(3*y - 5)"]}
+  - id: ca1e-ho-1-5-d
+    objective: "1.5"
+    interaction_type: single_choice
+    prompt: "Factor $2x^2 + 7x + 3$."
+    response_spec: {options: ["$(2x + 1)(x + 3)$", "$(2x + 3)(x + 1)$", "$(2x - 1)(x - 3)$", "$(x + 1)(x + 3)$"]}
+    scoring_spec: {correct_index: 0}
+    explanation: "Check the middle term: $(2x + 1)(x + 3) = 2x^2 + 6x + x + 3 = 2x^2 + 7x + 3$. $(2x + 3)(x + 1)$ gives $5x$ instead."
+    difficulty: advanced
+    cognitive_level: application
+    verify: {expression: "2*x**2 + 7*x + 3", options: ["(2*x + 1)*(x + 3)", "(2*x + 3)*(x + 1)", "(2*x - 1)*(x - 3)", "(x + 1)*(x + 3)"]}
+  - id: ca1e-ho-1-5-e
+    objective: "1.5"
+    interaction_type: single_choice
+    prompt: "Factor $x^3 - 8$."
+    response_spec: {options: ["$(x - 2)^3$", "$(x + 2)(x^2 - 2x + 4)$", "$(x - 2)(x^2 + 2x + 4)$", "$(x - 2)(x^2 + 4)$"]}
+    scoring_spec: {correct_index: 2}
+    explanation: "Difference of cubes: $a^3 - b^3 = (a - b)(a^2 + ab + b^2)$ with $a = x$, $b = 2$."
+    difficulty: advanced
+    cognitive_level: application
+    verify: {expression: "x**3 - 8", options: ["(x - 2)**3", "(x + 2)*(x**2 - 2*x + 4)", "(x - 2)*(x**2 + 2*x + 4)", "(x - 2)*(x**2 + 4)"]}
+  - id: ca1e-ho-1-5-f
+    objective: "1.5"
+    interaction_type: numeric_entry
+    prompt: "$x^2 - 10x + 21$ factors as $(x - a)(x - b)$ with $a < b$. What is $b$?"
+    scoring_spec: {correct_value: 7, tolerance: 0}
+    explanation: "$3 \\cdot 7 = 21$ and $3 + 7 = 10$, so $x^2 - 10x + 21 = (x - 3)(x - 7)$ and $b = 7$."
+    difficulty: intermediate
+    cognitive_level: application
+    verify: {largest_root_of: "x**2 - 10*x + 21"}
+
+  # ---------------------------------------------------------------- 1.6
+  - id: ca1e-ho-1-6-a
+    objective: "1.6"
+    interaction_type: single_choice
+    prompt: "Simplify $\\dfrac{x^2 - 9}{x^2 + x - 6}$."
+    response_spec: {options: ["$\\dfrac{x + 3}{x - 2}$", "$\\dfrac{x - 3}{x + 2}$", "$\\dfrac{-9}{x - 6}$", "$\\dfrac{x - 3}{x - 2}$"]}
+    scoring_spec: {correct_index: 3}
+    explanation: "$\\dfrac{(x - 3)(x + 3)}{(x + 3)(x - 2)} = \\dfrac{x - 3}{x - 2}$, for $x \\ne -3$ and $x \\ne 2$. You can only cancel common factors, not terms, so $\\dfrac{-9}{x - 6}$ is wrong."
+    difficulty: intermediate
+    cognitive_level: application
+    verify: {expression: "(x**2 - 9)/(x**2 + x - 6)", options: ["(x + 3)/(x - 2)", "(x - 3)/(x + 2)", "-9/(x - 6)", "(x - 3)/(x - 2)"]}
+  - id: ca1e-ho-1-6-b
+    objective: "1.6"
+    interaction_type: single_choice
+    prompt: "Multiply and simplify: $\\dfrac{x}{x + 2} \\cdot \\dfrac{x^2 - 4}{x^2}$."
+    response_spec: {options: ["$\\dfrac{x - 2}{x}$", "$\\dfrac{x + 2}{x}$", "$x - 2$", "$\\dfrac{x^2 - 4}{x(x + 2)}$ (already simplest)"]}
+    scoring_spec: {correct_index: 0}
+    explanation: "$x^2 - 4 = (x - 2)(x + 2)$. Cancel $x + 2$ and one $x$: $\\dfrac{x - 2}{x}$."
+    difficulty: intermediate
+    cognitive_level: application
+    verify: {expression: "x/(x + 2) * (x**2 - 4)/x**2", options: ["(x - 2)/x", "(x + 2)/x", "x - 2", "(x**2 - 4)/(x*(x + 2))"], same_value_distractors: [3]}
+  - id: ca1e-ho-1-6-c
+    objective: "1.6"
+    interaction_type: single_choice
+    prompt: "Add: $\\dfrac{2}{x} + \\dfrac{3}{x + 1}$."
+    response_spec: {options: ["$\\dfrac{5}{2x + 1}$", "$\\dfrac{5x + 3}{x(x + 1)}$", "$\\dfrac{5x + 2}{x(x + 1)}$", "$\\dfrac{6}{x(x + 1)}$"]}
+    scoring_spec: {correct_index: 2}
+    explanation: "Use the common denominator $x(x + 1)$: $\\dfrac{2(x + 1) + 3x}{x(x + 1)} = \\dfrac{5x + 2}{x(x + 1)}$."
+    difficulty: intermediate
+    cognitive_level: application
+    verify: {expression: "2/x + 3/(x + 1)", options: ["5/(2*x + 1)", "(5*x + 3)/(x*(x + 1))", "(5*x + 2)/(x*(x + 1))", "6/(x*(x + 1))"]}
+  - id: ca1e-ho-1-6-d
+    objective: "1.6"
+    interaction_type: numeric_entry
+    prompt: "Which value of $x$ must be excluded from the domain of $\\dfrac{x + 4}{2x - 6}$?"
+    scoring_spec: {correct_value: 3, tolerance: 0}
+    explanation: "The denominator is zero when $2x - 6 = 0$, that is $x = 3$. The numerator being zero ($x = -4$) is allowed."
+    difficulty: beginner
+    cognitive_level: comprehension
+    verify: {denominator_zero_of: "(x + 4)/(2*x - 6)"}
+  - id: ca1e-ho-1-6-e
+    objective: "1.6"
+    interaction_type: single_choice
+    prompt: "Divide and simplify: $\\dfrac{3x}{x - 1} \\div \\dfrac{6}{x^2 - 1}$."
+    response_spec: {options: ["$\\dfrac{18x}{(x - 1)^2(x + 1)}$", "$\\dfrac{x(x + 1)}{2}$", "$\\dfrac{2}{x(x + 1)}$", "$\\dfrac{x(x - 1)}{2}$"]}
+    scoring_spec: {correct_index: 1}
+    explanation: "Multiply by the reciprocal: $\\dfrac{3x}{x - 1} \\cdot \\dfrac{(x - 1)(x + 1)}{6} = \\dfrac{x(x + 1)}{2}$."
+    difficulty: advanced
+    cognitive_level: application
+    verify: {expression: "(3*x/(x - 1)) / (6/(x**2 - 1))", options: ["18*x/((x - 1)**2*(x + 1))", "x*(x + 1)/2", "2/(x*(x + 1))", "x*(x - 1)/2"]}
+  - id: ca1e-ho-1-6-f
+    objective: "1.6"
+    interaction_type: numeric_entry
+    prompt: "Evaluate $\\dfrac{x^2 - 1}{x - 1}$ when $x = 4$."
+    scoring_spec: {correct_value: 5, tolerance: 0}
+    explanation: "$\\dfrac{16 - 1}{4 - 1} = \\dfrac{15}{3} = 5$ (or simplify first to $x + 1$)."
+    difficulty: beginner
+    cognitive_level: application
+    verify: {expression: "(x**2 - 1)/(x - 1)", substitute: {x: 4}}
