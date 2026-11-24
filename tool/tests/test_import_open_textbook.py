@@ -152,6 +152,39 @@ class SectionTests(unittest.TestCase):
         self.assertIn("percent", self.lesson["tags"])
 
 
+class TeachingOnlyTests(unittest.TestCase):
+    """Plan v1.2 §7.4: keep teachable sections that have nothing gradable."""
+
+    def lesson_without_answers(self):
+        # Same section, but no answer key, so nothing can be graded.
+        lesson, _ = t.section_lesson(SECTION, META, {}, {})
+        self.assertEqual(lesson["assessment_items"], [])
+        return lesson
+
+    def test_teachable_section_is_kept_with_a_visible_gap(self):
+        lesson = self.lesson_without_answers()
+        self.assertTrue(t.mark_teaching_only(lesson))
+        self.assertIn("teaching-only", lesson["tags"])
+        self.assertEqual(lesson["tags"][-1], "unreviewed")
+        note, credit = lesson["blocks"][-2], lesson["blocks"][-1]
+        self.assertEqual(note["content"]["title"], "No graded questions yet")
+        self.assertIn("doesn't count toward exam readiness", note["content"]["body"])
+        self.assertEqual(credit["content"]["title"], "Source and license")
+        self.assertEqual([b["sort_order"] for b in lesson["blocks"]],
+                         list(range(1, len(lesson["blocks"]) + 1)))
+
+    def test_section_with_nothing_to_teach_is_left_out(self):
+        lesson = {"tags": ["unreviewed"], "blocks": [
+            {"sort_order": 1, "block_type": "markdown",
+             "content": {"text": "### In this section, you will:\n\n- Do a thing"}},
+            {"sort_order": 2, "block_type": "callout",
+             "content": {"type": "info", "title": "Source and license", "body": "credit"}},
+        ]}
+        self.assertFalse(t.mark_teaching_only(lesson))
+        self.assertNotIn("teaching-only", lesson["tags"])
+        self.assertEqual(len(lesson["blocks"]), 2)
+
+
 class SourceGateTests(unittest.TestCase):
     def test_only_approved_cc_by_sources_can_be_imported(self):
         t.check_source("openstax-college-algebra-1e")

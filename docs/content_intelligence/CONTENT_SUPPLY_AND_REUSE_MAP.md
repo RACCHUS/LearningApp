@@ -56,6 +56,8 @@ The per-lesson counts are the same in every row: 3 teach blocks, 2 call-outs, 2 
 | 4.3 | Sequences and Series | 9.1, 9.2, 9.3 | Exponents |
 | 4.4 | Combinatorics, Binomial Theorem | 9.5, 9.6 | Factorials and multiplication principle |
 
+**Open textbook support (2026-11-24):** the College Algebra import (R4) now includes OpenStax 1.4 Polynomials and 1.5 Factoring as teaching-only lessons, which supports objective 1.2 above. They have practice with answers to reveal but no graded check: factoring answers are expressions, which need a safe symbolic grader (plan v1.2 §9.1).
+
 **Gaps across all 20 lessons:**
 - **Practice is thin:** 2 questions per lesson. Add worked examples and practice adapted from OpenStax 1st edition (approved), or use parametric families where the arithmetic is checkable.
 - **No algebra Bridges:** the most-needed ones, by how many lessons need them, are negative numbers, solving linear equations, fraction operations, exponents and the coordinate plane. Bridges also need subject scoping so help offers only relevant Bridges (help is currently Excel-only); new check templates are also needed: signed arithmetic, absolute value, power, and one-step linear equations.

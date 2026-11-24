@@ -279,12 +279,30 @@ class ManifestLinter {
         // Lessons & Assessments
         final lessons = objective['lessons'] as List<dynamic>? ?? [];
         int totalObjectiveAssessments = 0;
+        // Ingestion plan v1.2 §7.4/§8.5: a lesson tagged `teaching-only`
+        // declares that it has no independent check yet. An objective whose
+        // lessons are all teaching-only may have zero assessment items; that
+        // is reported as a warning (a visible gap), not hidden.
+        final lessonMaps = lessons.whereType<Map>().toList();
+        bool isTeachingOnly(Map l) =>
+            ((l['tags'] as List<dynamic>?) ?? const []).map((t) => t.toString()).contains('teaching-only');
+        final allTeachingOnly = lessonMaps.isNotEmpty && lessonMaps.every(isTeachingOnly);
 
         for (final lesson in lessons) {
           if (lesson is! Map) continue;
           final lTitle = lesson['title']?.toString() ?? 'Untitled';
           final lLocation = '$oLocation -> Lesson "$lTitle"';
           checkSourceReleaseRef(lesson['source_release_id'], lLocation);
+          if (isTeachingOnly(lesson) &&
+              (((lesson['assessment_items'] as List<dynamic>?) ?? const []).isNotEmpty ||
+                  ((lesson['questions'] as List<dynamic>?) ?? const []).isNotEmpty)) {
+            issues.add(LintIssue(
+              level: 'ERROR',
+              rule: 'teaching-only-has-assessments',
+              location: lLocation,
+              message: 'Lesson is tagged teaching-only but has questions or assessment items. Remove the tag or the items.',
+            ));
+          }
 
           // Track taught concepts from lesson
           final lConceptSlugs = (lesson['concept_slugs'] as List<dynamic>?)?.map((e) => e.toString()).toList();
@@ -427,12 +445,19 @@ class ManifestLinter {
         }
 
         // Objective assessment evidence check (evaluates BOTH questions & assessment_items)
-        if (totalObjectiveAssessments == 0) {
+        if (totalObjectiveAssessments == 0 && allTeachingOnly) {
+          issues.add(LintIssue(
+            level: 'WARNING',
+            rule: 'objective-teaching-only',
+            location: oLocation,
+            message: 'Objective is teaching-only: no independent check yet, so it cannot count toward readiness.',
+          ));
+        } else if (totalObjectiveAssessments == 0) {
           issues.add(LintIssue(
             level: 'ERROR',
             rule: 'objective-assessment-coverage',
             location: oLocation,
-            message: 'Objective has 0 assessment questions or assessment items. Each objective must have measurable evidence.',
+            message: 'Objective has 0 assessment questions or assessment items. Each objective must have measurable evidence, or tag its lessons teaching-only.',
           ));
         }
       }
