@@ -6,7 +6,7 @@ source_releases:
   title: College Algebra
   version: ebc5beb (archive 20260604.144757)
   source_url: https://openstax.org/books/college-algebra/pages/preface
-  retrieved_at: '2026-11-24T01:21:41Z'
+  retrieved_at: '2026-11-24T19:02:17Z'
   license: Creative Commons Attribution 4.0 International (CC BY 4.0)
   license_name: CC BY 4.0
   rights_note: Adapted under CC BY 4.0 (owner-approved, data/content_sources.json). OpenStax and Rice University names and logos are not covered by the license; no endorsement implied. Imported automatically; not reviewed by a person.
@@ -18,7 +18,7 @@ source_releases:
 target:
   slug: open-openstax-college-algebra-1e
   title: College Algebra (open textbook)
-  version_code: OPENSTAX-EBC5BEB-R4
+  version_code: OPENSTAX-EBC5BEB-R5
   version_title: College Algebra by OpenStax, CC BY 4.0
   version_description: Open textbook sections imported as LearningApp lessons.
   volatility_class: V0
