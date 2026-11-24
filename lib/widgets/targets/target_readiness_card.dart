@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../models/readiness_coverage.dart';
 import '../../models/user_concept_state.dart';
 import '../../providers/target_readiness_provider.dart';
 import '../../theme/design_tokens.dart';
@@ -20,6 +21,9 @@ class TargetReadinessCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final readinessAsync = ref.watch(targetReadinessProvider(targetVersionId));
+    // D-14: while coverage is loading, show the spinner rather than an
+    // unqualified band that might be hidden a moment later.
+    final coverageAsync = ref.watch(readinessCoverageProvider(targetVersionId));
     final theme = Theme.of(context);
 
     return Card(
@@ -46,6 +50,17 @@ class TargetReadinessCard extends ConsumerWidget {
             ),
           ),
           data: (readiness) {
+            if (coverageAsync.isLoading) {
+              return const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(DesignTokens.space3),
+                  child: CircularProgressIndicator(),
+                ),
+              );
+            }
+            final coverage = coverageAsync.valueOrNull;
+            final hideBand = coverage?.state == ReadinessCoverageState.hidden;
+            final provisional = coverage?.state == ReadinessCoverageState.provisional;
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -53,14 +68,25 @@ class TargetReadinessCard extends ConsumerWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'Knowledge Readiness',
+                      hideBand ? 'Study progress' : 'Knowledge Readiness',
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    _ReadinessBadge(band: readiness.band),
+                    if (hideBand)
+                      const _NotEnoughChecksBadge()
+                    else
+                      _ReadinessBadge(band: readiness.band, provisional: provisional),
                   ],
                 ),
+                if (coverage != null && coverage.state != ReadinessCoverageState.full) ...[
+                  const SizedBox(height: DesignTokens.space2),
+                  Text(
+                    readinessCoverageMessage(coverage),
+                    key: const Key('readiness_coverage_message'),
+                    style: theme.textTheme.bodySmall,
+                  ),
+                ],
                 const SizedBox(height: DesignTokens.space2),
                 Text(
                   readiness.totalCoreConcepts > 0
@@ -127,10 +153,64 @@ class TargetReadinessCard extends ConsumerWidget {
   }
 }
 
+/// Plain-language explanation shown when readiness is hidden or provisional.
+String readinessCoverageMessage(ReadinessCoverage coverage) {
+  if (coverage.isUnavailable) {
+    return "Readiness isn't shown right now because we couldn't confirm how much of this "
+        'target has independent checks. Your study progress is below.';
+  }
+  final pct = coverage.coveredPercent;
+  final needed = (coverage.provisionalThreshold * 100).round();
+  return switch (coverage.state) {
+    ReadinessCoverageState.hidden =>
+      "Readiness isn't shown yet. Independent checks cover $pct% of this target, and at "
+          'least $needed% is needed for an estimate you can rely on. Your study progress is below.',
+    ReadinessCoverageState.provisional =>
+      'Provisional: independent checks cover $pct% of this target, so treat this estimate '
+          'as a rough guide.',
+    ReadinessCoverageState.full => '',
+  };
+}
+
+class _NotEnoughChecksBadge extends StatelessWidget {
+  const _NotEnoughChecksBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      key: const Key('readiness_not_enough_checks_badge'),
+      padding: const EdgeInsets.symmetric(
+        horizontal: DesignTokens.space2,
+        vertical: DesignTokens.space1,
+      ),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.fact_check_outlined, size: 14, color: theme.colorScheme.onSurfaceVariant),
+          const SizedBox(width: 4),
+          Text(
+            'Not enough checks yet',
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _ReadinessBadge extends StatelessWidget {
   final TargetReadinessBand band;
+  final bool provisional;
 
-  const _ReadinessBadge({required this.band});
+  const _ReadinessBadge({required this.band, this.provisional = false});
 
   @override
   Widget build(BuildContext context) {
@@ -173,7 +253,7 @@ class _ReadinessBadge extends StatelessWidget {
           Icon(icon, size: 14, color: fg),
           const SizedBox(width: 4),
           Text(
-            band.displayName,
+            provisional ? '${band.displayName} (provisional)' : band.displayName,
             style: theme.textTheme.labelSmall?.copyWith(
               color: fg,
               fontWeight: FontWeight.bold,
