@@ -1,11 +1,11 @@
 # LearningApp — Demand-Driven Content Ingestion & Educational Optimization
 
-**Implementation plan v1.2 — owner review draft**
+**Implementation plan v1.2 — accepted by the owner 2026-11-24**
 **Date:** 2026-11-23 (US Eastern). v1.1 merged in #372; v1.2 adds the readiness and motivation half (§0A, §8.5–§8.9, §9.2, §16.4) and recommendations for every owner decision (§18).
-**Status:** Proposed. The decisions in §18 carry recommendations but are **not yet accepted by the owner**.
+**Status:** **Accepted.** The owner accepted all §18 recommendations (D-1 to D-15) as written on 2026-11-24. Implementation proceeds in the PR slices of §14. Each production run (ingestion, migration, deployment) and each feature-switch activation still needs its own owner approval.
 **Scope:** Path B of [Content Intelligence v2.6](LEARNINGAPP_CONTENT_INTELLIGENCE_AND_GAP_RESCUE_MASTER_PLAN_V2_6_2026-11-11.md) (§8), with interfaces to Path A (AI-assisted generation, §5) and Path C (external-resource companionship, §9).
-**Authority:** The product owner approves priorities, rights exceptions, budget changes and production publication. This document authorizes no code change, migration, scraping, source-rights approval, deployment or spending.
-**Precedence (v1.1):** This plan refines v2.6 §8; it does not replace it. Where they conflict, the binding v2.6 decisions (D1–D89), `AGENTS.md` and `UI_ARCHITECTURE_LOCKED.md` win until the owner accepts a specific change from §18 below. No decision in this plan is binding until the owner accepts it.
+**Authority:** The product owner approves priorities, rights exceptions, budget changes and production publication. With the 2026-11-24 acceptance, this document authorizes the repository work in §14: docs, research files, validators, CI checks, importer changes, and the registry and manifest edits that D-5, D-6 and D-7 call for, each through a normal reviewed PR. It does not authorize production ingestion, migration deployment, feature activation, scraping or spending; those need a separate owner approval each time.
+**Precedence (v1.1):** This plan refines v2.6 §8; it does not replace it. Where they conflict, the binding v2.6 decisions (D1–D89), `AGENTS.md` and `UI_ARCHITECTURE_LOCKED.md` win, except where an accepted §18 decision explicitly settles a question v2.6 left open. D-5 settles the Psychology license mismatch, D-4 keeps the non-commercial question open, and D-13 settles part of the "ingest the seven manifests" decision.
 **Repository:** RACCHUS/LearningApp. Baseline: read-only inspection of `main` at `6033de6` (2026-11-23). No hosted audit, production query or test run was done for this draft.
 
 ---
@@ -738,9 +738,15 @@ Review the portfolio at a regular cadence the owner sets: proposed monthly for a
 
 ## 18. Owner review decisions and definition of done
 
-### Decisions requested before implementation
+### Decisions (accepted 2026-11-24)
 
-**State (v1.2):** every decision below carries a recommendation. **None is accepted until the owner says so**; record each acceptance here with a date. The decisions fall into three groups.
+**State:** **The owner accepted every recommendation below (D-1 to D-15) as written on 2026-11-24.** Any later change is recorded here with its date and reason. The decisions fall into three groups.
+
+Accepting a decision does not by itself run anything in production. In particular:
+
+- **D-7:** the `redistribute` approval is applied to `data/content_sources.json` with `decided_by: "owner 2026-11-24"` in an implementation PR.
+- **D-13:** each production ingestion run still goes through the controlled workflow with its own approval.
+- **D-14 and D-15:** set the starting values; they are tunable.
 
 **Real choices, with trade-offs**
 
