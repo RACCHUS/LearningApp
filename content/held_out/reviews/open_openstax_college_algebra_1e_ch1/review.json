@@ -1,0 +1,578 @@
+[
+ {
+  "id": "ca1e-ho-1-1-a",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_best": "pass",
+   "distractors": "pass",
+   "clear": "pass",
+   "aligned": "pass",
+   "held_out": "pass",
+   "explanation": "pass"
+  },
+  "reasons": "All checks pass; sympy agrees with key.",
+  "suggested_fix": null,
+  "your_answer": "16"
+ },
+ {
+  "id": "ca1e-ho-1-1-b",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_best": "pass",
+   "distractors": "pass",
+   "clear": "pass",
+   "aligned": "pass",
+   "held_out": "pass",
+   "explanation": "pass"
+  },
+  "reasons": "All checks pass; sympy agrees with key.",
+  "suggested_fix": null,
+  "your_answer": "-34"
+ },
+ {
+  "id": "ca1e-ho-1-1-c",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_best": "pass",
+   "distractors": "pass",
+   "clear": "pass",
+   "aligned": "pass",
+   "held_out": "pass",
+   "explanation": "pass"
+  },
+  "reasons": "All checks pass; sympy agrees with key.",
+  "suggested_fix": null,
+  "your_answer": "idx3 sqrt(12)"
+ },
+ {
+  "id": "ca1e-ho-1-1-d",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_best": "pass",
+   "distractors": "pass",
+   "clear": "pass",
+   "aligned": "pass",
+   "held_out": "pass",
+   "explanation": "pass"
+  },
+  "reasons": "All checks pass; sympy agrees with key.",
+  "suggested_fix": null,
+  "your_answer": "idx1 5y+3"
+ },
+ {
+  "id": "ca1e-ho-1-1-e",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_best": "pass",
+   "distractors": "pass",
+   "clear": "pass",
+   "aligned": "pass",
+   "held_out": "pass",
+   "explanation": "pass"
+  },
+  "reasons": "All checks pass; sympy agrees with key.",
+  "suggested_fix": null,
+  "your_answer": "idx2 distributive"
+ },
+ {
+  "id": "ca1e-ho-1-1-f",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_best": "pass",
+   "distractors": "pass",
+   "clear": "pass",
+   "aligned": "pass",
+   "held_out": "pass",
+   "explanation": "pass"
+  },
+  "reasons": "All checks pass; sympy agrees with key.",
+  "suggested_fix": null,
+  "your_answer": "-2"
+ },
+ {
+  "id": "ca1e-ho-1-2-a",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_best": "pass",
+   "distractors": "pass",
+   "clear": "pass",
+   "aligned": "pass",
+   "held_out": "pass",
+   "explanation": "pass"
+  },
+  "reasons": "All checks pass; sympy agrees with key.",
+  "suggested_fix": null,
+  "your_answer": "4"
+ },
+ {
+  "id": "ca1e-ho-1-2-b",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_best": "pass",
+   "distractors": "pass",
+   "clear": "pass",
+   "aligned": "pass",
+   "held_out": "pass",
+   "explanation": "pass"
+  },
+  "reasons": "All checks pass; sympy agrees with key.",
+  "suggested_fix": null,
+  "your_answer": "idx3 9x/y^3"
+ },
+ {
+  "id": "ca1e-ho-1-2-c",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_best": "pass",
+   "distractors": "pass",
+   "clear": "pass",
+   "aligned": "pass",
+   "held_out": "pass",
+   "explanation": "pass"
+  },
+  "reasons": "All checks pass; sympy agrees with key. Numeric format: prompt demands decimal; fraction entry (5/4, 1/8, 1/250) would be wrong unless grader parses fractions with tolerance 0.",
+  "suggested_fix": null,
+  "your_answer": "1.25"
+ },
+ {
+  "id": "ca1e-ho-1-2-d",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_best": "pass",
+   "distractors": "pass",
+   "clear": "pass",
+   "aligned": "pass",
+   "held_out": "pass",
+   "explanation": "pass"
+  },
+  "reasons": "All checks pass; sympy agrees with key.",
+  "suggested_fix": null,
+  "your_answer": "idx1"
+ },
+ {
+  "id": "ca1e-ho-1-2-e",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_best": "pass",
+   "distractors": "pass",
+   "clear": "pass",
+   "aligned": "pass",
+   "held_out": "pass",
+   "explanation": "pass"
+  },
+  "reasons": "All checks pass; sympy agrees with key.",
+  "suggested_fix": null,
+  "your_answer": "1800"
+ },
+ {
+  "id": "ca1e-ho-1-2-f",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_best": "pass",
+   "distractors": "pass",
+   "clear": "pass",
+   "aligned": "pass",
+   "held_out": "pass",
+   "explanation": "pass"
+  },
+  "reasons": "All checks pass; sympy agrees with key. Numeric format: prompt demands decimal; fraction entry (5/4, 1/8, 1/250) would be wrong unless grader parses fractions with tolerance 0.",
+  "suggested_fix": null,
+  "your_answer": "0.004"
+ },
+ {
+  "id": "ca1e-ho-1-3-a",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_best": "pass",
+   "distractors": "pass",
+   "clear": "pass",
+   "aligned": "pass",
+   "held_out": "pass",
+   "explanation": "pass"
+  },
+  "reasons": "All checks pass; sympy agrees with key.",
+  "suggested_fix": null,
+  "your_answer": "9"
+ },
+ {
+  "id": "ca1e-ho-1-3-b",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_best": "pass",
+   "distractors": "pass",
+   "clear": "pass",
+   "aligned": "pass",
+   "held_out": "pass",
+   "explanation": "pass"
+  },
+  "reasons": "All checks pass; sympy agrees with key. Numeric format: prompt demands decimal; fraction entry (5/4, 1/8, 1/250) would be wrong unless grader parses fractions with tolerance 0.",
+  "suggested_fix": null,
+  "your_answer": "0.125"
+ },
+ {
+  "id": "ca1e-ho-1-3-c",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_best": "pass",
+   "distractors": "pass",
+   "clear": "pass",
+   "aligned": "pass",
+   "held_out": "pass",
+   "explanation": "pass"
+  },
+  "reasons": "All checks pass; sympy agrees with key.",
+  "suggested_fix": null,
+  "your_answer": "idx0 6sqrt2"
+ },
+ {
+  "id": "ca1e-ho-1-3-d",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_best": "pass",
+   "distractors": "pass",
+   "clear": "pass",
+   "aligned": "pass",
+   "held_out": "pass",
+   "explanation": "pass"
+  },
+  "reasons": "All checks pass; sympy agrees with key.",
+  "suggested_fix": null,
+  "your_answer": "idx1 5sqrt3"
+ },
+ {
+  "id": "ca1e-ho-1-3-e",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_best": "pass",
+   "distractors": "pass",
+   "clear": "pass",
+   "aligned": "pass",
+   "held_out": "pass",
+   "explanation": "pass"
+  },
+  "reasons": "All checks pass; sympy agrees with key.",
+  "suggested_fix": null,
+  "your_answer": "idx2 2sqrt3"
+ },
+ {
+  "id": "ca1e-ho-1-3-f",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_best": "pass",
+   "distractors": "pass",
+   "clear": "pass",
+   "aligned": "pass",
+   "held_out": "pass",
+   "explanation": "pass"
+  },
+  "reasons": "All checks pass; sympy agrees with key.",
+  "suggested_fix": null,
+  "your_answer": "-4"
+ },
+ {
+  "id": "ca1e-ho-1-4-a",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_best": "pass",
+   "distractors": "pass",
+   "clear": "pass",
+   "aligned": "pass",
+   "held_out": "pass",
+   "explanation": "pass"
+  },
+  "reasons": "All checks pass; sympy agrees with key. Note: structurally parallel to a lesson practice prompt (degree/leading term of 4x^2-x^6+2x-6, out-of-order terms) but different numbers and only degree asked; accepted.",
+  "suggested_fix": null,
+  "your_answer": "6"
+ },
+ {
+  "id": "ca1e-ho-1-4-b",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_best": "pass",
+   "distractors": "pass",
+   "clear": "pass",
+   "aligned": "pass",
+   "held_out": "pass",
+   "explanation": "pass"
+  },
+  "reasons": "All checks pass; sympy agrees with key.",
+  "suggested_fix": null,
+  "your_answer": "idx1"
+ },
+ {
+  "id": "ca1e-ho-1-4-c",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_best": "pass",
+   "distractors": "pass",
+   "clear": "pass",
+   "aligned": "pass",
+   "held_out": "pass",
+   "explanation": "pass"
+  },
+  "reasons": "All checks pass; sympy agrees with key.",
+  "suggested_fix": null,
+  "your_answer": "idx3"
+ },
+ {
+  "id": "ca1e-ho-1-4-d",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_best": "pass",
+   "distractors": "pass",
+   "clear": "pass",
+   "aligned": "pass",
+   "held_out": "pass",
+   "explanation": "pass"
+  },
+  "reasons": "All checks pass; sympy agrees with key.",
+  "suggested_fix": null,
+  "your_answer": "idx1"
+ },
+ {
+  "id": "ca1e-ho-1-4-e",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_best": "pass",
+   "distractors": "pass",
+   "clear": "pass",
+   "aligned": "pass",
+   "held_out": "pass",
+   "explanation": "pass"
+  },
+  "reasons": "All checks pass; sympy agrees with key.",
+  "suggested_fix": null,
+  "your_answer": "6"
+ },
+ {
+  "id": "ca1e-ho-1-4-f",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_best": "pass",
+   "distractors": "pass",
+   "clear": "pass",
+   "aligned": "pass",
+   "held_out": "pass",
+   "explanation": "pass"
+  },
+  "reasons": "All checks pass; sympy agrees with key.",
+  "suggested_fix": null,
+  "your_answer": "13"
+ },
+ {
+  "id": "ca1e-ho-1-5-a",
+  "verdict": "rejected",
+  "checks": {
+   "correct": "pass",
+   "single_best": "pass",
+   "distractors": "pass",
+   "clear": "pass",
+   "aligned": "pass",
+   "held_out": "fail",
+   "explanation": "pass"
+  },
+  "reasons": "Exact copy of lesson Example 2 (\"Factor x^2+2x-15\", objective 1.5 in content/open_openstax_college_algebra_1e.yaml). Not held out. Math is correct.",
+  "suggested_fix": "Change the trinomial, e.g. x^2 + 3x - 28 = (x+7)(x-4) with distractors (x-7)(x+4), (x+14)(x-2), (x+4)(x+7); update key/explanation.",
+  "your_answer": "idx1 (x+5)(x-3)"
+ },
+ {
+  "id": "ca1e-ho-1-5-b",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_best": "pass",
+   "distractors": "pass",
+   "clear": "pass",
+   "aligned": "pass",
+   "held_out": "pass",
+   "explanation": "pass"
+  },
+  "reasons": "All checks pass; sympy agrees with key. Minor: option 3 12x^2(x-18) is weak (not equal in value); acceptable.",
+  "suggested_fix": null,
+  "your_answer": "idx2"
+ },
+ {
+  "id": "ca1e-ho-1-5-c",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_best": "pass",
+   "distractors": "pass",
+   "clear": "pass",
+   "aligned": "pass",
+   "held_out": "pass",
+   "explanation": "pass"
+  },
+  "reasons": "All checks pass; sympy agrees with key.",
+  "suggested_fix": null,
+  "your_answer": "idx3"
+ },
+ {
+  "id": "ca1e-ho-1-5-d",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_best": "pass",
+   "distractors": "pass",
+   "clear": "pass",
+   "aligned": "pass",
+   "held_out": "pass",
+   "explanation": "pass"
+  },
+  "reasons": "All checks pass; sympy agrees with key.",
+  "suggested_fix": null,
+  "your_answer": "idx0"
+ },
+ {
+  "id": "ca1e-ho-1-5-e",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_best": "pass",
+   "distractors": "pass",
+   "clear": "pass",
+   "aligned": "pass",
+   "held_out": "pass",
+   "explanation": "pass"
+  },
+  "reasons": "All checks pass; sympy agrees with key.",
+  "suggested_fix": null,
+  "your_answer": "idx2"
+ },
+ {
+  "id": "ca1e-ho-1-5-f",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_best": "pass",
+   "distractors": "pass",
+   "clear": "pass",
+   "aligned": "pass",
+   "held_out": "pass",
+   "explanation": "pass"
+  },
+  "reasons": "All checks pass; sympy agrees with key.",
+  "suggested_fix": null,
+  "your_answer": "7"
+ },
+ {
+  "id": "ca1e-ho-1-6-a",
+  "verdict": "rejected",
+  "checks": {
+   "correct": "pass",
+   "single_best": "pass",
+   "distractors": "pass",
+   "clear": "pass",
+   "aligned": "pass",
+   "held_out": "fail",
+   "explanation": "pass"
+  },
+  "reasons": "Near-copy of lesson Example 1 (Simplify (x^2-9)/(x^2+4x+3)): same numerator, same skill and structure (cancel x+3), only the denominator changed. Math correct (sympy: (x-3)/(x-2)).",
+  "suggested_fix": "Use a different numerator/structure, e.g. (x^2-16)/(x^2+x-12) = (x-4)/(x-3) with updated options and excluded values.",
+  "your_answer": "idx3"
+ },
+ {
+  "id": "ca1e-ho-1-6-b",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_best": "pass",
+   "distractors": "pass",
+   "clear": "pass",
+   "aligned": "pass",
+   "held_out": "pass",
+   "explanation": "pass"
+  },
+  "reasons": "All checks pass; sympy agrees with key. Minor: option 3 labeled \"(already simplest)\" is a weak, telegraphing distractor; acceptable.",
+  "suggested_fix": null,
+  "your_answer": "idx0"
+ },
+ {
+  "id": "ca1e-ho-1-6-c",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_best": "pass",
+   "distractors": "pass",
+   "clear": "pass",
+   "aligned": "pass",
+   "held_out": "pass",
+   "explanation": "pass"
+  },
+  "reasons": "All checks pass; sympy agrees with key.",
+  "suggested_fix": null,
+  "your_answer": "idx2"
+ },
+ {
+  "id": "ca1e-ho-1-6-d",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_best": "pass",
+   "distractors": "pass",
+   "clear": "pass",
+   "aligned": "pass",
+   "held_out": "pass",
+   "explanation": "pass"
+  },
+  "reasons": "All checks pass; sympy agrees with key.",
+  "suggested_fix": null,
+  "your_answer": "3"
+ },
+ {
+  "id": "ca1e-ho-1-6-e",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_best": "pass",
+   "distractors": "pass",
+   "clear": "pass",
+   "aligned": "pass",
+   "held_out": "pass",
+   "explanation": "pass"
+  },
+  "reasons": "All checks pass; sympy agrees with key.",
+  "suggested_fix": null,
+  "your_answer": "idx1"
+ },
+ {
+  "id": "ca1e-ho-1-6-f",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_best": "pass",
+   "distractors": "pass",
+   "clear": "pass",
+   "aligned": "pass",
+   "held_out": "pass",
+   "explanation": "pass"
+  },
+  "reasons": "All checks pass; sympy agrees with key. Minor: pure substitution; thin alignment with 1.6 but acceptable at beginner level.",
+  "suggested_fix": null,
+  "your_answer": "5"
+ }
+]

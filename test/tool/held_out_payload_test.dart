@@ -20,14 +20,28 @@ void main() {
   const slug = 'open-openstax-college-algebra-1e';
 
   test('unreviewed items are never sent', () {
-    final payload = buildHeldOutPayload(load(), targetSlug: slug);
+    final file = load();
+    for (final item in (file['items'] as List).cast<Map<String, dynamic>>()) {
+      item.remove('review');
+    }
+    final payload = buildHeldOutPayload(file, targetSlug: slug);
     expect(payload.items, isEmpty);
     expect(payload.skipped, 36);
+  });
+
+  test('the reviewed College Algebra set sends all 36, labelled as AI-reviewed', () {
+    final payload = buildHeldOutPayload(load(), targetSlug: slug);
+    expect(payload.items, hasLength(36));
+    expect(payload.items.every((i) => (i['review'] as Map)['reviewer_kind'] == 'ai'), isTrue);
+    expect(payload.items.every((i) => (i['review'] as Map)['reviewer_model'] == 'claude-sonnet-5-5'), isTrue);
   });
 
   test('an approved item is sent with its concepts and the file author', () {
     final file = load();
     final items = (file['items'] as List).cast<Map<String, dynamic>>();
+    for (final item in items) {
+      item.remove('review');
+    }
     items.first['review'] = {
       'reviewer_ref': 'ai-review:claude-sonnet-5-5',
       'reviewer_kind': 'ai',

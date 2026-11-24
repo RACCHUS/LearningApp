@@ -58,6 +58,32 @@ def _norm(text: str) -> str:
     return re.sub(r"[^a-z0-9]+", "", text.lower())
 
 
+def _math_norm(text: str) -> str:
+    """LaTeX with spacing and display variants removed, for reuse checks."""
+    t = re.sub(r"\\(left|right|displaystyle)", "", text)
+    t = t.replace("\\dfrac", "\\frac").replace("\\tfrac", "\\frac")
+    return re.sub(r"\s+", "", t)
+
+
+MIN_REUSED_MATH = 8  # shorter expressions (x^2-4) recur by chance
+
+
+def math_segments(prompt: str) -> list[str]:
+    """The $...$ expressions of a prompt, normalized, long enough to matter."""
+    segs = [_math_norm(m).rstrip(".,;:") for m in re.findall(r"\$([^$]+)\$", prompt)]
+    return [s for s in segs if len(s) >= MIN_REUSED_MATH]
+
+
+def _lesson_text(lesson: dict) -> str:
+    parts = [lesson.get("title", ""), lesson.get("description", "")]
+    for b in lesson.get("blocks") or []:
+        content = b.get("content") or {}
+        parts += [str(v) for k, v in content.items() if isinstance(v, str)]
+    for q in lesson.get("assessment_items") or []:
+        parts += [q.get("prompt", ""), q.get("explanation", "")]
+    return _math_norm("\n".join(parts))
+
+
 def keyed_value(item: dict) -> sp.Expr | None:
     """The mathematically correct answer the verify block describes."""
     v = item.get("verify") or {}
@@ -182,6 +208,7 @@ def check_file(path: Path) -> list[str]:
     manifest = published_manifest(data.get("source_release_id", ""))
     objectives = {o["code"]: o for d in manifest["domains"] for o in d["objectives"]}
     seen_prompts = set()
+    lesson_math = "\n".join(_lesson_text(lesson) for o in objectives.values() for lesson in o["lessons"])
     for o in objectives.values():
         for lesson in o["lessons"]:
             for q in lesson.get("assessment_items") or []:
@@ -222,6 +249,9 @@ def check_file(path: Path) -> list[str]:
         problems += [f"{name}: {p}" for p in check_review(item, author)]
         if _norm(item.get("prompt", "")) in seen_prompts:
             problems.append(f"{name}: {iid} repeats a lesson prompt, so it isn't held out")
+        for seg in math_segments(item.get("prompt", "")):
+            if seg in lesson_math:
+                problems.append(f"{name}: {iid} reuses ${seg}$ from the lessons, so it isn't held out")
         per_objective[item.get("objective")] += 1
         if item.get("interaction_type") == "single_choice":
             keyed_positions[(item.get("scoring_spec") or {}).get("correct_index")] += 1

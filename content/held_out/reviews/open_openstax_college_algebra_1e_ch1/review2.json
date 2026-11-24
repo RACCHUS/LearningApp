@@ -1,0 +1,66 @@
+[
+ {
+  "id": "ca1e-ho-1-5-a",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_best": "pass",
+   "distractors": "pass",
+   "clear": "pass",
+   "aligned": "pass",
+   "held_out": "pass",
+   "explanation": "pass"
+  },
+  "reasons": "sympy factor = (x-4)(x+7); other options expand to different trinomials; x^2+3x-28 does not occur in the lesson (reading blocks, practice, assessment items checked, whitespace-insensitive).",
+  "suggested_fix": null,
+  "your_answer": "idx1 (x+7)(x-4)"
+ },
+ {
+  "id": "ca1e-ho-1-5-b",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_best": "pass",
+   "distractors": "pass",
+   "clear": "pass",
+   "aligned": "pass",
+   "held_out": "pass",
+   "explanation": "pass"
+  },
+  "reasons": "sympy GCF form matches idx2; new option 3 6x^2(2x+3) is a plausible sign slip and expands to 12x^3+18x^2; no lesson match.",
+  "suggested_fix": null,
+  "your_answer": "idx2 6x^2(2x-3)"
+ },
+ {
+  "id": "ca1e-ho-1-6-a",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_best": "pass",
+   "distractors": "pass",
+   "clear": "pass",
+   "aligned": "pass",
+   "held_out": "pass",
+   "explanation": "pass"
+  },
+  "reasons": "sympy cancel = (x+5)/(x-3); options 0-2 are not equal; excluded values x!=3,4 correct. (x^2+x-20)/(x^2-7x+12) and its factors do not appear in the lesson; Example 1 is (x^2-9)/(x^2+4x+3), different numerator/denominator/factor pattern.",
+  "suggested_fix": null,
+  "your_answer": "idx3 (x+5)/(x-3)"
+ },
+ {
+  "id": "ca1e-ho-1-6-b",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_best": "pass",
+   "distractors": "pass",
+   "clear": "pass",
+   "aligned": "pass",
+   "held_out": "pass",
+   "explanation": "pass"
+  },
+  "reasons": "sympy cancel = (x-2)/x; new option 3 (x-2)/x^2 is a plausible partial-cancellation error and unequal; no lesson match.",
+  "suggested_fix": null,
+  "your_answer": "idx0 (x-2)/x"
+ }
+]
