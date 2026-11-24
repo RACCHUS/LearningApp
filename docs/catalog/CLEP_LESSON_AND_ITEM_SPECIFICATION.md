@@ -24,7 +24,7 @@ To ensure learners are genuinely prepared to pass official exams with high confi
 | Source Layer | Authoritative Provider | Approved Usage | Rights & Attribution |
 | :--- | :--- | :--- | :--- |
 | **Blueprint Authority** | College Board CLEP Official Examination Guides (2024–2026) | Domain taxonomy, topic scope, cognitive level distribution, percentage weight ranges. | **Fair Use / Public Domain Scope**: Used solely for taxonomic alignment and test blueprint structuring. |
-| **Instructional Reference** | OpenStax OER Textbooks (e.g., *Psychology 2e* by Spielman et al.) | Core theoretical exposition, empirical findings, diagrams, and glossary terminology. | **CC BY 4.0**: Full attribution required in manifest metadata and lesson citation blocks. |
+| **Instructional Reference** | OpenStax OER Textbooks (e.g., *Psychology*, 1st edition, by Spielman et al.; 2e is CC BY-NC-SA and link-only) | Core theoretical exposition, empirical findings, diagrams, and glossary terminology. | **CC BY 4.0**: Full attribution required in manifest metadata and lesson citation blocks. |
 | **Diagnostic Criteria** | American Psychiatric Association (*DSM-5-TR*) & APA Ethical Standards | Classification of psychological disorders, diagnostic thresholds, ethical principles in research. | **Academic Citation**: Referencing standard diagnostic criteria and empirical research. |
 
 > [!CAUTION]
@@ -90,7 +90,7 @@ flowchart TD
    - Exhaustive feedback explaining **why** the correct option is theoretically sound, and **why each individual distractor** is incorrect or misapplied.
 
 10. **Authoritative Source Citation**:
-    - Direct reference to OpenStax chapter/section (e.g., `OpenStax Psychology 2e, Section 8.2: Parts of the Brain Involved in Memory`) and relevant academic literature.
+    - Direct reference to OpenStax chapter/section (e.g., `OpenStax Psychology 1e, Section 8.2: Parts of the Brain Involved with Memory`) and relevant academic literature.
 
 ---
 

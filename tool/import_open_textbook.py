@@ -23,8 +23,10 @@ Images are not copied (they can carry separate rights); the text points to
 the original section instead. End-of-section exercise sets are skipped.
 
 Safety: the source must be registered in data/content_sources.json with
-``adapt`` allowed and status ``approved``, and the license the publisher's
-archive reports must match the registry, or nothing is written.
+``adapt`` and ``redistribute`` allowed and status ``approved``, and the
+license the publisher's archive reports must match the registry, or nothing
+is written. Reading blocks stay close to the book text, so the manifest
+declares ``redistribute`` (owner decision D-7, 2026-11-24).
 """
 from __future__ import annotations
 
@@ -625,8 +627,8 @@ def check_source(source_id: str) -> tuple[dict, dict]:
     book = next((b for b in BOOKS if b["source_id"] == source_id), None)
     if source is None or book is None:
         raise ImportProblem(f"{source_id} is not a registered, indexed open book")
-    if "adapt" not in source["allowed_uses"] or source.get("status") != "approved":
-        raise ImportProblem(f"{source_id} is not approved for adapting")
+    if source.get("status") != "approved" or not {"adapt", "redistribute"} <= set(source["allowed_uses"]):
+        raise ImportProblem(f"{source_id} is not approved for adapting and redistributing")
     if source["license"] not in LICENSE_TEXT:
         raise ImportProblem(f"{source_id}: importing {source['license']} content is not supported")
     return source, book
@@ -728,7 +730,7 @@ def import_book(source_id: str, chapters: set[int], delay: float) -> tuple[dict,
                             "OpenStax and Rice University names and logos are not covered by the "
                             "license; no endorsement implied. Imported automatically; not reviewed "
                             "by a person."),
-            "metadata": {"use": "adapt", "imported_by": "tool/import_open_textbook.py",
+            "metadata": {"use": "redistribute", "imported_by": "tool/import_open_textbook.py",
                          "chapters": sorted(chapters)},
         }],
         "target": {

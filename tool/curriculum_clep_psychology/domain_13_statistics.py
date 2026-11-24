@@ -23,14 +23,14 @@ DOMAIN_13 = {
                     "name": "Descriptive and Inferential Statistics",
                     "short_definition": "Quantitative tools for summarizing data distributions (central tendency, standard deviation, normal curve) and determining whether observed sample differences reflect true population effects (p < 0.05).",
                     "description": "Descriptive statistics characterize datasets using central tendency and dispersion. Inferential statistics use probability theory to test null hypotheses and establish statistical significance.",
-                    "citation": "OpenStax Psychology 2e, Section 2.3",
+                    "citation": "OpenStax Psychology 1e, Section 2.3",
                 },
                 {
                     "slug": "psyc-psychometric-reliability-validity",
                     "name": "Psychometric Reliability and Validity",
                     "short_definition": "Fundamental measurement criteria evaluating consistency (test-retest, split-half, alternate form, inter-rater reliability) and accuracy (content, criterion/predictive, construct validity).",
                     "description": "Reliability reflects score stability and reproducibility across administrations. Validity reflects whether an assessment genuinely measures the underlying construct it was designed to measure.",
-                    "citation": "OpenStax Psychology 2e, Section 7.5",
+                    "citation": "OpenStax Psychology 1e, Section 7.5",
                     "prerequisites": ["psyc-descriptive-inferential-statistics"],
                 },
                 {
@@ -38,7 +38,7 @@ DOMAIN_13 = {
                     "name": "Theories and Measurement of Intelligence",
                     "short_definition": "Theoretical models (Spearman's g, Gardner's multiple intelligences, Sternberg's triarchic theory) and psychometric tests (Stanford-Binet mental age, Wechsler deviation IQ).",
                     "description": "Intelligence assessment evolved from early ratio IQ (MA/CA * 100) to modern standardized deviation IQ distributions (mean 100, SD 15), alongside theoretical debates regarding general versus multifaceted cognitive abilities.",
-                    "citation": "OpenStax Psychology 2e, Section 7.4 & 7.5",
+                    "citation": "OpenStax Psychology 1e, Section 7.4 & 7.5",
                     "prerequisites": ["psyc-psychometric-reliability-validity"],
                 },
             ],
@@ -53,7 +53,7 @@ DOMAIN_13 = {
                         "psyc-psychometric-reliability-validity",
                         "psyc-intelligence-theories-measurement",
                     ],
-                    "citation": "OpenStax Psychology 2e, Chapter 2 (Research Methods) and Chapter 7 (Thinking and Intelligence)",
+                    "citation": "OpenStax Psychology 1e, Chapter 2 (Research Methods) and Chapter 7 (Thinking and Intelligence)",
                     "blocks": [
                         {
                             "sort_order": 1,
@@ -168,7 +168,7 @@ DOMAIN_13 = {
                             "explanation": "According to the empirical 68-95-99.7 rule for a normal bell curve, approximately 68% of all scores fall within one standard deviation of the mean (between -1 SD and +1 SD, or 85 to 115). Approximately 95% fall within two standard deviations (70 to 130), and 99.7% fall within three standard deviations (55 to 145).",
                             "difficulty": "intermediate",
                             "cognitive_level": "comprehension",
-                            "citation": "OpenStax Psychology 2e, Section 7.5",
+                            "citation": "OpenStax Psychology 1e, Section 7.5",
                             "concept_slugs": [
                                 "psyc-descriptive-inferential-statistics",
                                 "psyc-intelligence-theories-measurement",
@@ -189,7 +189,7 @@ DOMAIN_13 = {
                             "explanation": "The correlation of r = +0.92 across consecutive administrations demonstrates high test-retest reliability (consistent measurement over time). However, because the tool fails to discriminate individuals with the target clinical condition from healthy controls, it fails to measure the theoretical psychological construct it claims to assess, reflecting low construct validity.",
                             "difficulty": "advanced",
                             "cognitive_level": "analysis",
-                            "citation": "OpenStax Psychology 2e, Section 7.5",
+                            "citation": "OpenStax Psychology 1e, Section 7.5",
                             "concept_slugs": ["psyc-psychometric-reliability-validity"],
                         },
                         {
@@ -207,7 +207,7 @@ DOMAIN_13 = {
                             "explanation": "A p-value of 0.02 is below the conventional alpha threshold of 0.05, indicating statistical significance. This means there is only a 2% probability that the observed difference between the experimental and control groups occurred by chance alone assuming the null hypothesis (no true drug effect) is true. It does not measure effect size, percent of cured patients, or clinical magnitude.",
                             "difficulty": "advanced",
                             "cognitive_level": "application",
-                            "citation": "OpenStax Psychology 2e, Section 2.3",
+                            "citation": "OpenStax Psychology 1e, Section 2.3",
                             "concept_slugs": ["psyc-descriptive-inferential-statistics"],
                         },
                     ],

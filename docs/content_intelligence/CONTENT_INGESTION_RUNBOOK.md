@@ -44,7 +44,7 @@ python tool/import_open_textbook.py --source openstax-college-algebra-1e --chapt
 | — | A closing "Source and license" block: book, link, CC BY 4.0, changes, "not reviewed by a person" |
 
 **Built-in safeguards:**
-- The tool imports only sources with `adapt` allowed and status `approved`.
+- The tool imports only sources with `adapt` and `redistribute` allowed and status `approved`. Reading blocks stay close to the book's wording, so the manifest declares `use: redistribute` (owner decision D-7, 2026-11-24, for the three CC BY 1st editions).
 - It stops if the license the publisher reports differs from the registry.
 - It never turns an expression answer such as `(x-6)(x-1)` into a graded question: those stay as practice with the answer to reveal, so a correct but differently written answer is never marked wrong.
 - A section with no answer that can be graded automatically is left out and reported. It stays reachable as an open textbook link.
@@ -154,7 +154,7 @@ Choose the route by the allowed use:
 
 ### 7. Check it
 Run whichever apply:
-- `python tool/ci/verify_content_sources.py`: sources registered, uses allowed, licenses stated correctly
+- `python tool/ci/verify_content_sources.py`: sources registered, uses allowed, licenses stated correctly, and manifest pins real. A `sha256` must be computed from a copy you actually retrieved. If you have no such copy, leave `sha256` out and set `metadata.checksum_status: unverified_remote_document` with a `checksum_verification_note`. The checker rejects placeholders: repeated patterns, digests of common words, and values that share a long run with another source's pin.
 - `flutter test test/models/bridge_lesson_test.dart`: Bridge rules and recomputed check answers
 - `dart run tool/lint_manifest.dart --dir content/` and `dart run tool/ingest_curriculum.dart --dir content/ --dry-run`: manifests
 - `"$CI_TEST_PYTHON" tool/clep_content_pipeline.py --manifest content/<file>.yaml --require-simulation`: CLEP manifests
@@ -170,7 +170,7 @@ Run whichever apply:
 | Curriculum manifests (`content/*.yaml`) | **Owner only:** the *Controlled curriculum ingestion* GitHub workflow (`.github/workflows/controlled-curriculum-ingestion.yml`). Run it from Actions on `main`, give the manifest path, choose how far to go (`dry-run`, `draft`, `review-ready`, `published`) and type the project ref; the run waits for your approval in the `supabase-production-deployment` environment. It reads target and version from the manifest, checks source licenses, dry-runs, then calls `tool/ingest_curriculum.dart` `--apply`, `--stage-review` and `--publish` with the repository secrets. The same commands still work locally with the key in your shell. |
 | Learner or community lessons | The public contribution flow (`content.public_contribution`), labelled unreviewed |
 
-**Production status (2026-11-20):** the seven curriculum manifests pass the dry run, but none has been ingested into production.
+**Production status (2026-11-20):** the seven **authored** curriculum manifests (adult literacy, BS Computer Science, CLEP College Algebra, CLEP Introductory Psychology, Excel, Security+, Software Engineer career) pass the dry run, but none has been ingested into production. The two **open-textbook** manifests (`open_openstax_college_algebra_1e.yaml`, `open_openstax_prealgebra_1e.yaml`) were published on 2026-11-20 (see "Pilot" above). Ingestion order, per decision D-13 of the [ingestion plan](../../LEARNINGAPP_DEMAND_DRIVEN_CONTENT_INGESTION_PLAN_V1_2_2026-11-23.md): Excel first, then CLEP College Algebra once it is reconciled with the imported textbook lessons; the other five wait.
 
 ### 10. Keep it current
 - Re-check each source's `license_evidence` at least yearly, and whenever the publisher announces changes. OpenStax relicensed its library in 2026; such changes affect only new and updated versions, so record the edition you used.
@@ -184,8 +184,8 @@ Run whichever apply:
 ## Open owner decisions
 
 1. **Non-commercial status:** does LearningApp, with its sponsor, affiliate and donation plans, count as non-commercial for CC BY-NC-SA sources?
-2. **Psychology source:** `content/clep_introductory_psychology.yaml` records OpenStax Psychology 2e as CC BY 4.0, but 2e is now CC BY-NC-SA 4.0. Either re-point to Psychology (1st edition, CC BY 4.0) or keep 2e under NC-SA terms. The checker reports this as a warning until decided.
-3. ~~Approve the CC BY sources for adapting~~: **approved by the owner on 2026-11-20** for OpenStax College Algebra, Prealgebra and Psychology (1st editions), including `adapt` and `ai_transform`.
+2. ~~Psychology source~~: **decided by the owner on 2026-11-24 (D-5).** CLEP Introductory Psychology now cites Psychology (1st edition, CC BY 4.0). Citations keep their section numbers; each cited 1e section was checked against its lesson topic, but lesson text was not re-verified line by line. 2e stays link and reference only. Edit `tool/curriculum_clep_psychology/` and `tool/generate_clep_psychology_course.py`, then regenerate; don't edit the YAML by hand.
+3. ~~Approve the CC BY sources for adapting~~: **approved by the owner on 2026-11-20** for OpenStax College Algebra, Prealgebra and Psychology (1st editions), including `adapt` and `ai_transform`; `redistribute` added on 2026-11-24 (D-7).
 4. **Unconfirmed AI claim:** the Bridges say OpenStax prohibits use for training large language models. No such statement was found on OpenStax pages on 2026-11-20. Keep the conservative note, or correct it.
 5. **Production ingestion:** load the curricula (Excel and CLEP Algebra first) into production.
 

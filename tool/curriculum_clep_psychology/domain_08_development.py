@@ -23,14 +23,14 @@ DOMAIN_08 = {
                     "name": "Prenatal Development and Infancy Reflexes",
                     "short_definition": "Stages of prenatal growth (germinal, embryonic, fetal), teratogenic vulnerabilities, and neonatal survival reflexes.",
                     "description": "The embryonic phase represents the critical period of organogenesis vulnerable to teratogens like alcohol; neonates exhibit rooting, Moro, and grasping reflexes.",
-                    "citation": "OpenStax Psychology 2e, Section 9.1 & 9.2",
+                    "citation": "OpenStax Psychology 1e, Section 9.1 & 9.2",
                 },
                 {
                     "slug": "psyc-cognitive-development-stages",
                     "name": "Piagetian and Vygotskian Cognitive Development",
                     "short_definition": "Piaget's stages (sensorimotor, preoperational, concrete, formal) and Vygotsky's sociocultural scaffolding model.",
                     "description": "Piaget focuses on schema assimilation/accommodation, object permanence, egocentrism, and conservation; Vygotsky highlights the Zone of Proximal Development.",
-                    "citation": "OpenStax Psychology 2e, Section 9.2",
+                    "citation": "OpenStax Psychology 1e, Section 9.2",
                     "prerequisites": ["psyc-prenatal-infant-development"],
                 },
             ],
@@ -44,7 +44,7 @@ DOMAIN_08 = {
                         "psyc-prenatal-infant-development",
                         "psyc-cognitive-development-stages",
                     ],
-                    "citation": "OpenStax Psychology 2e, Section 9.1 & 9.2",
+                    "citation": "OpenStax Psychology 1e, Section 9.1 & 9.2",
                     "blocks": [
                         {
                             "sort_order": 1,
@@ -140,7 +140,7 @@ DOMAIN_08 = {
                             "explanation": "In Piaget's theory, children in the preoperational stage (ages 2–7) lack the principle of conservation. They demonstrate centration—focusing exclusively on the single visual dimension of height while failing to recognize that mass and volume remain conserved.",
                             "difficulty": "beginner",
                             "cognitive_level": "application",
-                            "citation": "OpenStax Psychology 2e, Section 9.2",
+                            "citation": "OpenStax Psychology 1e, Section 9.2",
                             "concept_slugs": ["psyc-cognitive-development-stages"],
                         },
                         {
@@ -158,7 +158,7 @@ DOMAIN_08 = {
                             "explanation": "Object permanence is the awareness that objects continue to exist even when they cannot be perceived directly. It emerges during the sensorimotor stage, typically around 8 months of age.",
                             "difficulty": "beginner",
                             "cognitive_level": "comprehension",
-                            "citation": "OpenStax Psychology 2e, Section 9.2",
+                            "citation": "OpenStax Psychology 1e, Section 9.2",
                             "concept_slugs": ["psyc-cognitive-development-stages"],
                         },
                         {
@@ -176,7 +176,7 @@ DOMAIN_08 = {
                             "explanation": "Assimilation occurs when a child interprets novel environmental experiences in terms of their existing cognitive schemas (in this case, forcing the new goat into the existing four-legged 'dog' schema).",
                             "difficulty": "intermediate",
                             "cognitive_level": "application",
-                            "citation": "OpenStax Psychology 2e, Section 9.2",
+                            "citation": "OpenStax Psychology 1e, Section 9.2",
                             "concept_slugs": ["psyc-cognitive-development-stages"],
                         },
                         {
@@ -194,7 +194,7 @@ DOMAIN_08 = {
                             "explanation": "Alcohol is a potent teratogen that crosses the placenta. Exposure during the critical embryonic organogenesis window causes Fetal Alcohol Spectrum Disorder (FASD), characterized by flattened philtrum, small eye openings, microcephaly, and permanent intellectual disability.",
                             "difficulty": "intermediate",
                             "cognitive_level": "recall",
-                            "citation": "OpenStax Psychology 2e, Section 9.1",
+                            "citation": "OpenStax Psychology 1e, Section 9.1",
                             "concept_slugs": ["psyc-prenatal-infant-development"],
                         },
                     ],
@@ -226,14 +226,14 @@ DOMAIN_08 = {
                     "name": "Attachment Bonds and Baumrind Parenting Styles",
                     "short_definition": "Emotional bonding in infancy (Harlow's contact comfort, Ainsworth's Strange Situation) and Baumrind's four parenting frameworks.",
                     "description": "Harlow disproved nourishment-based bonding; Ainsworth classified secure, avoidant, and resistant attachments; authoritative parenting yields optimal autonomy.",
-                    "citation": "OpenStax Psychology 2e, Section 9.3",
+                    "citation": "OpenStax Psychology 1e, Section 9.3",
                 },
                 {
                     "slug": "psyc-psychosocial-moral-development",
                     "name": "Eriksonian Psychosocial and Kohlberg Moral Development",
                     "short_definition": "Erikson's eight lifelong psychosocial crises and Kohlberg's preconventional, conventional, and postconventional moral reasoning stages.",
                     "description": "Erikson spans Trust vs. Mistrust through Integrity vs. Despair; Kohlberg evaluates moral justice reasoning, contrasted with Gilligan's care ethics.",
-                    "citation": "OpenStax Psychology 2e, Section 9.3",
+                    "citation": "OpenStax Psychology 1e, Section 9.3",
                     "prerequisites": ["psyc-attachment-parenting"],
                 },
             ],
@@ -247,7 +247,7 @@ DOMAIN_08 = {
                         "psyc-attachment-parenting",
                         "psyc-psychosocial-moral-development",
                     ],
-                    "citation": "OpenStax Psychology 2e, Section 9.3",
+                    "citation": "OpenStax Psychology 1e, Section 9.3",
                     "blocks": [
                         {
                             "sort_order": 1,
@@ -355,7 +355,7 @@ DOMAIN_08 = {
                             "explanation": "Harlow showed that infant monkeys clung almost continuously to a soft, terrycloth surrogate mother rather than a wire mother that dispensed milk, demonstrating that contact comfort (not feeding reinforcement) is the primary foundation of infant attachment.",
                             "difficulty": "beginner",
                             "cognitive_level": "recall",
-                            "citation": "OpenStax Psychology 2e, Section 9.3",
+                            "citation": "OpenStax Psychology 1e, Section 9.3",
                             "concept_slugs": ["psyc-attachment-parenting"],
                         },
                         {
@@ -373,7 +373,7 @@ DOMAIN_08 = {
                             "explanation": "Secure attachment is characterized by using the caregiver as a safe base for exploration, displaying distress upon separation, and actively seeking contact and being readily comforted upon the caregiver's return.",
                             "difficulty": "intermediate",
                             "cognitive_level": "application",
-                            "citation": "OpenStax Psychology 2e, Section 9.3",
+                            "citation": "OpenStax Psychology 1e, Section 9.3",
                             "concept_slugs": ["psyc-attachment-parenting"],
                         },
                         {
@@ -391,7 +391,7 @@ DOMAIN_08 = {
                             "explanation": "Conventional morality (Kohlberg's second level, Stage 4) emphasizes maintaining social order, respecting authority, and obeying laws for the collective stability of the social system.",
                             "difficulty": "intermediate",
                             "cognitive_level": "analysis",
-                            "citation": "OpenStax Psychology 2e, Section 9.3",
+                            "citation": "OpenStax Psychology 1e, Section 9.3",
                             "concept_slugs": ["psyc-psychosocial-moral-development"],
                         },
                         {
@@ -409,7 +409,7 @@ DOMAIN_08 = {
                             "explanation": "During adolescence (ages 12–18), individuals confront Erikson's crisis of Identity vs. Role Confusion, testing and integrating various roles to develop a stable, unified sense of personal self.",
                             "difficulty": "beginner",
                             "cognitive_level": "recall",
-                            "citation": "OpenStax Psychology 2e, Section 9.3",
+                            "citation": "OpenStax Psychology 1e, Section 9.3",
                             "concept_slugs": ["psyc-psychosocial-moral-development"],
                         },
                     ],

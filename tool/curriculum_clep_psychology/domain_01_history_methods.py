@@ -23,14 +23,14 @@ DOMAIN_01 = {
                     "name": "Structuralism",
                     "short_definition": "Early school of thought promoted by Wundt and Titchener using systematic introspection to isolate the basic elements of conscious experience.",
                     "description": "Structuralism sought to map the adult human mind by breaking conscious experience down into basic sensation and perception elements through rigorous introspection.",
-                    "citation": "OpenStax Psychology 2e, Section 1.2",
+                    "citation": "OpenStax Psychology 1e, Section 1.2",
                 },
                 {
                     "slug": "psyc-functionalism",
                     "name": "Functionalism",
                     "short_definition": "Early school of thought influenced by William James and Charles Darwin examining how mental and behavioral processes function to enable adaptation.",
                     "description": "Functionalism focused on the practical adaptive utility of consciousness, habits, and mental operations in organisms navigating their environments.",
-                    "citation": "OpenStax Psychology 2e, Section 1.2",
+                    "citation": "OpenStax Psychology 1e, Section 1.2",
                     "prerequisites": ["psyc-structuralism"],
                 },
                 {
@@ -38,7 +38,7 @@ DOMAIN_01 = {
                     "name": "Contemporary Psychological Perspectives",
                     "short_definition": "Modern frameworks including biological, cognitive, behavioral, psychodynamic, humanistic, social-cultural, and evolutionary approaches to understanding behavior.",
                     "description": "Contemporary psychology utilizes multiple complementary levels of analysis (the biopsychosocial model) rather than a single unifying school of thought.",
-                    "citation": "OpenStax Psychology 2e, Section 1.2",
+                    "citation": "OpenStax Psychology 1e, Section 1.2",
                     "prerequisites": ["psyc-functionalism"],
                 },
             ],
@@ -53,7 +53,7 @@ DOMAIN_01 = {
                         "psyc-functionalism",
                         "psyc-contemporary-perspectives",
                     ],
-                    "citation": "OpenStax Psychology 2e, Section 1.2: History of Psychology",
+                    "citation": "OpenStax Psychology 1e, Section 1.2: History of Psychology",
                     "blocks": [
                         {
                             "sort_order": 1,
@@ -157,7 +157,7 @@ DOMAIN_01 = {
                             "explanation": "Functionalism, established by William James and influenced by Darwinian evolutionary theory, studied how conscious mental activities enable organisms to adapt and flourish in their environments. Structuralism, by contrast, focused on decomposing consciousness into static sensory elements.",
                             "difficulty": "beginner",
                             "cognitive_level": "comprehension",
-                            "citation": "OpenStax Psychology 2e, Section 1.2",
+                            "citation": "OpenStax Psychology 1e, Section 1.2",
                             "concept_slugs": ["psyc-functionalism"],
                         },
                         {
@@ -175,7 +175,7 @@ DOMAIN_01 = {
                             "explanation": "Wundt and Titchener utilized systematic introspection, training subjects to carefully observe and verbally describe their immediate conscious sensory experiences when exposed to controlled physical stimuli.",
                             "difficulty": "beginner",
                             "cognitive_level": "recall",
-                            "citation": "OpenStax Psychology 2e, Section 1.2",
+                            "citation": "OpenStax Psychology 1e, Section 1.2",
                             "concept_slugs": ["psyc-structuralism"],
                         },
                         {
@@ -193,7 +193,7 @@ DOMAIN_01 = {
                             "explanation": "The humanistic perspective, developed by Carl Rogers and Abraham Maslow, focuses on conscious self-concept, personal growth, and emotional distress caused by incongruence between the actual self and the ideal self.",
                             "difficulty": "intermediate",
                             "cognitive_level": "application",
-                            "citation": "OpenStax Psychology 2e, Section 1.2",
+                            "citation": "OpenStax Psychology 1e, Section 1.2",
                             "concept_slugs": ["psyc-contemporary-perspectives"],
                         },
                         {
@@ -211,7 +211,7 @@ DOMAIN_01 = {
                             "explanation": "Behaviorism, pioneered by John B. Watson and expanded by B. F. Skinner, rejected the study of internal mental states, arguing that objective science must focus entirely on observable behaviors and environmental stimuli.",
                             "difficulty": "beginner",
                             "cognitive_level": "recall",
-                            "citation": "OpenStax Psychology 2e, Section 1.2",
+                            "citation": "OpenStax Psychology 1e, Section 1.2",
                             "concept_slugs": ["psyc-contemporary-perspectives"],
                         },
                         {
@@ -229,7 +229,7 @@ DOMAIN_01 = {
                             "explanation": "Evolutionary psychology applies Darwinian principles of natural selection, asserting that behavioral patterns such as aggression or mate preferences evolved because they conferred survival and reproductive advantages in ancestral environments.",
                             "difficulty": "intermediate",
                             "cognitive_level": "comprehension",
-                            "citation": "OpenStax Psychology 2e, Section 1.2",
+                            "citation": "OpenStax Psychology 1e, Section 1.2",
                             "concept_slugs": ["psyc-contemporary-perspectives"],
                         },
                     ],
@@ -261,14 +261,14 @@ DOMAIN_01 = {
                     "name": "Experimental Methodology and Control",
                     "short_definition": "Scientific research design establishing cause-and-effect relationships by manipulating independent variables while controlling confounding variables.",
                     "description": "Experiments require random assignment to experimental and control conditions to isolate the causal impact of the independent variable on the dependent variable.",
-                    "citation": "OpenStax Psychology 2e, Chapter 2",
+                    "citation": "OpenStax Psychology 1e, Chapter 2",
                 },
                 {
                     "slug": "psyc-correlational-research",
                     "name": "Correlational Research and Directionality",
                     "short_definition": "Statistical assessment measuring the strength and direction of the relationship between two variables, ranging from -1.0 to +1.0.",
                     "description": "Correlations demonstrate co-variation but never prove direct causality due to directionality problems and potential third-variable confounders.",
-                    "citation": "OpenStax Psychology 2e, Chapter 2",
+                    "citation": "OpenStax Psychology 1e, Chapter 2",
                     "prerequisites": ["psyc-experimental-methodology"],
                 },
             ],
@@ -282,7 +282,7 @@ DOMAIN_01 = {
                         "psyc-experimental-methodology",
                         "psyc-correlational-research",
                     ],
-                    "citation": "OpenStax Psychology 2e, Chapter 2: Psychological Research",
+                    "citation": "OpenStax Psychology 1e, Chapter 2: Psychological Research",
                     "blocks": [
                         {
                             "sort_order": 1,
@@ -385,7 +385,7 @@ DOMAIN_01 = {
                             "explanation": "The dependent variable is the measured outcome that researchers hypothesize will change as a result of the independent variable. Here, spatial reasoning test scores represent the dependent variable, while the auditory condition is the independent variable.",
                             "difficulty": "beginner",
                             "cognitive_level": "application",
-                            "citation": "OpenStax Psychology 2e, Chapter 2",
+                            "citation": "OpenStax Psychology 1e, Chapter 2",
                             "concept_slugs": ["psyc-experimental-methodology"],
                         },
                         {
@@ -403,7 +403,7 @@ DOMAIN_01 = {
                             "explanation": "Random assignment minimizes preexisting differences between participants assigned to the experimental and control groups. By ensuring confounding participant variables are distributed evenly, researchers can attribute outcome differences directly to the independent variable.",
                             "difficulty": "intermediate",
                             "cognitive_level": "comprehension",
-                            "citation": "OpenStax Psychology 2e, Chapter 2",
+                            "citation": "OpenStax Psychology 1e, Chapter 2",
                             "concept_slugs": ["psyc-experimental-methodology"],
                         },
                         {
@@ -421,7 +421,7 @@ DOMAIN_01 = {
                             "explanation": "A negative correlation indicates an inverse relationship: as one variable increases, the other tends to decrease. Because correlation does not prove causation, researchers cannot claim that gaming caused lower GPAs, only that the two variables reliably co-vary.",
                             "difficulty": "intermediate",
                             "cognitive_level": "analysis",
-                            "citation": "OpenStax Psychology 2e, Chapter 2",
+                            "citation": "OpenStax Psychology 1e, Chapter 2",
                             "concept_slugs": ["psyc-correlational-research"],
                         },
                         {
@@ -439,7 +439,7 @@ DOMAIN_01 = {
                             "explanation": "A double-blind procedure occurs when neither the participants nor the research staff who interact with them know which group received the active treatment versus the placebo, eliminating both participant expectancy and researcher expectancy biases.",
                             "difficulty": "beginner",
                             "cognitive_level": "recall",
-                            "citation": "OpenStax Psychology 2e, Chapter 2",
+                            "citation": "OpenStax Psychology 1e, Chapter 2",
                             "concept_slugs": ["psyc-experimental-methodology"],
                         },
                         {
@@ -457,7 +457,7 @@ DOMAIN_01 = {
                             "explanation": "APA ethical principles mandate that when deception is employed in research, participants must receive a full debriefing as soon as feasible after completion of their participation, explaining the true purpose and hypothesis of the study.",
                             "difficulty": "intermediate",
                             "cognitive_level": "comprehension",
-                            "citation": "OpenStax Psychology 2e, Chapter 2",
+                            "citation": "OpenStax Psychology 1e, Chapter 2",
                             "concept_slugs": ["psyc-experimental-methodology"],
                         },
                         {
@@ -475,7 +475,7 @@ DOMAIN_01 = {
                             "explanation": "The strength of a correlation coefficient is determined solely by its absolute value, regardless of whether it is positive or negative. The absolute value |-0.89| = 0.89 is greater than |+0.78|, |+0.55|, or |-0.15|, making it the strongest relationship.",
                             "difficulty": "intermediate",
                             "cognitive_level": "analysis",
-                            "citation": "OpenStax Psychology 2e, Chapter 2",
+                            "citation": "OpenStax Psychology 1e, Chapter 2",
                             "concept_slugs": ["psyc-correlational-research"],
                         },
                     ],

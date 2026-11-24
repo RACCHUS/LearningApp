@@ -10,6 +10,9 @@ source_release:
   license: "Proprietary documentation — reference link only"
   license_name: "Microsoft Support"
   rights_note: "Lessons are independently authored; no Microsoft screenshots, trademarks as branding, or manuals are redistributed."
+  metadata:
+    checksum_status: "unverified_remote_document"
+    checksum_verification_note: "Online help page; no archived artifact is pinned (ingestion plan D-6, 2026-11-24)."
 target:
   slug: "software-excel-fundamentals"
   title: "Microsoft Excel Fundamentals"

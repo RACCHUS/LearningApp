@@ -93,10 +93,11 @@ void main() {
     );
 
     test(
-      'Provenance includes OpenStax Psychology 2e CC BY 4.0 attribution and honest unverified_placeholder SHA-256 disclosure',
+      'Provenance includes OpenStax Psychology 1e CC BY 4.0 attribution and honest unverified_placeholder SHA-256 disclosure',
       () {
         final prov = clepPsychologyOverviewOutline.provenance;
-        expect(prov.openTextbookAttribution, contains('OpenStax Psychology 2e'));
+        expect(prov.openTextbookAttribution, contains('OpenStax Psychology 1e'));
+        expect(prov.openTextbookUrl, isNot(contains('psychology-2e')));
         expect(prov.openTextbookLicense, contains('CC BY 4.0'));
         expect(
           prov.verificationLevel,

@@ -23,14 +23,14 @@ DOMAIN_05 = {
                     "name": "Pavlovian Classical Conditioning",
                     "short_definition": "Form of associative learning where an organism pairs a neutral stimulus with an unconditioned stimulus to elicit a conditioned response.",
                     "description": "Demonstrated by Ivan Pavlov (salivation in dogs) and Watson's Little Albert; governed by acquisition, extinction, spontaneous recovery, and generalization.",
-                    "citation": "OpenStax Psychology 2e, Section 6.2",
+                    "citation": "OpenStax Psychology 1e, Section 6.2",
                 },
                 {
                     "slug": "psyc-biological-constraints",
                     "name": "Biological Preparedness and Taste Aversion",
                     "short_definition": "Evolutionary predisposition to learn specific associations (e.g., taste and nausea) rapidly across prolonged delays.",
                     "description": "John Garcia demonstrated that rats associate novel flavors with sickness even after hours of delay, violating traditional temporal contiguity assumptions.",
-                    "citation": "OpenStax Psychology 2e, Section 6.2",
+                    "citation": "OpenStax Psychology 1e, Section 6.2",
                     "prerequisites": ["psyc-classical-conditioning"],
                 },
             ],
@@ -44,7 +44,7 @@ DOMAIN_05 = {
                         "psyc-classical-conditioning",
                         "psyc-biological-constraints",
                     ],
-                    "citation": "OpenStax Psychology 2e, Section 6.2: Classical Conditioning",
+                    "citation": "OpenStax Psychology 1e, Section 6.2: Classical Conditioning",
                     "blocks": [
                         {
                             "sort_order": 1,
@@ -142,7 +142,7 @@ DOMAIN_05 = {
                             "explanation": "In Pavlov's experiments, the meat powder is the unconditioned stimulus (UCS) because it naturally, automatically, and reliably triggers salivation without any prior learning or conditioning.",
                             "difficulty": "beginner",
                             "cognitive_level": "recall",
-                            "citation": "OpenStax Psychology 2e, Section 6.2",
+                            "citation": "OpenStax Psychology 1e, Section 6.2",
                             "concept_slugs": ["psyc-classical-conditioning"],
                         },
                         {
@@ -160,7 +160,7 @@ DOMAIN_05 = {
                             "explanation": "Stimulus generalization is the tendency for stimuli that resemble the original conditioned stimulus (e.g., other furry white objects resembling the white rat) to evoke similar conditioned responses, as demonstrated in Watson and Rayner's Little Albert experiment.",
                             "difficulty": "intermediate",
                             "cognitive_level": "application",
-                            "citation": "OpenStax Psychology 2e, Section 6.2",
+                            "citation": "OpenStax Psychology 1e, Section 6.2",
                             "concept_slugs": ["psyc-classical-conditioning"],
                         },
                         {
@@ -178,7 +178,7 @@ DOMAIN_05 = {
                             "explanation": "Spontaneous recovery reveals that extinction is an active inhibitory process that suppresses the conditioned response rather than permanently destroying the underlying associative memory trace.",
                             "difficulty": "intermediate",
                             "cognitive_level": "analysis",
-                            "citation": "OpenStax Psychology 2e, Section 6.2",
+                            "citation": "OpenStax Psychology 1e, Section 6.2",
                             "concept_slugs": ["psyc-classical-conditioning"],
                         },
                         {
@@ -196,7 +196,7 @@ DOMAIN_05 = {
                             "explanation": "Traditional behaviorism asserted that conditioning required immediate temporal contiguity (seconds) and many repetitive pairings. Garcia proved that rats formed taste aversions after a single exposure even with hours separating ingestion and sickness, demonstrating evolutionary biological preparedness.",
                             "difficulty": "advanced",
                             "cognitive_level": "analysis",
-                            "citation": "OpenStax Psychology 2e, Section 6.2",
+                            "citation": "OpenStax Psychology 1e, Section 6.2",
                             "concept_slugs": ["psyc-biological-constraints"],
                         },
                     ],
@@ -228,14 +228,14 @@ DOMAIN_05 = {
                     "name": "Operant Conditioning Principles and Schedules",
                     "short_definition": "Voluntary behavioral modification where actions are strengthened by reinforcement or weakened by punishment.",
                     "description": "B. F. Skinner defined positive/negative reinforcers and punishers along fixed/variable ratio and interval partial reinforcement schedules.",
-                    "citation": "OpenStax Psychology 2e, Section 6.3",
+                    "citation": "OpenStax Psychology 1e, Section 6.3",
                 },
                 {
                     "slug": "psyc-observational-learning",
                     "name": "Social Learning and Cognitive Modeling",
                     "short_definition": "Learning by observing others' behaviors and consequences, highlighted by Bandura's Bobo doll study and mirror neurons.",
                     "description": "Observational learning requires attention, retention, motor reproduction, and motivation, augmented by latent learning and cognitive maps.",
-                    "citation": "OpenStax Psychology 2e, Section 6.4",
+                    "citation": "OpenStax Psychology 1e, Section 6.4",
                     "prerequisites": ["psyc-operant-conditioning"],
                 },
             ],
@@ -249,7 +249,7 @@ DOMAIN_05 = {
                         "psyc-operant-conditioning",
                         "psyc-observational-learning",
                     ],
-                    "citation": "OpenStax Psychology 2e, Section 6.3 & 6.4",
+                    "citation": "OpenStax Psychology 1e, Section 6.3 & 6.4",
                     "blocks": [
                         {
                             "sort_order": 1,
@@ -348,7 +348,7 @@ DOMAIN_05 = {
                             "explanation": "Negative reinforcement occurs when a behavior is strengthened and increases in frequency because it successfully removes, terminates, or avoids an aversive stimulus (in this case, the painful headache).",
                             "difficulty": "intermediate",
                             "cognitive_level": "application",
-                            "citation": "OpenStax Psychology 2e, Section 6.3",
+                            "citation": "OpenStax Psychology 1e, Section 6.3",
                             "concept_slugs": ["psyc-operant-conditioning"],
                         },
                         {
@@ -366,7 +366,7 @@ DOMAIN_05 = {
                             "explanation": "A variable-ratio schedule delivers reinforcement after an unpredictable number of responses (like a slot machine or lottery ticket). Because the next response could always yield reward, it generates the highest, steadiest response rates and is remarkably resistant to extinction.",
                             "difficulty": "beginner",
                             "cognitive_level": "recall",
-                            "citation": "OpenStax Psychology 2e, Section 6.3",
+                            "citation": "OpenStax Psychology 1e, Section 6.3",
                             "concept_slugs": ["psyc-operant-conditioning"],
                         },
                         {
@@ -384,7 +384,7 @@ DOMAIN_05 = {
                             "explanation": "A fixed-interval schedule reinforces the first response only after a specified time interval has elapsed. It characteristically produces a 'scalloped' response curve where activity slows dramatically following reinforcement and surges right before the scheduled deadline.",
                             "difficulty": "intermediate",
                             "cognitive_level": "application",
-                            "citation": "OpenStax Psychology 2e, Section 6.3",
+                            "citation": "OpenStax Psychology 1e, Section 6.3",
                             "concept_slugs": ["psyc-operant-conditioning"],
                         },
                         {
@@ -402,7 +402,7 @@ DOMAIN_05 = {
                             "explanation": "Bandura's experiments demonstrated that observational learning is heavily mediated by vicarious reinforcement and vicarious punishment: children who observed the aggressive adult model being rewarded or experiencing no consequences readily imitated the hostility, whereas observing punishment suppressed imitation.",
                             "difficulty": "intermediate",
                             "cognitive_level": "comprehension",
-                            "citation": "OpenStax Psychology 2e, Section 6.4",
+                            "citation": "OpenStax Psychology 1e, Section 6.4",
                             "concept_slugs": ["psyc-observational-learning"],
                         },
                     ],

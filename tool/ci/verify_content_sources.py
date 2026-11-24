@@ -13,6 +13,11 @@ Runbook: docs/content_intelligence/CONTENT_INGESTION_RUNBOOK.md.
 4. The license a file states matches the registry. A known mismatch that
    the owner still has to decide is recorded as the source's ``open_issue``
    and reported as a warning instead of a failure.
+5. Manifest source pins are real (ingestion plan D-6). A ``sha256`` must be
+   64 lowercase hex characters, not a repeated or low-variety pattern, not
+   a digest of a common word, and not shared with another source. A source
+   without one records why in ``metadata.checksum_status`` (or is pinned by
+   the importer's archive version); otherwise that is a warning.
 
 Exit 0 when clean (warnings allowed), 1 on any problem.
 """
@@ -20,6 +25,7 @@ from __future__ import annotations
 
 import argparse
 import glob
+import hashlib
 import json
 import re
 import sys
@@ -142,6 +148,57 @@ def check_use(
                 problems.append(msg)
 
 
+CHECKSUM_STATUSES = {"unverified_remote_document"}
+# Digests of words people type when inventing a hash ("hello", "test", ...).
+_COMMON_WORDS = ["", "hello", "test", "foo", "bar", "password", "example", "placeholder", "hash"]
+_COMMON_DIGESTS = {
+    hashlib.new(alg, w.encode()).hexdigest()[:16]
+    for w in _COMMON_WORDS for alg in ("md5", "sha1", "sha256")
+}
+_SHARED_RUN = 20  # two real SHA-256 digests share a 20-hex-char run with negligible probability
+
+
+def pin_problem(sha: str) -> str | None:
+    """Why ``sha`` cannot be a real SHA-256 digest, or None if it could be."""
+    if not re.fullmatch(r"[0-9a-f]{64}", sha):
+        return "is not 64 lowercase hex characters"
+    if len(set(sha)) < 10:
+        return "uses too few distinct characters to be a real digest"
+    if re.fullmatch(r"(.{1,16}?)\1+.{0,15}", sha):
+        return "is a repeated pattern"
+    if sha[:16] in _COMMON_DIGESTS:
+        return "starts with the digest of a common word"
+    return None
+
+
+def check_pins(releases: list[tuple[str, dict]], problems: list[str], warnings: list[str]) -> None:
+    """Rule 5: manifest pins must be real or explicitly absent (D-6)."""
+    pinned: list[tuple[str, str, str]] = []
+    for where, r in releases:
+        meta = r.get("metadata") or {}
+        label = r.get("id") or r.get("source_url") or r.get("title") or "?"
+        sha = r.get("sha256")
+        if sha:
+            why = pin_problem(str(sha))
+            if why:
+                problems.append(f"{where}: sha256 for {label} {why}; recompute it from a retrieved copy "
+                                f"or remove it and set metadata.checksum_status")
+            else:
+                pinned.append((where, label, str(sha)))
+        elif meta.get("checksum_status") is not None:
+            if meta["checksum_status"] not in CHECKSUM_STATUSES:
+                problems.append(f"{where}: {label} checksum_status must be one of {sorted(CHECKSUM_STATUSES)}")
+        elif not meta.get("imported_by"):
+            warnings.append(f"{where}: {label} has no sha256 and no metadata.checksum_status")
+    for i, (w1, l1, s1) in enumerate(pinned):
+        for w2, l2, s2 in pinned[i + 1:]:
+            if s1 == s2 and l1 == l2:
+                continue  # the same source pinned in two manifests
+            if any(s1[k:k + _SHARED_RUN] in s2 for k in range(len(s1) - _SHARED_RUN + 1)):
+                problems.append(f"{w1} ({l1}) and {w2} ({l2}): sha256 values share a "
+                                f"{_SHARED_RUN}-character run, so at least one is not real")
+
+
 def scan(reg: dict, root: Path) -> tuple[list[str], list[str]]:
     problems: list[str] = []
     warnings: list[str] = []
@@ -156,6 +213,7 @@ def scan(reg: dict, root: Path) -> tuple[list[str], list[str]]:
         use = POSTURE_TO_USE.get(r.get("rights_posture"), r.get("rights_posture") or "?")
         check_use(reg, Path(path).name, r.get("url"), r.get("license"), use, problems, warnings)
     manifests = sorted(glob.glob(str(root / "content" / "*.yaml")))
+    all_releases: list[tuple[str, dict]] = []
     if manifests:
         import yaml  # only needed for manifests
 
@@ -166,10 +224,12 @@ def scan(reg: dict, root: Path) -> tuple[list[str], list[str]]:
             )
             for s in releases:
                 # A manifest uses its sources as alignment references unless
-                # it declares otherwise (imported open textbooks: "adapt").
+                # it declares otherwise (imported open textbooks: "redistribute").
                 use = (s.get("metadata") or {}).get("use", "reference")
                 check_use(reg, Path(path).name, s.get("source_url"), s.get("license"),
                           use, problems, warnings)
+                all_releases.append((Path(path).name, s))
+    check_pins(all_releases, problems, warnings)
     return problems, warnings
 
 

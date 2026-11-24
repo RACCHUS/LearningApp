@@ -119,6 +119,62 @@ class ScanTests(unittest.TestCase):
     def test_real_repository_passes(self):
         self.assertEqual(v.main([]), 0)
 
+    def test_real_manifests_have_no_pin_warnings(self):
+        _, warnings = v.scan(REAL, Path(__file__).resolve().parents[2])
+        self.assertEqual([w for w in warnings if "sha256" in w], [])
+
+
+class PinTests(unittest.TestCase):
+    """Rule 5 (ingestion plan D-6): manifest sha256 pins must be real."""
+
+    REAL_DIGEST = "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824"[::-1]
+
+    def check(self, releases):
+        problems, warnings = [], []
+        v.check_pins(releases, problems, warnings)
+        return problems, warnings
+
+    def test_placeholders_are_rejected(self):
+        bad = {
+            "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2": "repeated pattern",
+            "5d41402abc4b2a76b9719d911017c592b21b79fbf576c9ef56e5d0fc0dc95116": "common word",
+            "0" * 64: "too few distinct",
+            "ABCDEF" * 10 + "ABCD": "64 lowercase hex",
+            "abc123": "64 lowercase hex",
+        }
+        for sha, reason in bad.items():
+            why = v.pin_problem(sha)
+            self.assertIsNotNone(why, sha)
+            self.assertIn(reason, why, sha)
+
+    def test_a_plausible_digest_passes(self):
+        self.assertIsNone(v.pin_problem(self.REAL_DIGEST))
+
+    def test_shared_runs_across_sources_fail(self):
+        a = "b45a6c1e95632b85d38f8cf2e4389ab9213bc54784a621e25e9d3d3a77a94f01"
+        b = "7f8c12b4e95632b85d38f8cf2e4389ab9213bc54784a621e25e9d3d3a77a94f0"
+        problems, _ = self.check([("x.yaml", {"id": "one", "sha256": a}),
+                                  ("y.yaml", {"id": "two", "sha256": b})])
+        self.assertTrue(any("share a" in p for p in problems))
+
+    def test_same_source_in_two_manifests_may_share_its_pin(self):
+        problems, _ = self.check([("x.yaml", {"id": "one", "sha256": self.REAL_DIGEST}),
+                                  ("y.yaml", {"id": "one", "sha256": self.REAL_DIGEST})])
+        self.assertEqual(problems, [])
+
+    def test_missing_pin_needs_a_reason(self):
+        _, warnings = self.check([("x.yaml", {"id": "one"})])
+        self.assertTrue(any("no sha256" in w for w in warnings))
+        problems, warnings = self.check([
+            ("x.yaml", {"id": "one", "metadata": {"checksum_status": "unverified_remote_document"}}),
+            ("y.yaml", {"id": "two", "metadata": {"imported_by": "tool/import_open_textbook.py"}}),
+        ])
+        self.assertEqual((problems, warnings), ([], []))
+
+    def test_unknown_checksum_status_fails(self):
+        problems, _ = self.check([("x.yaml", {"id": "one", "metadata": {"checksum_status": "trust me"}})])
+        self.assertTrue(any("checksum_status must be one of" in p for p in problems))
+
 
 if __name__ == "__main__":
     unittest.main()
