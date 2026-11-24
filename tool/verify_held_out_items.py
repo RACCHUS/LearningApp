@@ -32,6 +32,7 @@ import re
 import sys
 from collections import Counter
 from datetime import date
+from fractions import Fraction
 from pathlib import Path
 
 import sympy as sp
@@ -41,7 +42,7 @@ from sympy.parsing.sympy_parser import parse_expr, standard_transformations
 REPO = Path(__file__).resolve().parents[1]
 DRAFTS = REPO / "content" / "held_out"
 TYPES = {"numeric_entry", "single_choice"}
-SYMBOLS = {name: sp.Symbol(name) for name in ("x", "y", "a", "b")}
+SYMBOLS = {name: sp.Symbol(name) for name in ("x", "y", "a", "b", "n", "P", "r", "t")}
 NAMES = {**SYMBOLS, "sqrt": sp.sqrt, "Rational": sp.Rational, "Abs": sp.Abs,
          "real_root": sp.real_root}
 
@@ -81,16 +82,142 @@ def _lesson_text(lesson: dict) -> str:
         parts += [str(v) for k, v in content.items() if isinstance(v, str)]
     for q in lesson.get("assessment_items") or []:
         parts += [q.get("prompt", ""), q.get("explanation", "")]
+    for q in lesson.get("questions") or []:
+        parts += [q.get("question_text", ""), q.get("explanation", ""), *map(str, q.get("options") or [])]
     return _math_norm("\n".join(parts))
+
+
+_CELL = re.compile(r"^\$?([A-Z]{1,3})\$?([1-9][0-9]*)$")
+
+
+def _col_number(letters: str) -> int:
+    n = 0
+    for ch in letters:
+        n = n * 26 + (ord(ch) - 64)
+    return n
+
+
+def _cells_in(range_text: str) -> list[str]:
+    """Cell names in a range such as B2:C4 (column-major), or one cell."""
+    parts = range_text.upper().replace("$", "").split(":")
+    m1, m2 = _CELL.match(parts[0]), _CELL.match(parts[-1])
+    if not m1 or not m2 or len(parts) > 2:
+        raise ValueError(f"bad range {range_text}")
+    c1, c2 = sorted((_col_number(m1.group(1)), _col_number(m2.group(1))))
+    r1, r2 = sorted((int(m1.group(2)), int(m2.group(2))))
+    names = []
+    for c in range(c1, c2 + 1):
+        col, n = "", c
+        while n:
+            n, rem = divmod(n - 1, 26)
+            col = chr(65 + rem) + col
+        names += [f"{col}{r}" for r in range(r1, r2 + 1)]
+    return names
+
+
+def sheet_eval(formula: str | None, cells: dict) -> Fraction | None:
+    """Evaluate a small spreadsheet formula exactly, or None if invalid.
+
+    Supports numbers, cell references (A1, $A$1), ranges inside SUM, the
+    operators + - * / with brackets, and SUM. Empty cells count as 0. Not a
+    general spreadsheet engine: anything else is reported as invalid, which
+    is what a malformed distractor such as "=C2:C9" should be.
+    """
+    if not formula or not formula.startswith("="):
+        return None
+    tokens = re.findall(r"\$?[A-Za-z]+\$?\d+(?::\$?[A-Za-z]+\$?\d+)?|[A-Za-z]+(?=\()|\d+(?:\.\d+)?|[-+*/(),]",
+                        formula[1:].replace(" ", ""))
+    if "".join(tokens) != formula[1:].replace(" ", ""):
+        return None
+    pos = 0
+    values = {k.upper(): Fraction(str(v)) for k, v in cells.items()}
+
+    def peek():
+        return tokens[pos] if pos < len(tokens) else None
+
+    def take():
+        nonlocal pos
+        pos += 1
+        return tokens[pos - 1]
+
+    def factor():
+        t = take()
+        if t == "-":
+            return -factor()
+        if t == "(":
+            v = expression()
+            if take() != ")":
+                raise ValueError
+            return v
+        if re.fullmatch(r"\d+(\.\d+)?", t):
+            return Fraction(t)
+        if t.upper() == "SUM" and peek() == "(":
+            take()
+            total = Fraction(0)
+            while True:
+                arg = peek()
+                if arg and ":" in arg:
+                    take()
+                    total += sum((values.get(n, Fraction(0)) for n in _cells_in(arg)), Fraction(0))
+                else:
+                    total += expression()
+                sep = take()
+                if sep == ")":
+                    return total
+                if sep != ",":
+                    raise ValueError
+        if ":" in t:
+            raise ValueError("a range outside SUM is not a value")
+        m = _CELL.match(t.upper())
+        if m:
+            return values.get(t.upper().replace("$", ""), Fraction(0))
+        raise ValueError(t)
+
+    def term():
+        v = factor()
+        while peek() in ("*", "/"):
+            v = v * factor() if take() == "*" else v / factor()
+        return v
+
+    def expression():
+        v = term()
+        while peek() in ("+", "-"):
+            v = v + term() if take() == "+" else v - term()
+        return v
+
+    try:
+        result = expression()
+        return result if pos == len(tokens) else None
+    except (ValueError, ZeroDivisionError, IndexError, TypeError):
+        return None
+
+
+def _subs(v: dict) -> dict:
+    return {SYMBOLS[k]: (expr(val) if isinstance(val, str) else val)
+            for k, val in (v.get("substitute") or {}).items()}
+
+
+def option_value(v: dict, text: str) -> sp.Expr:
+    """An option's value, with the item's substitution applied."""
+    e = expr(text)
+    subs = _subs(v)
+    return sp.nsimplify(e.subs(subs)) if subs else e
 
 
 def keyed_value(item: dict) -> sp.Expr | None:
     """The mathematically correct answer the verify block describes."""
     v = item.get("verify") or {}
     if "expression" in v:
-        e = expr(v["expression"])
-        subs = {SYMBOLS[k]: val for k, val in (v.get("substitute") or {}).items()}
-        return sp.nsimplify(e.subs(subs)) if subs else e
+        return option_value(v, v["expression"])
+    sheet = v.get("spreadsheet")
+    if sheet:
+        if "cell_count_of" in sheet:
+            return sp.Integer(len(_cells_in(sheet["cell_count_of"])))
+        if "value_of" in sheet:
+            val = sheet_eval(sheet["value_of"], sheet.get("cells") or {})
+            return None if val is None else sp.Rational(val.numerator, val.denominator)
+        if "target" in sheet:
+            return sp.nsimplify(sheet["target"])
     x = SYMBOLS["x"]
     if "degree_of" in v:
         return sp.Integer(sp.degree(expr(v["degree_of"]), x))
@@ -134,17 +261,41 @@ def check_item(item: dict) -> list[str]:
         if not same(expr(v["identity"]), 0):
             problems.append(f"{iid}: the shown identity does not hold")
         return problems
-    sym_opts = v.get("options") or []
-    if len(sym_opts) != len(options):
-        return [f"{iid}: verify.options must match the options"]
+    if "largest_of" in v:
+        vals = [expr(t) for t in v["largest_of"]]
+        best = max(vals)
+        tops = [i for i, val in enumerate(vals) if same(val, best)]
+        if tops != [idx]:
+            problems.append(f"{iid}: largest options are {tops}, keyed {idx}")
+        return problems
+    if "zero_options" in v:
+        zeros = [i for i, t in enumerate(v["zero_options"]) if t is not None and same(expr(t), 0)]
+        if zeros != [idx]:
+            problems.append(f"{iid}: true options are {zeros}, keyed {idx}")
+        return problems
+    if "valid_cell_refs" in v:
+        valid = [i for i, t in enumerate(v["valid_cell_refs"]) if _CELL.match(str(t))]
+        if valid != [idx]:
+            problems.append(f"{iid}: valid cell references are {valid}, keyed {idx}")
+        return problems
+    sheet = v.get("spreadsheet")
+    sym_opts = (sheet or {}).get("formulas") if sheet else v.get("options") or []
+    if len(sym_opts or []) != len(options):
+        return [f"{iid}: verify options must match the options"]
     target = keyed_value(item)
+    if target is None:
+        return [f"{iid}: cannot compute the keyed value"]
     allowed_equal = set(v.get("same_value_distractors") or [])
     for i, opt in enumerate(sym_opts):
         if opt is None:
             if i == idx:
                 problems.append(f"{iid}: the keyed option has no expression to check")
             continue
-        equal = same(expr(opt), target)
+        if sheet:
+            val = sheet_eval(opt, sheet.get("cells") or {})
+            equal = val is not None and same(sp.Rational(val.numerator, val.denominator), target)
+        else:
+            equal = same(option_value(v, opt), target)
         if i == idx and not equal:
             problems.append(f"{iid}: keyed option {i} ({opt}) is not equal to {target}")
         if i != idx and equal and i not in allowed_equal:
@@ -195,8 +346,10 @@ def check_review(item: dict, author: str) -> list[str]:
     return problems
 
 
-def published_manifest(source_release_id: str) -> dict:
-    path = REPO / "content" / f"open_{source_release_id.replace('-', '_')}.yaml"
+def published_manifest(source_release_id: str, manifest: str | None = None) -> dict:
+    """The manifest the held-out file belongs to: `manifest:` if given,
+    otherwise the open-textbook manifest for the source release."""
+    path = REPO / manifest if manifest else REPO / "content" / f"open_{source_release_id.replace('-', '_')}.yaml"
     return yaml.safe_load(path.read_text(encoding="utf-8"))
 
 
@@ -205,7 +358,7 @@ def check_file(path: Path) -> list[str]:
     items = data.get("items") or []
     name = path.name
     problems: list[str] = []
-    manifest = published_manifest(data.get("source_release_id", ""))
+    manifest = published_manifest(data.get("source_release_id", ""), data.get("manifest"))
     objectives = {o["code"]: o for d in manifest["domains"] for o in d["objectives"]}
     seen_prompts = set()
     lesson_math = "\n".join(_lesson_text(lesson) for o in objectives.values() for lesson in o["lessons"])
@@ -213,6 +366,8 @@ def check_file(path: Path) -> list[str]:
         for lesson in o["lessons"]:
             for q in lesson.get("assessment_items") or []:
                 seen_prompts.add(_norm(q.get("prompt", "")))
+            for q in lesson.get("questions") or []:
+                seen_prompts.add(_norm(q.get("question_text", "")))
             for b in lesson.get("blocks") or []:
                 if b.get("block_type") == "practice_prompt":
                     seen_prompts.add(_norm((b.get("content") or {}).get("prompt", "")))

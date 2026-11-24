@@ -1,0 +1,66 @@
+[
+ {
+  "id": "pa1e-ho-6-1-a",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_best": "pass",
+   "distractors": "pass",
+   "clear": "pass",
+   "aligned": "pass",
+   "held_out": "pass",
+   "explanation": "pass"
+  },
+  "reasons": "Correct; 28.5% not in lesson as a conversion exercise (only a 28.5/52.5 proportion).",
+  "suggested_fix": null,
+  "your_answer": 0.285
+ },
+ {
+  "id": "pa1e-ho-6-1-e",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_best": "pass",
+   "distractors": "pass",
+   "clear": "pass",
+   "aligned": "pass",
+   "held_out": "pass",
+   "explanation": "pass"
+  },
+  "reasons": "Correct; 165% appears in lesson only as a dollar amount. Explanation shows a garbled symbol only in console output (likely encoding of the divide sign); check file is UTF-8.",
+  "suggested_fix": null,
+  "your_answer": 1.65
+ },
+ {
+  "id": "pa1e-ho-6-1-c",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_best": "pass",
+   "distractors": "pass",
+   "clear": "pass",
+   "aligned": "pass",
+   "held_out": "pass",
+   "explanation": "pass"
+  },
+  "reasons": "Only 9/20 equals 45%; 45/10 and 9/2 are slips of dividing by 10 / using 4.5, 9/200 is 0.045; all plausible.",
+  "suggested_fix": null,
+  "your_answer": "9/20 (index 0)"
+ },
+ {
+  "id": "xl-ho-1-1-c",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_best": "pass",
+   "distractors": "pass",
+   "clear": "pass",
+   "aligned": "pass",
+   "held_out": "pass",
+   "explanation": "pass"
+  },
+  "reasons": "SUM(B2:B4)+B6 = 29+10 = 39; tests range plus single cell; within lesson scope; not a copy.",
+  "suggested_fix": null,
+  "your_answer": 39
+ }
+]

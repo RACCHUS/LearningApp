@@ -11,6 +11,8 @@ import verify_held_out_items as v  # noqa: E402
 
 DRAFT = v.DRAFTS / "open_openstax_college_algebra_1e_ch1.yaml"
 REAL = yaml.safe_load(DRAFT.read_text(encoding="utf-8"))
+PRE = yaml.safe_load((v.DRAFTS / "open_openstax_prealgebra_1e_ch6.yaml").read_text(encoding="utf-8"))
+XL = yaml.safe_load((v.DRAFTS / "excel_fundamentals.yaml").read_text(encoding="utf-8"))
 
 
 def item(iid):
@@ -51,6 +53,45 @@ class ItemMathTests(unittest.TestCase):
         self.assertEqual(v.keyed_value(item("ca1e-ho-1-4-e")), 6)
         self.assertEqual(v.keyed_value(item("ca1e-ho-1-5-f")), 7)
         self.assertEqual(v.keyed_value(item("ca1e-ho-1-6-d")), 3)
+
+
+class SpreadsheetAndOtherModesTests(unittest.TestCase):
+    CELLS = {"C2": 20, "C3": 30, "C9": 90}
+
+    def test_sheet_eval(self):
+        self.assertEqual(v.sheet_eval("=SUM(C2:C9)", self.CELLS), 140)
+        self.assertEqual(v.sheet_eval("=SUM(C2,C9)", self.CELLS), 110)
+        self.assertEqual(v.sheet_eval("=C2*(C3-10)/2", self.CELLS), 200)
+        self.assertEqual(v.sheet_eval("=$C$2+1", self.CELLS), 21)
+        for bad in ("=C2:C9", "C2", "=FOO(C2)", "=SUM(C2", "=C2/0", "=2^3"):
+            self.assertIsNone(v.sheet_eval(bad, self.CELLS), bad)
+
+    def test_cells_in_range(self):
+        self.assertEqual(v._cells_in("A1:B3"), ["A1", "A2", "A3", "B1", "B2", "B3"])
+        self.assertEqual(len(v._cells_in("Z1:AB2")), 6)
+
+    def test_spreadsheet_items_catch_a_wrong_key(self):
+        it = copy.deepcopy(next(i for i in XL["items"] if i["id"] == "xl-ho-1-1-b"))
+        self.assertEqual(v.check_item(it), [])
+        it["scoring_spec"]["correct_index"] = 0
+        self.assertTrue(v.check_item(it))
+        it = copy.deepcopy(next(i for i in XL["items"] if i["id"] == "xl-ho-1-1-a"))
+        it["scoring_spec"]["correct_value"] = 41
+        self.assertTrue(any("keyed 41" in p for p in v.check_item(it)))
+
+    def test_largest_zero_and_cell_ref_modes(self):
+        for iid in ("pa1e-ho-6-1-f", "pa1e-ho-6-5-f"):
+            it = copy.deepcopy(next(i for i in PRE["items"] if i["id"] == iid))
+            self.assertEqual(v.check_item(it), [], iid)
+            it["scoring_spec"]["correct_index"] = 1
+            self.assertTrue(v.check_item(it), iid)
+        it = copy.deepcopy(next(i for i in XL["items"] if i["id"] == "xl-ho-1-1-f"))
+        it["scoring_spec"]["correct_index"] = 0
+        self.assertTrue(any("valid cell references" in p for p in v.check_item(it)))
+
+    def test_substitution_applies_to_options(self):
+        it = next(i for i in PRE["items"] if i["id"] == "pa1e-ho-6-4-f")
+        self.assertEqual(v.check_item(it), [])
 
 
 class ReviewTests(unittest.TestCase):

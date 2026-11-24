@@ -1,0 +1,202 @@
+# Held-out check items for Microsoft Excel Fundamentals (budget totals).
+#
+# Ingestion plan v1.2 §8.6 / D-14: 6 independent check items per objective,
+# none shared with lesson practice. ORIGINAL items written for LearningApp;
+# Microsoft Support (reference only) is cited only as an alignment reference.
+#
+# Status: AI-drafted (Claude Opus 5.5); all items approved 2026-11-24 by an
+# independent AI review (Claude Sonnet 5.5), evidence in content/held_out/reviews/.
+# Not yet ingested. An item counts
+# toward readiness only after an INDEPENDENT review approves it (decision
+# D-16): an AI reviewer that is a different model, or a fresh session, from
+# the author, working through AI review checklist v1 with its own
+# deterministic check; or a person. Record the approval on the item (see the
+# College Algebra file for the review block), then ingest with
+# `dart run tool/ingest_curriculum.dart --held-out <this file>`.
+#
+# Every item carries a `verify` block checked by tool/verify_held_out_items.py
+# (SymPy, or the spreadsheet-formula evaluator for Excel items).
+target_slug: software-excel-fundamentals
+source_release_id: microsoft-excel-support-2026-11
+manifest: content/excel_fundamentals.yaml
+min_items_per_objective: 6
+author_ref: ai-drafted-by-claude
+ai_drafted: true
+objective_concepts:
+  SPREADSHEET-1.1:
+  - spreadsheet-cell-reference
+  - spreadsheet-range-summation
+items:
+- id: xl-ho-1-1-a
+  objective: SPREADSHEET-1.1
+  interaction_type: numeric_entry
+  prompt: Cells B2, B3, B4 and B5 contain 12, 7, 15 and 6. What value does the formula =SUM(B2:B5) show?
+  scoring_spec:
+    correct_value: 40
+    tolerance: 0
+  explanation: 'The range B2:B5 is all four cells: 12 + 7 + 15 + 6 = 40.'
+  difficulty: beginner
+  cognitive_level: application
+  citation: 'Microsoft Support: Basic tasks in Excel; SUM function (alignment only; original item)'
+  verify:
+    spreadsheet:
+      cells:
+        B2: 12
+        B3: 7
+        B4: 15
+        B5: 6
+      value_of: =SUM(B2:B5)
+  review:
+    reviewer_kind: ai
+    reviewer_model: claude-sonnet-5-5
+    reviewer_ref: ai-review:claude-sonnet-5-5
+    reviewer_qualification: 'AI review checklist v1 (HELD_OUT_CHECKS_DESIGN.md); separate model from the author; solved independently with its own code; scanned the lessons for copies. Rights: original item, Microsoft Support cited as reference only. Evidence: content/held_out/reviews/open_openstax_prealgebra_1e_ch6_and_excel_fundamentals/'
+    reviewed_on: '2026-11-24'
+    review_status: approved
+    rights_review_status: approved
+- id: xl-ho-1-1-b
+  objective: SPREADSHEET-1.1
+  interaction_type: single_choice
+  prompt: Cells D3, D4, D5, D6 and D7 contain 10, 1, 20, 2 and 30. Which formula adds only D3, D5 and D7?
+  response_spec:
+    options:
+    - =SUM(D3:D7)
+    - =SUM(D3,D5,D7)
+    - =D3:D7
+    - =SUM(D3+D7)
+  scoring_spec:
+    correct_index: 1
+  explanation: Commas list separate cells, so =SUM(D3,D5,D7) gives 10 + 20 + 30 = 60. A colon makes a range, so =SUM(D3:D7) also adds D4 and D6 (63). =D3:D7 is not a valid single value, and =SUM(D3+D7) leaves out D5.
+  difficulty: intermediate
+  cognitive_level: application
+  citation: 'Microsoft Support: Basic tasks in Excel; SUM function (alignment only; original item)'
+  verify:
+    spreadsheet:
+      cells:
+        D3: 10
+        D4: 1
+        D5: 20
+        D6: 2
+        D7: 30
+      target: 60
+      formulas:
+      - =SUM(D3:D7)
+      - =SUM(D3,D5,D7)
+      - =D3:D7
+      - =SUM(D3+D7)
+  review:
+    reviewer_kind: ai
+    reviewer_model: claude-sonnet-5-5
+    reviewer_ref: ai-review:claude-sonnet-5-5
+    reviewer_qualification: 'AI review checklist v1 (HELD_OUT_CHECKS_DESIGN.md); separate model from the author; solved independently with its own code; scanned the lessons for copies. Rights: original item, Microsoft Support cited as reference only. Evidence: content/held_out/reviews/open_openstax_prealgebra_1e_ch6_and_excel_fundamentals/'
+    reviewed_on: '2026-11-24'
+    review_status: approved
+    rights_review_status: approved
+- id: xl-ho-1-1-c
+  objective: SPREADSHEET-1.1
+  interaction_type: numeric_entry
+  prompt: Cells B2 to B6 contain 9, 14, 6, 11 and 10. What value does the formula =SUM(B2:B4)+B6 show?
+  scoring_spec:
+    correct_value: 39
+    tolerance: 0
+  explanation: 'SUM(B2:B4) adds B2, B3 and B4: 9 + 14 + 6 = 29. Then + B6 adds 10, giving 39. B5 (11) is not included.'
+  difficulty: intermediate
+  cognitive_level: application
+  citation: 'Microsoft Support: Basic tasks in Excel; SUM function (alignment only; original item)'
+  verify:
+    spreadsheet:
+      cells:
+        B2: 9
+        B3: 14
+        B4: 6
+        B5: 11
+        B6: 10
+      value_of: =SUM(B2:B4)+B6
+  review:
+    reviewer_kind: ai
+    reviewer_model: claude-sonnet-5-5
+    reviewer_ref: ai-review:claude-sonnet-5-5
+    reviewer_qualification: 'AI review checklist v1 (HELD_OUT_CHECKS_DESIGN.md); separate model from the author; solved independently with its own code; scanned the lessons for copies. Rights: original item, Microsoft Support cited as reference only. Evidence: content/held_out/reviews/open_openstax_prealgebra_1e_ch6_and_excel_fundamentals/'
+    reviewed_on: '2026-11-24'
+    review_status: approved
+    rights_review_status: approved
+- id: xl-ho-1-1-d
+  objective: SPREADSHEET-1.1
+  interaction_type: numeric_entry
+  prompt: How many cells are in the range A1:B3?
+  scoring_spec:
+    correct_value: 6
+    tolerance: 0
+  explanation: 'The range covers columns A and B and rows 1 to 3: 2 columns × 3 rows = 6 cells.'
+  difficulty: intermediate
+  cognitive_level: comprehension
+  citation: 'Microsoft Support: Basic tasks in Excel; SUM function (alignment only; original item)'
+  verify:
+    spreadsheet:
+      cell_count_of: A1:B3
+  review:
+    reviewer_kind: ai
+    reviewer_model: claude-sonnet-5-5
+    reviewer_ref: ai-review:claude-sonnet-5-5
+    reviewer_qualification: 'AI review checklist v1 (HELD_OUT_CHECKS_DESIGN.md); separate model from the author; solved independently with its own code; scanned the lessons for copies. Rights: original item, Microsoft Support cited as reference only. Evidence: content/held_out/reviews/open_openstax_prealgebra_1e_ch6_and_excel_fundamentals/'
+    reviewed_on: '2026-11-24'
+    review_status: approved
+    rights_review_status: approved
+- id: xl-ho-1-1-e
+  objective: SPREADSHEET-1.1
+  interaction_type: numeric_entry
+  prompt: Cells D2 to D6 contain 12, 25, 8, 30 and 15, and D7 contains =SUM(D2:D6), which shows 90. You change D4 from 8 to 20. What does D7 show now?
+  scoring_spec:
+    correct_value: 102
+    tolerance: 0
+  explanation: 'The formula refers to the cells, so it recalculates: 12 + 25 + 20 + 30 + 15 = 102 (12 more than before).'
+  difficulty: intermediate
+  cognitive_level: application
+  citation: 'Microsoft Support: Basic tasks in Excel; SUM function (alignment only; original item)'
+  verify:
+    spreadsheet:
+      cells:
+        D2: 12
+        D3: 25
+        D4: 20
+        D5: 30
+        D6: 15
+      value_of: =SUM(D2:D6)
+  review:
+    reviewer_kind: ai
+    reviewer_model: claude-sonnet-5-5
+    reviewer_ref: ai-review:claude-sonnet-5-5
+    reviewer_qualification: 'AI review checklist v1 (HELD_OUT_CHECKS_DESIGN.md); separate model from the author; solved independently with its own code; scanned the lessons for copies. Rights: original item, Microsoft Support cited as reference only. Evidence: content/held_out/reviews/open_openstax_prealgebra_1e_ch6_and_excel_fundamentals/'
+    reviewed_on: '2026-11-24'
+    review_status: approved
+    rights_review_status: approved
+- id: xl-ho-1-1-f
+  objective: SPREADSHEET-1.1
+  interaction_type: single_choice
+  prompt: Which of these is a valid cell reference?
+  response_spec:
+    options:
+    - 12B
+    - B-12
+    - BB
+    - B12
+  scoring_spec:
+    correct_index: 3
+  explanation: A cell reference is the column letter(s) followed by the row number, as in B12. 12B has them in the wrong order, B-12 has an extra sign, and BB has no row.
+  difficulty: beginner
+  cognitive_level: recall
+  citation: 'Microsoft Support: Basic tasks in Excel; SUM function (alignment only; original item)'
+  verify:
+    valid_cell_refs:
+    - 12B
+    - B-12
+    - BB
+    - B12
+  review:
+    reviewer_kind: ai
+    reviewer_model: claude-sonnet-5-5
+    reviewer_ref: ai-review:claude-sonnet-5-5
+    reviewer_qualification: 'AI review checklist v1 (HELD_OUT_CHECKS_DESIGN.md); separate model from the author; solved independently with its own code; scanned the lessons for copies. Rights: original item, Microsoft Support cited as reference only. Evidence: content/held_out/reviews/open_openstax_prealgebra_1e_ch6_and_excel_fundamentals/'
+    reviewed_on: '2026-11-24'
+    review_status: approved
+    rights_review_status: approved

@@ -65,6 +65,20 @@ void main() {
     expect(sent.containsKey('verify'), isFalse, reason: 'the sympy block stays in the repository');
   });
 
+  test('the Excel set links each item to both objective concepts', () {
+    dynamic toDart(dynamic n) => n is YamlMap
+        ? n.map((k, v) => MapEntry(k.toString(), toDart(v)))
+        : n is YamlList
+            ? n.map(toDart).toList()
+            : n;
+    final file = (toDart(loadYaml(File('content/held_out/excel_fundamentals.yaml').readAsStringSync())) as Map)
+        .cast<String, dynamic>();
+    final payload = buildHeldOutPayload(file, targetSlug: 'software-excel-fundamentals');
+    expect(payload.items, hasLength(6));
+    expect(payload.items.first['concept_slugs'],
+        ['spreadsheet-cell-reference', 'spreadsheet-range-summation']);
+  });
+
   test('a file for another target is refused', () {
     expect(() => buildHeldOutPayload(load(), targetSlug: 'software-excel-fundamentals'),
         throwsA(isA<Exception>()));

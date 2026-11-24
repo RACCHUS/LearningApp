@@ -1,0 +1,578 @@
+[
+ {
+  "id": "pa1e-ho-6-1-a",
+  "verdict": "rejected",
+  "checks": {
+   "correct": "pass",
+   "single_best": "pass",
+   "distractors": "pass",
+   "clear": "pass",
+   "aligned": "pass",
+   "held_out": "fail",
+   "explanation": "pass"
+  },
+  "reasons": "37.5% is an exercise in the lesson's percent-to-fraction list (asked as fraction here as decimal); same expression with a tweak.",
+  "suggested_fix": "Use e.g. 28.5% -> 0.285 or 62.4% -> 0.624 (not in the lesson).",
+  "your_answer": 0.375
+ },
+ {
+  "id": "pa1e-ho-6-1-b",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_best": "pass",
+   "distractors": "pass",
+   "clear": "pass",
+   "aligned": "pass",
+   "held_out": "pass",
+   "explanation": "pass"
+  },
+  "reasons": "All checks pass; independent computation matches key.",
+  "suggested_fix": null,
+  "your_answer": 8
+ },
+ {
+  "id": "pa1e-ho-6-1-c",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_best": "pass",
+   "distractors": "pass",
+   "clear": "pass",
+   "aligned": "pass",
+   "held_out": "pass",
+   "explanation": "pass"
+  },
+  "reasons": "All checks pass; independent computation matches key.",
+  "suggested_fix": null,
+  "your_answer": "9/20 (index 0)"
+ },
+ {
+  "id": "pa1e-ho-6-1-d",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_best": "pass",
+   "distractors": "pass",
+   "clear": "pass",
+   "aligned": "pass",
+   "held_out": "pass",
+   "explanation": "pass"
+  },
+  "reasons": "All checks pass; independent computation matches key.",
+  "suggested_fix": null,
+  "your_answer": 85
+ },
+ {
+  "id": "pa1e-ho-6-1-e",
+  "verdict": "rejected",
+  "checks": {
+   "correct": "pass",
+   "single_best": "pass",
+   "distractors": "pass",
+   "clear": "pass",
+   "aligned": "pass",
+   "held_out": "fail",
+   "explanation": "pass"
+  },
+  "reasons": "125% to a decimal is a verbatim exercise in the lesson's 'convert each percent to a decimal' list (125%, also 115%, 150%).",
+  "suggested_fix": "Use a percent not in the lesson, e.g. 165% -> 1.65, or 7.25% -> 0.0725.",
+  "your_answer": 1.25
+ },
+ {
+  "id": "pa1e-ho-6-1-f",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_best": "pass",
+   "distractors": "pass",
+   "clear": "pass",
+   "aligned": "pass",
+   "held_out": "pass",
+   "explanation": "pass"
+  },
+  "reasons": "All checks pass; independent computation matches key.",
+  "suggested_fix": null,
+  "your_answer": "5/8 (index 2)"
+ },
+ {
+  "id": "pa1e-ho-6-2-a",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_best": "pass",
+   "distractors": "pass",
+   "clear": "pass",
+   "aligned": "pass",
+   "held_out": "pass",
+   "explanation": "pass"
+  },
+  "reasons": "All checks pass; independent computation matches key.",
+  "suggested_fix": null,
+  "your_answer": 12
+ },
+ {
+  "id": "pa1e-ho-6-2-b",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_best": "pass",
+   "distractors": "pass",
+   "clear": "pass",
+   "aligned": "pass",
+   "held_out": "pass",
+   "explanation": "pass"
+  },
+  "reasons": "All checks pass; independent computation matches key.",
+  "suggested_fix": null,
+  "your_answer": 25
+ },
+ {
+  "id": "pa1e-ho-6-2-c",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_best": "pass",
+   "distractors": "pass",
+   "clear": "pass",
+   "aligned": "pass",
+   "held_out": "pass",
+   "explanation": "pass"
+  },
+  "reasons": "All checks pass; independent computation matches key.",
+  "suggested_fix": null,
+  "your_answer": 40
+ },
+ {
+  "id": "pa1e-ho-6-2-d",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_best": "pass",
+   "distractors": "pass",
+   "clear": "pass",
+   "aligned": "pass",
+   "held_out": "pass",
+   "explanation": "pass"
+  },
+  "reasons": "All checks pass; independent computation matches key.",
+  "suggested_fix": null,
+  "your_answer": 288
+ },
+ {
+  "id": "pa1e-ho-6-2-e",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_best": "pass",
+   "distractors": "pass",
+   "clear": "pass",
+   "aligned": "pass",
+   "held_out": "pass",
+   "explanation": "pass"
+  },
+  "reasons": "All checks pass; independent computation matches key.",
+  "suggested_fix": null,
+  "your_answer": 15
+ },
+ {
+  "id": "pa1e-ho-6-2-f",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_best": "pass",
+   "distractors": "pass",
+   "clear": "pass",
+   "aligned": "pass",
+   "held_out": "pass",
+   "explanation": "pass"
+  },
+  "reasons": "All checks pass; independent computation matches key.",
+  "suggested_fix": null,
+  "your_answer": 8
+ },
+ {
+  "id": "pa1e-ho-6-3-a",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_best": "pass",
+   "distractors": "pass",
+   "clear": "pass",
+   "aligned": "pass",
+   "held_out": "pass",
+   "explanation": "pass"
+  },
+  "reasons": "All checks pass; independent computation matches key.",
+  "suggested_fix": null,
+  "your_answer": 4.2
+ },
+ {
+  "id": "pa1e-ho-6-3-b",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_best": "pass",
+   "distractors": "pass",
+   "clear": "pass",
+   "aligned": "pass",
+   "held_out": "pass",
+   "explanation": "pass"
+  },
+  "reasons": "All checks pass; independent computation matches key.",
+  "suggested_fix": null,
+  "your_answer": 47.7
+ },
+ {
+  "id": "pa1e-ho-6-3-c",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_best": "pass",
+   "distractors": "pass",
+   "clear": "pass",
+   "aligned": "pass",
+   "held_out": "pass",
+   "explanation": "pass"
+  },
+  "reasons": "All checks pass; independent computation matches key.",
+  "suggested_fix": null,
+  "your_answer": 140
+ },
+ {
+  "id": "pa1e-ho-6-3-d",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_best": "pass",
+   "distractors": "pass",
+   "clear": "pass",
+   "aligned": "pass",
+   "held_out": "pass",
+   "explanation": "pass"
+  },
+  "reasons": "Pass; note lesson has a jacket-on-sale example (40% off $150) but numbers and task differ.",
+  "suggested_fix": null,
+  "your_answer": 60
+ },
+ {
+  "id": "pa1e-ho-6-3-e",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_best": "pass",
+   "distractors": "pass",
+   "clear": "pass",
+   "aligned": "pass",
+   "held_out": "pass",
+   "explanation": "pass"
+  },
+  "reasons": "All checks pass; independent computation matches key.",
+  "suggested_fix": null,
+  "your_answer": 16
+ },
+ {
+  "id": "pa1e-ho-6-3-f",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_best": "pass",
+   "distractors": "pass",
+   "clear": "pass",
+   "aligned": "pass",
+   "held_out": "pass",
+   "explanation": "pass"
+  },
+  "reasons": "Pass; two successive discounts is a mild extension of 6.3, tagged advanced; acceptable.",
+  "suggested_fix": null,
+  "your_answer": "72 (index 1)"
+ },
+ {
+  "id": "pa1e-ho-6-4-a",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_best": "pass",
+   "distractors": "pass",
+   "clear": "pass",
+   "aligned": "pass",
+   "held_out": "pass",
+   "explanation": "pass"
+  },
+  "reasons": "All checks pass; independent computation matches key.",
+  "suggested_fix": null,
+  "your_answer": 300
+ },
+ {
+  "id": "pa1e-ho-6-4-b",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_best": "pass",
+   "distractors": "pass",
+   "clear": "pass",
+   "aligned": "pass",
+   "held_out": "pass",
+   "explanation": "pass"
+  },
+  "reasons": "All checks pass; independent computation matches key.",
+  "suggested_fix": null,
+  "your_answer": 1620
+ },
+ {
+  "id": "pa1e-ho-6-4-c",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_best": "pass",
+   "distractors": "pass",
+   "clear": "pass",
+   "aligned": "pass",
+   "held_out": "pass",
+   "explanation": "pass"
+  },
+  "reasons": "All checks pass; independent computation matches key.",
+  "suggested_fix": null,
+  "your_answer": 2.5
+ },
+ {
+  "id": "pa1e-ho-6-4-d",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_best": "pass",
+   "distractors": "pass",
+   "clear": "pass",
+   "aligned": "pass",
+   "held_out": "pass",
+   "explanation": "pass"
+  },
+  "reasons": "All checks pass; independent computation matches key.",
+  "suggested_fix": null,
+  "your_answer": 1000
+ },
+ {
+  "id": "pa1e-ho-6-4-e",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_best": "pass",
+   "distractors": "pass",
+   "clear": "pass",
+   "aligned": "pass",
+   "held_out": "pass",
+   "explanation": "pass"
+  },
+  "reasons": "All checks pass; independent computation matches key.",
+  "suggested_fix": null,
+  "your_answer": 12
+ },
+ {
+  "id": "pa1e-ho-6-4-f",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_best": "pass",
+   "distractors": "pass",
+   "clear": "pass",
+   "aligned": "pass",
+   "held_out": "pass",
+   "explanation": "pass"
+  },
+  "reasons": "Pass; recalls I=Prt which the lesson states, but is not a copy of an exercise. Compound-interest distractor is a fair misconception.",
+  "suggested_fix": null,
+  "your_answer": "I = Prt (index 1)"
+ },
+ {
+  "id": "pa1e-ho-6-5-a",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_best": "pass",
+   "distractors": "pass",
+   "clear": "pass",
+   "aligned": "pass",
+   "held_out": "pass",
+   "explanation": "pass"
+  },
+  "reasons": "All checks pass; independent computation matches key.",
+  "suggested_fix": null,
+  "your_answer": 7.5
+ },
+ {
+  "id": "pa1e-ho-6-5-b",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_best": "pass",
+   "distractors": "pass",
+   "clear": "pass",
+   "aligned": "pass",
+   "held_out": "pass",
+   "explanation": "pass"
+  },
+  "reasons": "All checks pass; independent computation matches key.",
+  "suggested_fix": null,
+  "your_answer": 15
+ },
+ {
+  "id": "pa1e-ho-6-5-c",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_best": "pass",
+   "distractors": "pass",
+   "clear": "pass",
+   "aligned": "pass",
+   "held_out": "pass",
+   "explanation": "pass"
+  },
+  "reasons": "All checks pass; independent computation matches key.",
+  "suggested_fix": null,
+  "your_answer": 5
+ },
+ {
+  "id": "pa1e-ho-6-5-d",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_best": "pass",
+   "distractors": "pass",
+   "clear": "pass",
+   "aligned": "pass",
+   "held_out": "pass",
+   "explanation": "pass"
+  },
+  "reasons": "All checks pass; independent computation matches key.",
+  "suggested_fix": null,
+  "your_answer": 87.5
+ },
+ {
+  "id": "pa1e-ho-6-5-e",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_best": "pass",
+   "distractors": "pass",
+   "clear": "pass",
+   "aligned": "pass",
+   "held_out": "pass",
+   "explanation": "pass"
+  },
+  "reasons": "All checks pass; independent computation matches key.",
+  "suggested_fix": null,
+  "your_answer": 385
+ },
+ {
+  "id": "pa1e-ho-6-5-f",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_best": "pass",
+   "distractors": "pass",
+   "clear": "pass",
+   "aligned": "pass",
+   "held_out": "pass",
+   "explanation": "pass"
+  },
+  "reasons": "All checks pass; independent computation matches key.",
+  "suggested_fix": null,
+  "your_answer": "3/4 = 9/12 (index 3)"
+ },
+ {
+  "id": "xl-ho-1-1-a",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_best": "pass",
+   "distractors": "pass",
+   "clear": "pass",
+   "aligned": "pass",
+   "held_out": "pass",
+   "explanation": "pass"
+  },
+  "reasons": "All checks pass; independent computation matches key.",
+  "suggested_fix": null,
+  "your_answer": 40
+ },
+ {
+  "id": "xl-ho-1-1-b",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_best": "pass",
+   "distractors": "pass",
+   "clear": "pass",
+   "aligned": "pass",
+   "held_out": "pass",
+   "explanation": "pass"
+  },
+  "reasons": "Pass; =D3:D7 as a bare formula may spill in Excel 365, but is clearly not 'adds only D3, D5, D7', so still wrong.",
+  "suggested_fix": null,
+  "your_answer": "=SUM(D3,D5,D7) (index 1)"
+ },
+ {
+  "id": "xl-ho-1-1-c",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_best": "pass",
+   "distractors": "pass",
+   "clear": "pass",
+   "aligned": "pass",
+   "held_out": "pass",
+   "explanation": "pass"
+  },
+  "reasons": "Pass with concern: multiplication/precedence is not taught in the lesson (only SUM, refs, ranges); allowed as a simple cell formula, and result is the same under left-to-right evaluation so it tests little. Consider a SUM-based item instead.",
+  "suggested_fix": null,
+  "your_answer": 32
+ },
+ {
+  "id": "xl-ho-1-1-d",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_best": "pass",
+   "distractors": "pass",
+   "clear": "pass",
+   "aligned": "pass",
+   "held_out": "pass",
+   "explanation": "pass"
+  },
+  "reasons": "Pass; two-column range A1:B3 slightly extends the lesson's single-column ranges but is within 'ranges'.",
+  "suggested_fix": null,
+  "your_answer": 6
+ },
+ {
+  "id": "xl-ho-1-1-e",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_best": "pass",
+   "distractors": "pass",
+   "clear": "pass",
+   "aligned": "pass",
+   "held_out": "pass",
+   "explanation": "pass"
+  },
+  "reasons": "All checks pass; independent computation matches key.",
+  "suggested_fix": null,
+  "your_answer": 102
+ },
+ {
+  "id": "xl-ho-1-1-f",
+  "verdict": "approved",
+  "checks": {
+   "correct": "pass",
+   "single_best": "pass",
+   "distractors": "pass",
+   "clear": "pass",
+   "aligned": "pass",
+   "held_out": "pass",
+   "explanation": "pass"
+  },
+  "reasons": "All checks pass; independent computation matches key.",
+  "suggested_fix": null,
+  "your_answer": "B12 (index 3)"
+ }
+]

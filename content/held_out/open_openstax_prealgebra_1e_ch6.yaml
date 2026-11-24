@@ -1,0 +1,717 @@
+# Held-out check items for Prealgebra (OpenStax 1e) chapter 6, percents.
+#
+# Ingestion plan v1.2 §8.6 / D-14: 6 independent check items per objective,
+# none shared with lesson practice. ORIGINAL items written for LearningApp;
+# OpenStax is cited only as an alignment reference.
+#
+# Status: AI-drafted (Claude Opus 5.5); all items approved 2026-11-24 by an
+# independent AI review (Claude Sonnet 5.5), evidence in content/held_out/reviews/.
+# Not yet ingested. An item counts
+# toward readiness only after an INDEPENDENT review approves it (decision
+# D-16): an AI reviewer that is a different model, or a fresh session, from
+# the author, working through AI review checklist v1 with its own
+# deterministic check; or a person. Record the approval on the item (see the
+# College Algebra file for the review block), then ingest with
+# `dart run tool/ingest_curriculum.dart --held-out <this file>`.
+#
+# Every item carries a `verify` block checked by tool/verify_held_out_items.py
+# (SymPy, or the spreadsheet-formula evaluator for Excel items).
+target_slug: open-openstax-prealgebra-1e
+source_release_id: openstax-prealgebra-1e
+min_items_per_objective: 6
+author_ref: ai-drafted-by-claude
+ai_drafted: true
+objective_concepts:
+  '6.1':
+  - open-openstax-prealgebra-1e-6-1
+  '6.2':
+  - open-openstax-prealgebra-1e-6-2
+  '6.3':
+  - open-openstax-prealgebra-1e-6-3
+  '6.4':
+  - open-openstax-prealgebra-1e-6-4
+  '6.5':
+  - open-openstax-prealgebra-1e-6-5
+items:
+- id: pa1e-ho-6-1-a
+  objective: '6.1'
+  interaction_type: numeric_entry
+  prompt: Write 28.5% as a decimal.
+  scoring_spec:
+    correct_value: 0.285
+    tolerance: 0
+  explanation: 'Divide by 100 (move the decimal point two places left): 28.5% = 0.285. A common slip is 2.85.'
+  difficulty: beginner
+  cognitive_level: application
+  citation: Prealgebra (OpenStax 1e), Section 6.1, https://openstax.org/books/prealgebra/pages/6-1-understand-percent (alignment only; original item)
+  verify:
+    expression: Rational(285, 1000)
+  review:
+    reviewer_kind: ai
+    reviewer_model: claude-sonnet-5-5
+    reviewer_ref: ai-review:claude-sonnet-5-5
+    reviewer_qualification: 'AI review checklist v1 (HELD_OUT_CHECKS_DESIGN.md); separate model from the author; solved independently with its own code; scanned the lessons for copies. Rights: original item, OpenStax cited for alignment only. Evidence: content/held_out/reviews/open_openstax_prealgebra_1e_ch6_and_excel_fundamentals/'
+    reviewed_on: '2026-11-24'
+    review_status: approved
+    rights_review_status: approved
+- id: pa1e-ho-6-1-b
+  objective: '6.1'
+  interaction_type: numeric_entry
+  prompt: Write the decimal 0.08 as a percent. Enter the number without the % sign.
+  scoring_spec:
+    correct_value: 8
+    tolerance: 0
+  explanation: 'Multiply by 100 (move the decimal point two places right): 0.08 = 8%. A common slip is 0.8%.'
+  difficulty: beginner
+  cognitive_level: application
+  citation: Prealgebra (OpenStax 1e), Section 6.1, https://openstax.org/books/prealgebra/pages/6-1-understand-percent (alignment only; original item)
+  verify:
+    expression: Rational(8, 100) * 100
+  review:
+    reviewer_kind: ai
+    reviewer_model: claude-sonnet-5-5
+    reviewer_ref: ai-review:claude-sonnet-5-5
+    reviewer_qualification: 'AI review checklist v1 (HELD_OUT_CHECKS_DESIGN.md); separate model from the author; solved independently with its own code; scanned the lessons for copies. Rights: original item, OpenStax cited for alignment only. Evidence: content/held_out/reviews/open_openstax_prealgebra_1e_ch6_and_excel_fundamentals/'
+    reviewed_on: '2026-11-24'
+    review_status: approved
+    rights_review_status: approved
+- id: pa1e-ho-6-1-c
+  objective: '6.1'
+  interaction_type: single_choice
+  prompt: Which fraction, in simplest form, equals 45%?
+  response_spec:
+    options:
+    - $\frac{9}{20}$
+    - $\frac{45}{10}$
+    - $\frac{9}{200}$
+    - $\frac{9}{2}$
+  scoring_spec:
+    correct_index: 0
+  explanation: '45% means 45 out of 100: $\frac{45}{100} = \frac{9}{20}$. $\frac{45}{10}$ divides by 10 instead of 100, and $\frac{9}{200}$ treats 45% as 0.045.'
+  difficulty: intermediate
+  cognitive_level: application
+  citation: Prealgebra (OpenStax 1e), Section 6.1, https://openstax.org/books/prealgebra/pages/6-1-understand-percent (alignment only; original item)
+  verify:
+    expression: Rational(45, 100)
+    options:
+    - Rational(9, 20)
+    - Rational(45, 10)
+    - Rational(9, 200)
+    - Rational(9, 2)
+  review:
+    reviewer_kind: ai
+    reviewer_model: claude-sonnet-5-5
+    reviewer_ref: ai-review:claude-sonnet-5-5
+    reviewer_qualification: 'AI review checklist v1 (HELD_OUT_CHECKS_DESIGN.md); separate model from the author; solved independently with its own code; scanned the lessons for copies. Rights: original item, OpenStax cited for alignment only. Evidence: content/held_out/reviews/open_openstax_prealgebra_1e_ch6_and_excel_fundamentals/'
+    reviewed_on: '2026-11-24'
+    review_status: approved
+    rights_review_status: approved
+- id: pa1e-ho-6-1-d
+  objective: '6.1'
+  interaction_type: numeric_entry
+  prompt: Write $\frac{17}{20}$ as a percent. Enter the number without the % sign.
+  scoring_spec:
+    correct_value: 85
+    tolerance: 0
+  explanation: $\frac{17}{20} = \frac{85}{100} = 85\%$ (multiply top and bottom by 5).
+  difficulty: intermediate
+  cognitive_level: application
+  citation: Prealgebra (OpenStax 1e), Section 6.1, https://openstax.org/books/prealgebra/pages/6-1-understand-percent (alignment only; original item)
+  verify:
+    expression: Rational(17, 20) * 100
+  review:
+    reviewer_kind: ai
+    reviewer_model: claude-sonnet-5-5
+    reviewer_ref: ai-review:claude-sonnet-5-5
+    reviewer_qualification: 'AI review checklist v1 (HELD_OUT_CHECKS_DESIGN.md); separate model from the author; solved independently with its own code; scanned the lessons for copies. Rights: original item, OpenStax cited for alignment only. Evidence: content/held_out/reviews/open_openstax_prealgebra_1e_ch6_and_excel_fundamentals/'
+    reviewed_on: '2026-11-24'
+    review_status: approved
+    rights_review_status: approved
+- id: pa1e-ho-6-1-e
+  objective: '6.1'
+  interaction_type: numeric_entry
+  prompt: Write 165% as a decimal.
+  scoring_spec:
+    correct_value: 1.65
+    tolerance: 0
+  explanation: 'Percents over 100% give decimals over 1: 165% = 165 ÷ 100 = 1.65.'
+  difficulty: beginner
+  cognitive_level: application
+  citation: Prealgebra (OpenStax 1e), Section 6.1, https://openstax.org/books/prealgebra/pages/6-1-understand-percent (alignment only; original item)
+  verify:
+    expression: Rational(165, 100)
+  review:
+    reviewer_kind: ai
+    reviewer_model: claude-sonnet-5-5
+    reviewer_ref: ai-review:claude-sonnet-5-5
+    reviewer_qualification: 'AI review checklist v1 (HELD_OUT_CHECKS_DESIGN.md); separate model from the author; solved independently with its own code; scanned the lessons for copies. Rights: original item, OpenStax cited for alignment only. Evidence: content/held_out/reviews/open_openstax_prealgebra_1e_ch6_and_excel_fundamentals/'
+    reviewed_on: '2026-11-24'
+    review_status: approved
+    rights_review_status: approved
+- id: pa1e-ho-6-1-f
+  objective: '6.1'
+  interaction_type: single_choice
+  prompt: Which of these is the largest?
+  response_spec:
+    options:
+    - '0.62'
+    - 61%
+    - $\frac{5}{8}$
+    - '0.6'
+  scoring_spec:
+    correct_index: 2
+  explanation: 'Write them all as decimals: 0.62, 0.61, 0.625 and 0.6. The largest is $\frac{5}{8} = 0.625$.'
+  difficulty: intermediate
+  cognitive_level: analysis
+  citation: Prealgebra (OpenStax 1e), Section 6.1, https://openstax.org/books/prealgebra/pages/6-1-understand-percent (alignment only; original item)
+  verify:
+    largest_of:
+    - Rational(62, 100)
+    - Rational(61, 100)
+    - Rational(5, 8)
+    - Rational(6, 10)
+  review:
+    reviewer_kind: ai
+    reviewer_model: claude-sonnet-5-5
+    reviewer_ref: ai-review:claude-sonnet-5-5
+    reviewer_qualification: 'AI review checklist v1 (HELD_OUT_CHECKS_DESIGN.md); separate model from the author; solved independently with its own code; scanned the lessons for copies. Rights: original item, OpenStax cited for alignment only. Evidence: content/held_out/reviews/open_openstax_prealgebra_1e_ch6_and_excel_fundamentals/'
+    reviewed_on: '2026-11-24'
+    review_status: approved
+    rights_review_status: approved
+- id: pa1e-ho-6-2-a
+  objective: '6.2'
+  interaction_type: numeric_entry
+  prompt: A shop has 80 bikes, and 15% of them are red. How many bikes are red?
+  scoring_spec:
+    correct_value: 12
+    tolerance: 0
+  explanation: 15% of 80 = 0.15 × 80 = 12.
+  difficulty: beginner
+  cognitive_level: application
+  citation: Prealgebra (OpenStax 1e), Section 6.2, https://openstax.org/books/prealgebra/pages/6-2-solve-general-applications-of-percent (alignment only; original item)
+  verify:
+    expression: 80 * Rational(15, 100)
+  review:
+    reviewer_kind: ai
+    reviewer_model: claude-sonnet-5-5
+    reviewer_ref: ai-review:claude-sonnet-5-5
+    reviewer_qualification: 'AI review checklist v1 (HELD_OUT_CHECKS_DESIGN.md); separate model from the author; solved independently with its own code; scanned the lessons for copies. Rights: original item, OpenStax cited for alignment only. Evidence: content/held_out/reviews/open_openstax_prealgebra_1e_ch6_and_excel_fundamentals/'
+    reviewed_on: '2026-11-24'
+    review_status: approved
+    rights_review_status: approved
+- id: pa1e-ho-6-2-b
+  objective: '6.2'
+  interaction_type: numeric_entry
+  prompt: 18 is what percent of 72? Enter the number without the % sign.
+  scoring_spec:
+    correct_value: 25
+    tolerance: 0
+  explanation: $\frac{18}{72} = 0.25 = 25\%$.
+  difficulty: intermediate
+  cognitive_level: application
+  citation: Prealgebra (OpenStax 1e), Section 6.2, https://openstax.org/books/prealgebra/pages/6-2-solve-general-applications-of-percent (alignment only; original item)
+  verify:
+    expression: Rational(18, 72) * 100
+  review:
+    reviewer_kind: ai
+    reviewer_model: claude-sonnet-5-5
+    reviewer_ref: ai-review:claude-sonnet-5-5
+    reviewer_qualification: 'AI review checklist v1 (HELD_OUT_CHECKS_DESIGN.md); separate model from the author; solved independently with its own code; scanned the lessons for copies. Rights: original item, OpenStax cited for alignment only. Evidence: content/held_out/reviews/open_openstax_prealgebra_1e_ch6_and_excel_fundamentals/'
+    reviewed_on: '2026-11-24'
+    review_status: approved
+    rights_review_status: approved
+- id: pa1e-ho-6-2-c
+  objective: '6.2'
+  interaction_type: numeric_entry
+  prompt: 35% of a number is 14. What is the number?
+  scoring_spec:
+    correct_value: 40
+    tolerance: 0
+  explanation: 0.35 × n = 14, so n = 14 ÷ 0.35 = 40.
+  difficulty: intermediate
+  cognitive_level: application
+  citation: Prealgebra (OpenStax 1e), Section 6.2, https://openstax.org/books/prealgebra/pages/6-2-solve-general-applications-of-percent (alignment only; original item)
+  verify:
+    expression: 14 / Rational(35, 100)
+  review:
+    reviewer_kind: ai
+    reviewer_model: claude-sonnet-5-5
+    reviewer_ref: ai-review:claude-sonnet-5-5
+    reviewer_qualification: 'AI review checklist v1 (HELD_OUT_CHECKS_DESIGN.md); separate model from the author; solved independently with its own code; scanned the lessons for copies. Rights: original item, OpenStax cited for alignment only. Evidence: content/held_out/reviews/open_openstax_prealgebra_1e_ch6_and_excel_fundamentals/'
+    reviewed_on: '2026-11-24'
+    review_status: approved
+    rights_review_status: approved
+- id: pa1e-ho-6-2-d
+  objective: '6.2'
+  interaction_type: numeric_entry
+  prompt: A school has 640 students, and 45% of them walk to school. How many students walk?
+  scoring_spec:
+    correct_value: 288
+    tolerance: 0
+  explanation: 0.45 × 640 = 288.
+  difficulty: intermediate
+  cognitive_level: application
+  citation: Prealgebra (OpenStax 1e), Section 6.2, https://openstax.org/books/prealgebra/pages/6-2-solve-general-applications-of-percent (alignment only; original item)
+  verify:
+    expression: 640 * Rational(45, 100)
+  review:
+    reviewer_kind: ai
+    reviewer_model: claude-sonnet-5-5
+    reviewer_ref: ai-review:claude-sonnet-5-5
+    reviewer_qualification: 'AI review checklist v1 (HELD_OUT_CHECKS_DESIGN.md); separate model from the author; solved independently with its own code; scanned the lessons for copies. Rights: original item, OpenStax cited for alignment only. Evidence: content/held_out/reviews/open_openstax_prealgebra_1e_ch6_and_excel_fundamentals/'
+    reviewed_on: '2026-11-24'
+    review_status: approved
+    rights_review_status: approved
+- id: pa1e-ho-6-2-e
+  objective: '6.2'
+  interaction_type: numeric_entry
+  prompt: The price of a game rose from $\text{\textdollar}40$ to $\text{\textdollar}46$. What was the percent increase? Enter the number without the % sign.
+  scoring_spec:
+    correct_value: 15
+    tolerance: 0
+  explanation: 'The increase is 6 dollars. Compare it with the ORIGINAL price: $\frac{6}{40} = 0.15 = 15\%$.'
+  difficulty: intermediate
+  cognitive_level: application
+  citation: Prealgebra (OpenStax 1e), Section 6.2, https://openstax.org/books/prealgebra/pages/6-2-solve-general-applications-of-percent (alignment only; original item)
+  verify:
+    expression: (46 - 40) * 100 / Rational(40)
+  review:
+    reviewer_kind: ai
+    reviewer_model: claude-sonnet-5-5
+    reviewer_ref: ai-review:claude-sonnet-5-5
+    reviewer_qualification: 'AI review checklist v1 (HELD_OUT_CHECKS_DESIGN.md); separate model from the author; solved independently with its own code; scanned the lessons for copies. Rights: original item, OpenStax cited for alignment only. Evidence: content/held_out/reviews/open_openstax_prealgebra_1e_ch6_and_excel_fundamentals/'
+    reviewed_on: '2026-11-24'
+    review_status: approved
+    rights_review_status: approved
+- id: pa1e-ho-6-2-f
+  objective: '6.2'
+  interaction_type: numeric_entry
+  prompt: A town's population fell from 2,500 to 2,300. What was the percent decrease? Enter the number without the % sign.
+  scoring_spec:
+    correct_value: 8
+    tolerance: 0
+  explanation: 'The drop is 200. Compare it with the original 2,500: $\frac{200}{2500} = 0.08 = 8\%$.'
+  difficulty: intermediate
+  cognitive_level: application
+  citation: Prealgebra (OpenStax 1e), Section 6.2, https://openstax.org/books/prealgebra/pages/6-2-solve-general-applications-of-percent (alignment only; original item)
+  verify:
+    expression: (2500 - 2300) * 100 / Rational(2500)
+  review:
+    reviewer_kind: ai
+    reviewer_model: claude-sonnet-5-5
+    reviewer_ref: ai-review:claude-sonnet-5-5
+    reviewer_qualification: 'AI review checklist v1 (HELD_OUT_CHECKS_DESIGN.md); separate model from the author; solved independently with its own code; scanned the lessons for copies. Rights: original item, OpenStax cited for alignment only. Evidence: content/held_out/reviews/open_openstax_prealgebra_1e_ch6_and_excel_fundamentals/'
+    reviewed_on: '2026-11-24'
+    review_status: approved
+    rights_review_status: approved
+- id: pa1e-ho-6-3-a
+  objective: '6.3'
+  interaction_type: numeric_entry
+  prompt: A pair of headphones costs $\text{\textdollar}60$, and the sales tax rate is 7%. How much is the sales tax, in dollars?
+  scoring_spec:
+    correct_value: 4.2
+    tolerance: 0
+  explanation: Tax = 0.07 × 60 = 4.20 dollars.
+  difficulty: beginner
+  cognitive_level: application
+  citation: Prealgebra (OpenStax 1e), Section 6.3, https://openstax.org/books/prealgebra/pages/6-3-solve-sales-tax-commission-and-discount-applications (alignment only; original item)
+  verify:
+    expression: 60 * Rational(7, 100)
+  review:
+    reviewer_kind: ai
+    reviewer_model: claude-sonnet-5-5
+    reviewer_ref: ai-review:claude-sonnet-5-5
+    reviewer_qualification: 'AI review checklist v1 (HELD_OUT_CHECKS_DESIGN.md); separate model from the author; solved independently with its own code; scanned the lessons for copies. Rights: original item, OpenStax cited for alignment only. Evidence: content/held_out/reviews/open_openstax_prealgebra_1e_ch6_and_excel_fundamentals/'
+    reviewed_on: '2026-11-24'
+    review_status: approved
+    rights_review_status: approved
+- id: pa1e-ho-6-3-b
+  objective: '6.3'
+  interaction_type: numeric_entry
+  prompt: A book costs $\text{\textdollar}45$, and the sales tax rate is 6%. What is the total cost, in dollars?
+  scoring_spec:
+    correct_value: 47.7
+    tolerance: 0
+  explanation: Tax = 0.06 × 45 = 2.70, so the total is 45 + 2.70 = 47.70 dollars.
+  difficulty: intermediate
+  cognitive_level: application
+  citation: Prealgebra (OpenStax 1e), Section 6.3, https://openstax.org/books/prealgebra/pages/6-3-solve-sales-tax-commission-and-discount-applications (alignment only; original item)
+  verify:
+    expression: 45 + 45 * Rational(6, 100)
+  review:
+    reviewer_kind: ai
+    reviewer_model: claude-sonnet-5-5
+    reviewer_ref: ai-review:claude-sonnet-5-5
+    reviewer_qualification: 'AI review checklist v1 (HELD_OUT_CHECKS_DESIGN.md); separate model from the author; solved independently with its own code; scanned the lessons for copies. Rights: original item, OpenStax cited for alignment only. Evidence: content/held_out/reviews/open_openstax_prealgebra_1e_ch6_and_excel_fundamentals/'
+    reviewed_on: '2026-11-24'
+    review_status: approved
+    rights_review_status: approved
+- id: pa1e-ho-6-3-c
+  objective: '6.3'
+  interaction_type: numeric_entry
+  prompt: A salesperson earns 4% commission. How much commission, in dollars, do they earn on a $\text{\textdollar}3,500$ sale?
+  scoring_spec:
+    correct_value: 140
+    tolerance: 0
+  explanation: Commission = 0.04 × 3,500 = 140 dollars.
+  difficulty: beginner
+  cognitive_level: application
+  citation: Prealgebra (OpenStax 1e), Section 6.3, https://openstax.org/books/prealgebra/pages/6-3-solve-sales-tax-commission-and-discount-applications (alignment only; original item)
+  verify:
+    expression: 3500 * Rational(4, 100)
+  review:
+    reviewer_kind: ai
+    reviewer_model: claude-sonnet-5-5
+    reviewer_ref: ai-review:claude-sonnet-5-5
+    reviewer_qualification: 'AI review checklist v1 (HELD_OUT_CHECKS_DESIGN.md); separate model from the author; solved independently with its own code; scanned the lessons for copies. Rights: original item, OpenStax cited for alignment only. Evidence: content/held_out/reviews/open_openstax_prealgebra_1e_ch6_and_excel_fundamentals/'
+    reviewed_on: '2026-11-24'
+    review_status: approved
+    rights_review_status: approved
+- id: pa1e-ho-6-3-d
+  objective: '6.3'
+  interaction_type: numeric_entry
+  prompt: A jacket regularly priced at $\text{\textdollar}80$ is on sale for 25% off. What is the sale price, in dollars?
+  scoring_spec:
+    correct_value: 60
+    tolerance: 0
+  explanation: Discount = 0.25 × 80 = 20, so the sale price is 80 − 20 = 60 dollars. (20 is the discount, not the price.)
+  difficulty: intermediate
+  cognitive_level: application
+  citation: Prealgebra (OpenStax 1e), Section 6.3, https://openstax.org/books/prealgebra/pages/6-3-solve-sales-tax-commission-and-discount-applications (alignment only; original item)
+  verify:
+    expression: 80 - 80 * Rational(25, 100)
+  review:
+    reviewer_kind: ai
+    reviewer_model: claude-sonnet-5-5
+    reviewer_ref: ai-review:claude-sonnet-5-5
+    reviewer_qualification: 'AI review checklist v1 (HELD_OUT_CHECKS_DESIGN.md); separate model from the author; solved independently with its own code; scanned the lessons for copies. Rights: original item, OpenStax cited for alignment only. Evidence: content/held_out/reviews/open_openstax_prealgebra_1e_ch6_and_excel_fundamentals/'
+    reviewed_on: '2026-11-24'
+    review_status: approved
+    rights_review_status: approved
+- id: pa1e-ho-6-3-e
+  objective: '6.3'
+  interaction_type: numeric_entry
+  prompt: A lamp's regular price is $\text{\textdollar}50$ and its sale price is $\text{\textdollar}42$. What is the discount rate? Enter the number without the % sign.
+  scoring_spec:
+    correct_value: 16
+    tolerance: 0
+  explanation: 'The discount is 8 dollars. Compare it with the REGULAR price: $\frac{8}{50} = 0.16 = 16\%$.'
+  difficulty: intermediate
+  cognitive_level: application
+  citation: Prealgebra (OpenStax 1e), Section 6.3, https://openstax.org/books/prealgebra/pages/6-3-solve-sales-tax-commission-and-discount-applications (alignment only; original item)
+  verify:
+    expression: (50 - 42) * 100 / Rational(50)
+  review:
+    reviewer_kind: ai
+    reviewer_model: claude-sonnet-5-5
+    reviewer_ref: ai-review:claude-sonnet-5-5
+    reviewer_qualification: 'AI review checklist v1 (HELD_OUT_CHECKS_DESIGN.md); separate model from the author; solved independently with its own code; scanned the lessons for copies. Rights: original item, OpenStax cited for alignment only. Evidence: content/held_out/reviews/open_openstax_prealgebra_1e_ch6_and_excel_fundamentals/'
+    reviewed_on: '2026-11-24'
+    review_status: approved
+    rights_review_status: approved
+- id: pa1e-ho-6-3-f
+  objective: '6.3'
+  interaction_type: single_choice
+  prompt: An item priced at $\text{\textdollar}100$ is discounted 20%, and then the sale price is discounted another 10%. What is the final price?
+  response_spec:
+    options:
+    - $\text{\textdollar}70$
+    - $\text{\textdollar}72$
+    - $\text{\textdollar}80$
+    - $\text{\textdollar}90$
+  scoring_spec:
+    correct_index: 1
+  explanation: 'After 20% off the price is 80. Then 10% off 80 is 8, so the final price is 72 dollars, not 70: the second discount applies to the lower price.'
+  difficulty: advanced
+  cognitive_level: analysis
+  citation: Prealgebra (OpenStax 1e), Section 6.3, https://openstax.org/books/prealgebra/pages/6-3-solve-sales-tax-commission-and-discount-applications (alignment only; original item)
+  verify:
+    expression: 100 * Rational(80, 100) * Rational(90, 100)
+    options:
+    - '70'
+    - '72'
+    - '80'
+    - '90'
+  review:
+    reviewer_kind: ai
+    reviewer_model: claude-sonnet-5-5
+    reviewer_ref: ai-review:claude-sonnet-5-5
+    reviewer_qualification: 'AI review checklist v1 (HELD_OUT_CHECKS_DESIGN.md); separate model from the author; solved independently with its own code; scanned the lessons for copies. Rights: original item, OpenStax cited for alignment only. Evidence: content/held_out/reviews/open_openstax_prealgebra_1e_ch6_and_excel_fundamentals/'
+    reviewed_on: '2026-11-24'
+    review_status: approved
+    rights_review_status: approved
+- id: pa1e-ho-6-4-a
+  objective: '6.4'
+  interaction_type: numeric_entry
+  prompt: Find the simple interest, in dollars, on $\text{\textdollar}2,000$ at 5% per year for 3 years.
+  scoring_spec:
+    correct_value: 300
+    tolerance: 0
+  explanation: I = Prt = 2,000 × 0.05 × 3 = 300 dollars.
+  difficulty: beginner
+  cognitive_level: application
+  citation: Prealgebra (OpenStax 1e), Section 6.4, https://openstax.org/books/prealgebra/pages/6-4-solve-simple-interest-applications (alignment only; original item)
+  verify:
+    expression: 2000 * Rational(5, 100) * 3
+  review:
+    reviewer_kind: ai
+    reviewer_model: claude-sonnet-5-5
+    reviewer_ref: ai-review:claude-sonnet-5-5
+    reviewer_qualification: 'AI review checklist v1 (HELD_OUT_CHECKS_DESIGN.md); separate model from the author; solved independently with its own code; scanned the lessons for copies. Rights: original item, OpenStax cited for alignment only. Evidence: content/held_out/reviews/open_openstax_prealgebra_1e_ch6_and_excel_fundamentals/'
+    reviewed_on: '2026-11-24'
+    review_status: approved
+    rights_review_status: approved
+- id: pa1e-ho-6-4-b
+  objective: '6.4'
+  interaction_type: numeric_entry
+  prompt: $\text{\textdollar}1,500$ is borrowed at 4% simple interest for 2 years. What is the total amount to pay back (principal plus interest), in dollars?
+  scoring_spec:
+    correct_value: 1620
+    tolerance: 0
+  explanation: Interest = 1,500 × 0.04 × 2 = 120, so the total is 1,500 + 120 = 1,620 dollars.
+  difficulty: intermediate
+  cognitive_level: application
+  citation: Prealgebra (OpenStax 1e), Section 6.4, https://openstax.org/books/prealgebra/pages/6-4-solve-simple-interest-applications (alignment only; original item)
+  verify:
+    expression: 1500 + 1500 * Rational(4, 100) * 2
+  review:
+    reviewer_kind: ai
+    reviewer_model: claude-sonnet-5-5
+    reviewer_ref: ai-review:claude-sonnet-5-5
+    reviewer_qualification: 'AI review checklist v1 (HELD_OUT_CHECKS_DESIGN.md); separate model from the author; solved independently with its own code; scanned the lessons for copies. Rights: original item, OpenStax cited for alignment only. Evidence: content/held_out/reviews/open_openstax_prealgebra_1e_ch6_and_excel_fundamentals/'
+    reviewed_on: '2026-11-24'
+    review_status: approved
+    rights_review_status: approved
+- id: pa1e-ho-6-4-c
+  objective: '6.4'
+  interaction_type: numeric_entry
+  prompt: A principal of $\text{\textdollar}1,600$ earned $\text{\textdollar}120$ simple interest in 3 years. What was the annual interest rate? Enter the number without the % sign.
+  scoring_spec:
+    correct_value: 2.5
+    tolerance: 0
+  explanation: 120 = 1,600 × r × 3, so r = 120 ÷ 4,800 = 0.025 = 2.5%.
+  difficulty: advanced
+  cognitive_level: application
+  citation: Prealgebra (OpenStax 1e), Section 6.4, https://openstax.org/books/prealgebra/pages/6-4-solve-simple-interest-applications (alignment only; original item)
+  verify:
+    expression: Rational(120) / (1600 * 3) * 100
+  review:
+    reviewer_kind: ai
+    reviewer_model: claude-sonnet-5-5
+    reviewer_ref: ai-review:claude-sonnet-5-5
+    reviewer_qualification: 'AI review checklist v1 (HELD_OUT_CHECKS_DESIGN.md); separate model from the author; solved independently with its own code; scanned the lessons for copies. Rights: original item, OpenStax cited for alignment only. Evidence: content/held_out/reviews/open_openstax_prealgebra_1e_ch6_and_excel_fundamentals/'
+    reviewed_on: '2026-11-24'
+    review_status: approved
+    rights_review_status: approved
+- id: pa1e-ho-6-4-d
+  objective: '6.4'
+  interaction_type: numeric_entry
+  prompt: An account earned $\text{\textdollar}240$ simple interest in 4 years at 6% per year. What was the principal, in dollars?
+  scoring_spec:
+    correct_value: 1000
+    tolerance: 0
+  explanation: 240 = P × 0.06 × 4 = 0.24P, so P = 240 ÷ 0.24 = 1,000 dollars.
+  difficulty: intermediate
+  cognitive_level: application
+  citation: Prealgebra (OpenStax 1e), Section 6.4, https://openstax.org/books/prealgebra/pages/6-4-solve-simple-interest-applications (alignment only; original item)
+  verify:
+    expression: 240 / (Rational(6, 100) * 4)
+  review:
+    reviewer_kind: ai
+    reviewer_model: claude-sonnet-5-5
+    reviewer_ref: ai-review:claude-sonnet-5-5
+    reviewer_qualification: 'AI review checklist v1 (HELD_OUT_CHECKS_DESIGN.md); separate model from the author; solved independently with its own code; scanned the lessons for copies. Rights: original item, OpenStax cited for alignment only. Evidence: content/held_out/reviews/open_openstax_prealgebra_1e_ch6_and_excel_fundamentals/'
+    reviewed_on: '2026-11-24'
+    review_status: approved
+    rights_review_status: approved
+- id: pa1e-ho-6-4-e
+  objective: '6.4'
+  interaction_type: numeric_entry
+  prompt: Find the simple interest, in dollars, on $\text{\textdollar}800$ at 3% per year for 6 months.
+  scoring_spec:
+    correct_value: 12
+    tolerance: 0
+  explanation: 'Time must be in years: 6 months = 0.5 years. I = 800 × 0.03 × 0.5 = 12 dollars.'
+  difficulty: intermediate
+  cognitive_level: application
+  citation: Prealgebra (OpenStax 1e), Section 6.4, https://openstax.org/books/prealgebra/pages/6-4-solve-simple-interest-applications (alignment only; original item)
+  verify:
+    expression: 800 * Rational(3, 100) * Rational(1, 2)
+  review:
+    reviewer_kind: ai
+    reviewer_model: claude-sonnet-5-5
+    reviewer_ref: ai-review:claude-sonnet-5-5
+    reviewer_qualification: 'AI review checklist v1 (HELD_OUT_CHECKS_DESIGN.md); separate model from the author; solved independently with its own code; scanned the lessons for copies. Rights: original item, OpenStax cited for alignment only. Evidence: content/held_out/reviews/open_openstax_prealgebra_1e_ch6_and_excel_fundamentals/'
+    reviewed_on: '2026-11-24'
+    review_status: approved
+    rights_review_status: approved
+- id: pa1e-ho-6-4-f
+  objective: '6.4'
+  interaction_type: single_choice
+  prompt: Which formula gives the simple interest $I$ on a principal $P$ at annual rate $r$ for $t$ years?
+  response_spec:
+    options:
+    - $I = P + rt$
+    - $I = Prt$
+    - $I = P(1 + r)^t$
+    - $I = \dfrac{P}{rt}$
+  scoring_spec:
+    correct_index: 1
+  explanation: 'Simple interest is principal × rate × time: $I = Prt$. $P(1 + r)^t$ is the total with compound interest, not simple interest.'
+  difficulty: beginner
+  cognitive_level: recall
+  citation: Prealgebra (OpenStax 1e), Section 6.4, https://openstax.org/books/prealgebra/pages/6-4-solve-simple-interest-applications (alignment only; original item)
+  verify:
+    expression: P*r*t
+    substitute:
+      P: 1000
+      r: Rational(5, 100)
+      t: 2
+    options:
+    - P + r*t
+    - P*r*t
+    - P*(1 + r)**t
+    - P/(r*t)
+  review:
+    reviewer_kind: ai
+    reviewer_model: claude-sonnet-5-5
+    reviewer_ref: ai-review:claude-sonnet-5-5
+    reviewer_qualification: 'AI review checklist v1 (HELD_OUT_CHECKS_DESIGN.md); separate model from the author; solved independently with its own code; scanned the lessons for copies. Rights: original item, OpenStax cited for alignment only. Evidence: content/held_out/reviews/open_openstax_prealgebra_1e_ch6_and_excel_fundamentals/'
+    reviewed_on: '2026-11-24'
+    review_status: approved
+    rights_review_status: approved
+- id: pa1e-ho-6-5-a
+  objective: '6.5'
+  interaction_type: numeric_entry
+  prompt: Solve $\frac{x}{12} = \frac{5}{8}$. Enter $x$ as a decimal.
+  scoring_spec:
+    correct_value: 7.5
+    tolerance: 0
+  explanation: 'Multiply both sides by 12: $x = \frac{5 \cdot 12}{8} = 7.5$.'
+  difficulty: intermediate
+  cognitive_level: application
+  citation: Prealgebra (OpenStax 1e), Section 6.5, https://openstax.org/books/prealgebra/pages/6-5-solve-proportions-and-their-applications (alignment only; original item)
+  verify:
+    expression: 12 * Rational(5, 8)
+  review:
+    reviewer_kind: ai
+    reviewer_model: claude-sonnet-5-5
+    reviewer_ref: ai-review:claude-sonnet-5-5
+    reviewer_qualification: 'AI review checklist v1 (HELD_OUT_CHECKS_DESIGN.md); separate model from the author; solved independently with its own code; scanned the lessons for copies. Rights: original item, OpenStax cited for alignment only. Evidence: content/held_out/reviews/open_openstax_prealgebra_1e_ch6_and_excel_fundamentals/'
+    reviewed_on: '2026-11-24'
+    review_status: approved
+    rights_review_status: approved
+- id: pa1e-ho-6-5-b
+  objective: '6.5'
+  interaction_type: numeric_entry
+  prompt: Solve $\frac{9}{n} = \frac{15}{25}$.
+  scoring_spec:
+    correct_value: 15
+    tolerance: 0
+  explanation: 'Cross-multiply: 15n = 9 × 25 = 225, so n = 15.'
+  difficulty: intermediate
+  cognitive_level: application
+  citation: Prealgebra (OpenStax 1e), Section 6.5, https://openstax.org/books/prealgebra/pages/6-5-solve-proportions-and-their-applications (alignment only; original item)
+  verify:
+    expression: 9 * 25 / Rational(15)
+  review:
+    reviewer_kind: ai
+    reviewer_model: claude-sonnet-5-5
+    reviewer_ref: ai-review:claude-sonnet-5-5
+    reviewer_qualification: 'AI review checklist v1 (HELD_OUT_CHECKS_DESIGN.md); separate model from the author; solved independently with its own code; scanned the lessons for copies. Rights: original item, OpenStax cited for alignment only. Evidence: content/held_out/reviews/open_openstax_prealgebra_1e_ch6_and_excel_fundamentals/'
+    reviewed_on: '2026-11-24'
+    review_status: approved
+    rights_review_status: approved
+- id: pa1e-ho-6-5-c
+  objective: '6.5'
+  interaction_type: numeric_entry
+  prompt: A recipe uses 3 cups of flour for 24 cookies. How many cups of flour are needed for 40 cookies?
+  scoring_spec:
+    correct_value: 5
+    tolerance: 0
+  explanation: $\frac{3}{24} = \frac{c}{40}$, so $c = \frac{3 \cdot 40}{24} = 5$.
+  difficulty: intermediate
+  cognitive_level: application
+  citation: Prealgebra (OpenStax 1e), Section 6.5, https://openstax.org/books/prealgebra/pages/6-5-solve-proportions-and-their-applications (alignment only; original item)
+  verify:
+    expression: 3 * 40 / Rational(24)
+  review:
+    reviewer_kind: ai
+    reviewer_model: claude-sonnet-5-5
+    reviewer_ref: ai-review:claude-sonnet-5-5
+    reviewer_qualification: 'AI review checklist v1 (HELD_OUT_CHECKS_DESIGN.md); separate model from the author; solved independently with its own code; scanned the lessons for copies. Rights: original item, OpenStax cited for alignment only. Evidence: content/held_out/reviews/open_openstax_prealgebra_1e_ch6_and_excel_fundamentals/'
+    reviewed_on: '2026-11-24'
+    review_status: approved
+    rights_review_status: approved
+- id: pa1e-ho-6-5-d
+  objective: '6.5'
+  interaction_type: numeric_entry
+  prompt: On a map, 1 inch represents 25 miles. How many miles do 3.5 inches represent?
+  scoring_spec:
+    correct_value: 87.5
+    tolerance: 0
+  explanation: Each inch is 25 miles, so 3.5 × 25 = 87.5 miles.
+  difficulty: beginner
+  cognitive_level: application
+  citation: Prealgebra (OpenStax 1e), Section 6.5, https://openstax.org/books/prealgebra/pages/6-5-solve-proportions-and-their-applications (alignment only; original item)
+  verify:
+    expression: Rational(35, 10) * 25
+  review:
+    reviewer_kind: ai
+    reviewer_model: claude-sonnet-5-5
+    reviewer_ref: ai-review:claude-sonnet-5-5
+    reviewer_qualification: 'AI review checklist v1 (HELD_OUT_CHECKS_DESIGN.md); separate model from the author; solved independently with its own code; scanned the lessons for copies. Rights: original item, OpenStax cited for alignment only. Evidence: content/held_out/reviews/open_openstax_prealgebra_1e_ch6_and_excel_fundamentals/'
+    reviewed_on: '2026-11-24'
+    review_status: approved
+    rights_review_status: approved
+- id: pa1e-ho-6-5-e
+  objective: '6.5'
+  interaction_type: numeric_entry
+  prompt: A car uses 8 gallons of gas to travel 280 miles. At that rate, how many miles can it travel on 11 gallons?
+  scoring_spec:
+    correct_value: 385
+    tolerance: 0
+  explanation: $\frac{280}{8} = 35$ miles per gallon, and 35 × 11 = 385 miles.
+  difficulty: intermediate
+  cognitive_level: application
+  citation: Prealgebra (OpenStax 1e), Section 6.5, https://openstax.org/books/prealgebra/pages/6-5-solve-proportions-and-their-applications (alignment only; original item)
+  verify:
+    expression: 280 * 11 / Rational(8)
+  review:
+    reviewer_kind: ai
+    reviewer_model: claude-sonnet-5-5
+    reviewer_ref: ai-review:claude-sonnet-5-5
+    reviewer_qualification: 'AI review checklist v1 (HELD_OUT_CHECKS_DESIGN.md); separate model from the author; solved independently with its own code; scanned the lessons for copies. Rights: original item, OpenStax cited for alignment only. Evidence: content/held_out/reviews/open_openstax_prealgebra_1e_ch6_and_excel_fundamentals/'
+    reviewed_on: '2026-11-24'
+    review_status: approved
+    rights_review_status: approved
+- id: pa1e-ho-6-5-f
+  objective: '6.5'
+  interaction_type: single_choice
+  prompt: Which equation is a true proportion?
+  response_spec:
+    options:
+    - $\frac{2}{3} = \frac{4}{9}$
+    - $\frac{5}{6} = \frac{10}{18}$
+    - $\frac{4}{5} = \frac{12}{16}$
+    - $\frac{3}{4} = \frac{9}{12}$
+  scoring_spec:
+    correct_index: 3
+  explanation: 'Cross products must be equal: 3 × 12 = 4 × 9 = 36. For the others, 2 × 9 ≠ 3 × 4, 5 × 18 ≠ 6 × 10 and 4 × 16 ≠ 5 × 12.'
+  difficulty: intermediate
+  cognitive_level: analysis
+  citation: Prealgebra (OpenStax 1e), Section 6.5, https://openstax.org/books/prealgebra/pages/6-5-solve-proportions-and-their-applications (alignment only; original item)
+  verify:
+    zero_options:
+    - Rational(2, 3) - Rational(4, 9)
+    - Rational(5, 6) - Rational(10, 18)
+    - Rational(4, 5) - Rational(12, 16)
+    - Rational(3, 4) - Rational(9, 12)
+  review:
+    reviewer_kind: ai
+    reviewer_model: claude-sonnet-5-5
+    reviewer_ref: ai-review:claude-sonnet-5-5
+    reviewer_qualification: 'AI review checklist v1 (HELD_OUT_CHECKS_DESIGN.md); separate model from the author; solved independently with its own code; scanned the lessons for copies. Rights: original item, OpenStax cited for alignment only. Evidence: content/held_out/reviews/open_openstax_prealgebra_1e_ch6_and_excel_fundamentals/'
+    reviewed_on: '2026-11-24'
+    review_status: approved
+    rights_review_status: approved
