@@ -303,6 +303,21 @@ class ManifestLinter {
               message: 'Lesson is tagged teaching-only but has questions or assessment items. Remove the tag or the items.',
             ));
           }
+          // Mirrors the database check lesson_blocks_simulation_fallback_check
+          // (migration 20261107100000): a simulation block needs a non-empty
+          // `body`, shown when the simulation is unavailable.
+          for (final block in (lesson['blocks'] as List<dynamic>?) ?? const []) {
+            if (block is! Map || block['block_type'] != 'simulation') continue;
+            final body = ((block['content'] as Map?)?['body'] ?? '').toString().trim();
+            if (body.isEmpty) {
+              issues.add(LintIssue(
+                level: 'ERROR',
+                rule: 'simulation-missing-body',
+                location: '$lLocation -> Block ${block['sort_order'] ?? '?'}',
+                message: 'Simulation block needs a non-empty content.body (the text shown when the simulation is unavailable); the database rejects it otherwise.',
+              ));
+            }
+          }
 
           // Track taught concepts from lesson
           final lConceptSlugs = (lesson['concept_slugs'] as List<dynamic>?)?.map((e) => e.toString()).toList();
