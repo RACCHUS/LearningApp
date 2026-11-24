@@ -18,9 +18,11 @@ source_release:
 target:
   slug: "software-excel-fundamentals"
   title: "Microsoft Excel Fundamentals"
-  version_code: "EXCEL-PILOT-1"
+  version_code: "EXCEL-PILOT-2"
   version_title: "Spreadsheet Basics and Budget Totals"
   version_description: "Guided practice in the real Microsoft Excel application: one lesson on cell references and summing a range. Not a software replica or a professional credential."
+  # Plan v2.6 §7.1: software documentation changes, so review every 9 months (V2).
+  volatility_class: "V2"
 domains:
   - code: "SPREADSHEET-1"
     title: "Spreadsheet Data and Formulas"
