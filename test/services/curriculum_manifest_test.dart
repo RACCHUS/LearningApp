@@ -296,6 +296,21 @@ void main() {
       expect(issues.where((i) => i.level == 'ERROR'), isEmpty);
     });
 
+    test('a simulation block without a body is an error (mirrors the DB check)', () {
+      final ok = lintWith((l) => (l['blocks'] as List).add({
+            'sort_order': 99,
+            'block_type': 'simulation',
+            'content': {'simulation_id': 'x', 'body': 'Shown when unavailable.'},
+          }));
+      expect(ok.any((i) => i.rule == 'simulation-missing-body'), isFalse);
+      final bad = lintWith((l) => (l['blocks'] as List).add({
+            'sort_order': 99,
+            'block_type': 'simulation',
+            'content': {'simulation_id': 'x', 'fallback_body': 'Not the field the database checks.'},
+          }));
+      expect(bad.any((i) => i.rule == 'simulation-missing-body' && i.level == 'ERROR'), isTrue);
+    });
+
     test('a teaching-only lesson cannot carry assessment items', () {
       final issues = lintWith((l) => l['tags'] = [...(l['tags'] as List), 'teaching-only']);
       expect(issues.any((i) => i.rule == 'teaching-only-has-assessments' && i.level == 'ERROR'), isTrue);
