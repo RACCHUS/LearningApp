@@ -1,4 +1,6 @@
-# Excel pilot curriculum draft. Reviewed content; NOT a published target.
+# Excel pilot curriculum. Prepared for ingestion 2026-11-24 (ingestion plan v1.2, D-13).
+# Study material with practice questions and flashcards. It has no independent
+# (held-out) check items, so readiness must not be shown for this target yet (D-14).
 # No Excel application is recreated inside LearningApp.
 source_release:
   id: "microsoft-excel-support-2026-11"
@@ -18,7 +20,7 @@ target:
   title: "Microsoft Excel Fundamentals"
   version_code: "EXCEL-PILOT-1"
   version_title: "Spreadsheet Basics and Budget Totals"
-  version_description: "Draft guided practice in the real Microsoft Excel application, not a software replica or professional credential."
+  version_description: "Guided practice in the real Microsoft Excel application: one lesson on cell references and summing a range. Not a software replica or a professional credential."
 domains:
   - code: "SPREADSHEET-1"
     title: "Spreadsheet Data and Formulas"
@@ -53,6 +55,27 @@ domains:
             source_release_id: "microsoft-excel-support-2026-11"
             citation: "Microsoft Support — SUM function"
             prerequisites: ["spreadsheet-cell-reference"]
+        flashcards:
+          - front: "In the cell address C2, what do C and 2 mean?"
+            back: "C is the column and 2 is the row."
+            concept_slugs: ["spreadsheet-cell-reference"]
+            citation: "Microsoft Support — Basic tasks in Excel"
+          - front: "What does the colon mean in C2:C9?"
+            back: "It makes a range: every cell from C2 through C9."
+            concept_slugs: ["spreadsheet-cell-reference", "spreadsheet-range-summation"]
+            citation: "Microsoft Support — Basic tasks in Excel"
+          - front: "Write a formula that adds every value from C2 through C9."
+            back: "=SUM(C2:C9)"
+            concept_slugs: ["spreadsheet-range-summation"]
+            citation: "Microsoft Support — SUM function"
+          - front: "Why use a formula instead of typing the total?"
+            back: "A formula recalculates when the amounts change; a typed number does not."
+            concept_slugs: ["spreadsheet-range-summation"]
+            citation: "Microsoft Support — SUM function"
+          - front: "What is a workbook?"
+            back: "A file that contains one or more worksheets, such as an .xlsx file."
+            concept_slugs: ["spreadsheet-cell-reference"]
+            citation: "Microsoft Support — Basic tasks in Excel"
         lessons:
           - title: "Budget Totals in Excel"
             description: "Use the real Excel application to organize eight sample transactions and calculate their total."
@@ -71,13 +94,27 @@ domains:
               - sort_order: 2
                 block_type: "markdown"
                 content:
-                  text: "Download the synthetic data file excel_budget_transactions.csv from this course's starter materials. Open it in Excel; save a new workbook in .xlsx format. Rename the worksheet Budget. Column C contains eight transaction amounts in C2 through C9. In C10, write a formula that totals the eight values. Keep the original numeric inputs unchanged."
+                  text: |
+                    Open a new workbook in Excel, rename the worksheet **Budget** and type in these eight sample transactions, starting in cell A1. The data is made up, so don't use real business records.
+
+                    | Date | Category | Amount |
+                    |---|---|---|
+                    | 2026-01-05 | Office supplies | 20 |
+                    | 2026-01-06 | Printing | 30 |
+                    | 2026-01-07 | Travel | 40 |
+                    | 2026-01-08 | Software | 50 |
+                    | 2026-01-09 | Shipping | 60 |
+                    | 2026-01-10 | Utilities | 70 |
+                    | 2026-01-11 | Equipment | 80 |
+                    | 2026-01-12 | Maintenance | 90 |
+
+                    The headings go in row 1, so the eight amounts are in C2 through C9. In C10, write a formula that totals them. Keep the amounts as typed numbers, and save the workbook in .xlsx format.
               - sort_order: 3
                 block_type: "callout"
                 content:
-                  variant: "info"
+                  type: "info"
                   title: "Accessibility and privacy"
-                  text: "Use the text instructions or the app's reading assistance. The practice data is synthetic; do not substitute real business records. Independent workbook uploading and verified grading remain disabled until the safe ingestion worker and evidence gates are implemented."
+                  body: "Use the text instructions or the app's reading assistance. The practice data is synthetic; do not substitute real business records. Independent workbook uploading and verified grading remain disabled until the safe ingestion worker and evidence gates are implemented."
               - sort_order: 4
                 block_type: "practice_prompt"
                 metadata:
@@ -85,6 +122,7 @@ domains:
                 content:
                   prompt: "Open the real Excel application and calculate the total of the eight numeric transaction cells without replacing the formula with a typed number. How would you check that your formula covers every row exactly once?"
                   exercise_id: "excel-budget-total-v1"
+                  answer: "In C10, enter =SUM(C2:C9). The total is 440. To check the range, click C10: Excel outlines the cells the formula uses, and the outline should start at the first amount (C2) and end at the last (C9). Then change one amount, for example C2 from 20 to 25: the total should become 445. Change it back afterwards."
               - sort_order: 5
                 block_type: "simulation"
                 content:
@@ -110,7 +148,8 @@ domains:
                   - "A range identifies which rows a calculation should include."
                   - "A verified result needs both the correct data and the correct formula."
             questions:
-              - question_text: "What does the spreadsheet address C2 identify?"
+              - id: "excel-cell-address-meaning"
+                question_text: "What does the spreadsheet address C2 identify?"
                 options:
                   - "Column C, row 2"
                   - "Row C, column 2"
@@ -121,7 +160,8 @@ domains:
                 explanation: "The letter represents the column and the number represents the row."
                 concept_slugs: ["spreadsheet-cell-reference"]
                 citation: "Microsoft Support — Basic tasks in Excel"
-              - question_text: "Why is a formula that references transaction cells preferable to typing a fixed total?"
+              - id: "excel-formula-vs-typed-total"
+                question_text: "Why is a formula that references transaction cells preferable to typing a fixed total?"
                 options:
                   - "It changes the data automatically without permission"
                   - "It recalculates from the referenced values when they change"
@@ -130,5 +170,53 @@ domains:
                 correct_answer: 1
                 type: "mcq"
                 explanation: "A formula recomputes from its cell references; a typed total is not connected to its inputs."
+                concept_slugs: ["spreadsheet-range-summation"]
+                citation: "Microsoft Support — SUM function"
+              - id: "excel-sum-formula-for-range"
+                question_text: "Which formula adds every value from C2 through C9?"
+                options:
+                  - "=SUM(C2,C9)"
+                  - "=C2:C9"
+                  - "=SUM(C2:C9)"
+                  - "=SUM(C2-C9)"
+                correct_answer: 2
+                type: "mcq"
+                explanation: "A colon makes a range, so C2:C9 means every cell from C2 to C9. A comma lists separate cells, so =SUM(C2,C9) adds only two of them."
+                concept_slugs: ["spreadsheet-range-summation"]
+                citation: "Microsoft Support — SUM function"
+              - id: "excel-range-cell-count"
+                question_text: "How many cells does the range C2:C9 contain?"
+                options:
+                  - "2"
+                  - "7"
+                  - "9"
+                  - "8"
+                correct_answer: 3
+                type: "mcq"
+                explanation: "Rows 2 through 9 are eight rows in a single column: 9 - 2 + 1 = 8."
+                concept_slugs: ["spreadsheet-cell-reference", "spreadsheet-range-summation"]
+                citation: "Microsoft Support — Basic tasks in Excel"
+              - id: "excel-range-missing-last-row"
+                question_text: "The amounts are in C2 through C9, but C10 contains =SUM(C2:C8). What is wrong?"
+                options:
+                  - "The total leaves out the amount in C9"
+                  - "The total counts C2 twice"
+                  - "SUM cannot be used in column C"
+                  - "The formula should start with SUM, not ="
+                correct_answer: 0
+                type: "mcq"
+                explanation: "The range stops at C8, so the last transaction is not included. A range must start at the first value and end at the last."
+                concept_slugs: ["spreadsheet-range-summation"]
+                citation: "Microsoft Support — SUM function"
+              - id: "excel-typed-total-goes-stale"
+                question_text: "Someone types 440 into C10 instead of a formula. What happens when C4 changes from 40 to 45?"
+                options:
+                  - "C10 updates to 445"
+                  - "C10 still shows 440, which is now wrong"
+                  - "Excel shows an error in C10"
+                  - "C4 changes back to 40"
+                correct_answer: 1
+                type: "mcq"
+                explanation: "A typed number is not connected to the cells above it, so it does not update. A formula such as =SUM(C2:C9) would show 445."
                 concept_slugs: ["spreadsheet-range-summation"]
                 citation: "Microsoft Support — SUM function"
