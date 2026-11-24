@@ -1,11 +1,11 @@
 # LearningApp — Demand-Driven Content Ingestion & Educational Optimization
 
-**Implementation plan v1.1 — owner review draft**
-**Date:** 2026-11-23 (US Eastern)
-**Status:** Proposed. Review before implementation.
+**Implementation plan v1.2 — accepted by the owner 2026-11-24**
+**Date:** 2026-11-23 (US Eastern). v1.1 merged in #372; v1.2 adds the readiness and motivation half (§0A, §8.5–§8.9, §9.2, §16.4) and recommendations for every owner decision (§18).
+**Status:** **Accepted.** The owner accepted all §18 recommendations (D-1 to D-15) as written on 2026-11-24. Implementation proceeds in the PR slices of §14. Each production run (ingestion, migration, deployment) and each feature-switch activation still needs its own owner approval.
 **Scope:** Path B of [Content Intelligence v2.6](LEARNINGAPP_CONTENT_INTELLIGENCE_AND_GAP_RESCUE_MASTER_PLAN_V2_6_2026-11-11.md) (§8), with interfaces to Path A (AI-assisted generation, §5) and Path C (external-resource companionship, §9).
-**Authority:** The product owner approves priorities, rights exceptions, budget changes and production publication. This document authorizes no code change, migration, scraping, source-rights approval, deployment or spending.
-**Precedence (v1.1):** This plan refines v2.6 §8; it does not replace it. Where they conflict, the binding v2.6 decisions (D1–D89), `AGENTS.md` and `UI_ARCHITECTURE_LOCKED.md` win until the owner accepts a specific change from §18 below. No decision in this plan is binding until the owner accepts it.
+**Authority:** The product owner approves priorities, rights exceptions, budget changes and production publication. With the 2026-11-24 acceptance, this document authorizes the repository work in §14: docs, research files, validators, CI checks, importer changes, and the registry and manifest edits that D-5, D-6 and D-7 call for, each through a normal reviewed PR. It does not authorize production ingestion, migration deployment, feature activation, scraping or spending; those need a separate owner approval each time.
+**Precedence (v1.1):** This plan refines v2.6 §8; it does not replace it. Where they conflict, the binding v2.6 decisions (D1–D89), `AGENTS.md` and `UI_ARCHITECTURE_LOCKED.md` win, except where an accepted §18 decision explicitly settles a question v2.6 left open. D-5 settles the Psychology license mismatch, D-4 keeps the non-commercial question open, and D-13 settles part of the "ingest the seven manifests" decision.
 **Repository:** RACCHUS/LearningApp. Baseline: read-only inspection of `main` at `6033de6` (2026-11-23). No hosted audit, production query or test run was done for this draft.
 
 ---
@@ -40,6 +40,33 @@ v1.0 was checked against `main` at `6033de6`. Most of its repository claims hold
 8. **The importer already fetches per page (§13).** `fetch_book` requests book metadata, then one archive JSON per selected page, with a 60-second timeout per request. It does not download whole books. "Source sections per batch" is therefore the natural limit. The byte cap applies to summed response sizes.
 9. **Feature controls are now named (§13, new §13.1).** `AGENTS.md` (FLAG-010/016) requires a stable key, a default-OFF seed and `tool/verify_feature_registry.py` parity for substantial new runtime features. CLI and CI tooling is gated by workflow approval, not by a runtime key.
 10. **Defined units:** capacity is in operator minutes per review cycle (§3.2). Learner-validation work follows the existing consent and age rules and needs a privacy review before any assignment experiment (§16.3).
+
+---
+
+## 0A. What changed in v1.2 (readiness and motivation review)
+
+v1.1 was strong on **supply and trust**: rights, provenance, fidelity, gates and lifecycle. It stated **readiness and motivation** only as principles. Yet the app already has the engines that turn content into readiness, and v1.1 never connected imported content to them. v1.2 closes that gap. It verified these engines at `4c8f1f9`:
+
+| Existing engine | Where | What it needs from content | State |
+|---|---|---|---|
+| Exam-date readiness: FSRS memory model, weakest concepts, projected retrievability | `lib/models/assessment_engine/calibrated_readiness.dart`, `lib/services/target_readiness_service.dart` | Concept-tagged reviewable evidence for every blueprint objective | Wired |
+| Daily plan: due reviews vs new material, exam-date workload | `lib/models/daily_plan.dart`, `lib/providers/daily_plan_provider.dart` | Reviewable items and time estimates per unit | Wired |
+| Mock and simulation exams with blueprint domain weights, server scoring (`clep_submit_simulation_exam`) | `lib/services/assessment/clep_simulation_service.dart`, `mock_exam_blueprint.dart`, `mock_exam_screen.dart` | Protected, blueprint-tagged items, deep enough per domain | Wired for CLEP |
+| Exam reference manifests: fail-closed official facts with evidence IDs | `lib/models/assessment_engine/exam_reference_manifest.dart` (EXM-01) | Official facts with evidence; no inferred regulator values | Wired |
+| Blueprint weights in curriculum manifests | e.g. `content/clep_college_algebra.yaml` (`weight:` per domain) | Each imported objective placed under a weighted node | Present |
+| Question statistics (Classical Test Theory: difficulty, discrimination, moderation flags) | `lib/services/analytics/item_analytics_calculator.dart`, `lib/widgets/analytics/item_psychometrics_sheet.dart` | Response data per item | **Built but not wired** (code-efficiency plan §14.3, W14 "Admin item analytics") |
+
+**v1.2 additions:**
+
+1. **§8.5 Readiness integration contract.** Every imported objective must feed the engines above, or be labeled as not counting toward readiness.
+2. **§8.6 Question-bank supply strategy.** Assessment items, not teaching text, are the binding constraint for exam readiness. Adds minimum bank depth, sources for items, and a rule that readiness is shown only when the bank is deep enough.
+3. **§8.7 Motivation mechanisms.** A projected readiness date, per-objective readiness, a recovery path and a weekly-pace choice, built on the existing daily plan instead of new engagement features.
+4. **§8.8 Skill targets.** Every skill target needs at least one authentic performance task with a rubric (the Excel pattern), not only multiple choice.
+5. **§8.9 Consistency across sources.** Notation, terminology and voice normalization for slices that mix sources.
+6. **§9.2 Risk tiers and a fast lane.** Low-risk teaching flows through automatic gates, so throughput isn't limited by the strictest lane.
+7. **§16.4 Learner-signal revision loop.** Question statistics and learner reports open revision items automatically; this is the reason to wire W14.
+8. **Throughput and cold start.** A cycle-time metric (§16.1) and an explicit cold-start plan (§16.3), so outcome evidence never blocks shipping useful content.
+9. **§18** now has a recommendation and reason for every decision, plus three new decisions (D-13 to D-15).
 
 ---
 
@@ -376,6 +403,67 @@ Support low-bandwidth and mobile use, plain language where appropriate, accessib
 
 Measure whether learners return after difficulty, complete the meaningful milestones they chose, improve on delayed performance, and report that the path is manageable. A learner who finishes efficiently and leaves is a success, not an engagement failure.
 
+### 8.5 Readiness integration contract (v1.2)
+
+An imported slice is **readiness-contributing** only if it meets all of the following. Otherwise it is published as **study material only**, with a visible label, and is excluded from readiness numbers.
+
+1. **Placement.** Every objective sits under a node in the target's blueprint, and every node carries a `weight` (as in `clep_college_algebra.yaml`). For an objective with no official blueprint, the weight is editorial and is labeled as editorial.
+2. **Reviewable evidence.** Every objective produces items the FSRS scheduler can review: glossary terms turned into flashcards, worked-step recall, and short practice. All are concept-tagged, so the daily plan and the readiness projection can use them. The importer already extracts terms; v1.2 requires that they reach the review queue, not only the lesson glossary.
+3. **Independent check items.** Each objective has items that count toward readiness and are kept apart from teaching examples and from practice whose answers can be revealed (§9.1). They use protected scoring and are tagged with blueprint domain and concept IDs, so mock and simulation exams can draw from them by domain weight.
+4. **Time estimate.** Each unit carries an estimated study-time range (later replaced by observed medians), so the daily plan can project a readiness date (§8.7).
+5. **Honest coverage.** The readiness view shows how much of the blueprint weight is covered by readiness-contributing objectives. Uncovered weight is shown as "not yet available in LearningApp", with external or companion options. It is never treated as mastered or as zero.
+
+**Acceptance test for every slice:** a test learner can study the slice, see the reviews it adds in the daily plan, take a mock section that draws its items, and see the readiness projection change, while no protected key appears in any client payload.
+
+### 8.6 Question-bank supply strategy (v1.2)
+
+For exam targets, **assessment items, not teaching text, are the bottleneck.** Open textbooks supply explanations and some exercises. Issuer questions (CLEP, CompTIA, GED) cannot be copied. A shallow bank lets learners memorize answers, which inflates readiness.
+
+**Minimum bank depth.** Proposed starting values, owner-tunable and recalibrated from item statistics:
+
+| Use | Minimum per objective | Purpose |
+|---|---|---|
+| Practice pool (formative) | 10 items, or 1 parametric family | Retrieval practice without immediate repeats |
+| Held-out check items (readiness) | 6 items, none shared with practice | Independent evidence |
+| Mock-exam pool per blueprint domain | Enough for 2 non-overlapping forms at blueprint weight | Repeated mocks without recall effects |
+
+**Readiness display rule.** A readiness projection for a target is shown only when held-out items exist for objectives covering at least a set share of blueprint weight. Proposed: 60% to show a **provisional** readiness label and 90% for an unqualified one, alongside the existing calibration disclaimers. Below 60%, show coverage and study progress, not readiness.
+
+**Sources of items, in preferred order:**
+
+1. **Parametric families** (existing, server-generated and server-scored, with exposure limits). They produce the most items per hour of authoring for math, percent, Excel formula and numeric skills.
+2. **Permitted source exercises** with stable IDs, aligned per §7.4, used for practice. Held-out use is allowed only when they have not been exposed in teaching.
+3. **Original item templates** written per objective, with defensible distractors, each linked to a misconception tag.
+4. **Contributed items** through the existing moderation flow (Wanted Board requests at item level). They stay out of readiness until they pass G6 and have item statistics.
+5. **Learner-operated AI drafting** through the prompt cart, only for unresolved item slots. Validated and AI-labeled, it never enters readiness scoring until it passes G6 and has item statistics.
+
+**Exposure control.** Track how often each learner and the cohort have seen each item. Retire or rotate items whose exposure would make them recall tests. Never reuse practice items as held-out checks.
+
+### 8.7 Motivation mechanisms (v1.2)
+
+Motivation comes from visible, believable progress toward a goal the learner chose, not from streak pressure. Build on the existing daily plan and readiness engine. No new engagement system.
+
+- **Projected readiness date.** "At about N hours a week you'd reach provisional readiness around <date>." It is computed from the remaining blueprint weight, unit time estimates and the learner's actual pace. It is shown as a range and labeled as an estimate. The learner chooses the weekly pace or an exam date, and the plan adapts. No penalty for pausing.
+- **Readiness by objective.** A per-domain view (strong, building, not started, not yet available) matching blueprint weights, so learners see where effort pays off most. The weakest-concept summary already exists.
+- **Meaningful milestones.** Completing a blueprint domain to check level, or passing a full mock section, instead of points for activity. The existing XP and achievement features stay under their own switches and are not reworked here.
+- **Recovery path.** When a learner keeps failing an objective, offer the Bridge, a different explanation (TEL mode or external companion), and a smaller next step, then return to the exact point they left.
+- **Honest effort framing.** Show "content completed" and "ready" as separate measures. Celebrate demonstrated competence, not time spent.
+- **Return after a break.** On return, the daily plan prioritizes due reviews with a short catch-up estimate, never a punishing backlog count.
+
+Acceptance for each slice adds: the slice's units have time estimates, and the projection and per-domain view render correctly with the slice present and with it absent.
+
+### 8.8 Skill targets need authentic performance tasks (v1.2)
+
+For skill and job-oriented targets (Excel, programming, IT, trades), multiple-choice readiness is not enough. Each skill target needs at least one **authentic performance task** per major blueprint domain. The task produces real output (a workbook, code, a configuration or a written artifact) that is checked by a deterministic checker or a published rubric. Excel's existing simulation and rubric is the pattern; v1.2 generalizes it as a requirement. Where automatic checking is impossible, the task is a self-assessed rubric with exemplars, labeled as not independently verified. Long-answer rubric support exists but has no content (code-efficiency plan W11); this would supply its first content.
+
+### 8.9 Consistency across sources (v1.2)
+
+A slice that mixes sources (OpenStax, original text, Bridges, contributions) must read as one course:
+
+- **Notation profile per target.** For example, decimal and thousands separators, how intervals are written, function notation and Excel function casing. The importer normalizes where a deterministic rule exists and flags the rest.
+- **Terminology.** One preferred term per concept, with source synonyms recorded as aliases in the concept mapping (§8.1).
+- **Voice.** Plain, direct second person in original text. Imported passages keep their wording (D-7) but are framed by original introductions and summaries.
+
 ---
 
 ## 9. Quality and reliability gates
@@ -406,6 +494,18 @@ Use the existing protected scoring infrastructure for assessments that count tow
 - **Psychology:** use source-supported scenarios with justified answers and defensible distractors.
 - **Excel:** verify the actual task output with the existing deterministic simulation and rubric capabilities. Never award competence for a video-completion tick.
 - **Literacy:** use appropriately accessible unseen items, and distinguish assisted from independent performance.
+
+### 9.2 Risk tiers and the fast lane (v1.2)
+
+Applying every gate with equal weight to everything would make a one-operator team too slow to help learners. Gates G1, G2 and G7 always apply. How the others are satisfied depends on the tier:
+
+| Tier | Examples | How G3–G6 are satisfied | Label | Owner touch |
+|---|---|---|---|---|
+| **T1 Fast lane** | Teaching and formative practice from approved CC BY or public-domain sources, or original; V0/V1 volatility; deterministic math or Excel answers | Automatic fidelity checks, deterministic answer recomputation, sampled spot-check (record the sample size) | "Source-attributed · automatically checked · not reviewed by a person" | One approval per batch in the ingestion workflow |
+| **T2 Standard** | Readiness-contributing check items, mock-exam pools, conceptual non-math content (psychology), contributed content | All T1 checks, plus item review against the source, distractor justification, and item statistics before an item counts toward readiness | "Automatically checked; items calibrated" once statistics exist | Batch approval plus review of each held-out item set |
+| **T3 High stakes** | Regulated or licensing content, health, safety, legal requirements, V3/V4 volatility | All T2 checks, plus corroboration against an authoritative source and qualified review where available; otherwise link only | As reviewed, or link only | Explicit owner decision per release |
+
+The tier is recorded per slice, and a slice takes the highest tier of anything in it. Teaching parts may ship at T1 while their check items wait at T2: that is the teaching-only path in §7.1.
 
 ---
 
@@ -484,6 +584,7 @@ Per `AGENTS.md` (FLAG-010/016), each new runtime feature gets a stable key in `l
 |---|---|---|
 | `content.acquisition_admin` | Admin views for the opportunity queue, source discovery and acquisition jobs, if they move beyond CLI reports (IN-7) | OFF |
 | `content.teaching_only_sections` | Learner-visible teaching-only imported sections with a visible assessment gap (IN-5/IN-6), if this changes learner-facing behavior beyond the existing lesson renderer | OFF |
+| `learning.readiness_projection` **(v1.2)** | Projected readiness date, per-domain readiness view and the coverage display rule (§8.6–§8.7), if they change existing learner-facing readiness screens | OFF |
 | `analytics.pilot_outcomes` | Any new consented pilot-outcome instrumentation (IN-8), on top of the existing analytics consent | OFF |
 
 CLI tools, research files and CI checks are not runtime features. They are controlled by code review and by approvals in the `supabase-production-deployment` environment for any production run. Ingesting content through the existing controlled workflow needs no new key.
@@ -494,14 +595,14 @@ CLI tools, research files and CI checks are not runtime features. They are contr
 
 | Package | Deliverables | Exit criteria and dependencies |
 |---|---|---|
-| IN-0 Baseline and contracts | Reverify `main` and hosted status (which manifests and versions are published); existing source and demand schema; manifest rights; feature controls; current tests. Reconcile stale docs: runbook scope, Psychology license in the three files, runbook "proposed" vs registry "candidate". **(v1.1) Audit every manifest's `sha256` and license fields and list the placeholders** | Inventory of reuse and extension decisions and known blockers. No production mutation |
+| IN-0 Baseline and contracts | Reverify `main` and hosted status (which manifests and versions are published); existing source and demand schema; manifest rights; feature controls; current tests. Reconcile stale docs: runbook scope, Psychology license in the three files, runbook "proposed" vs registry "candidate". **(v1.1) Audit every manifest's `sha256` and license fields and list the placeholders.** **(v1.2)** Confirm what the readiness engine, daily plan and mock exams read (tables, RPCs, tags) and where item responses for statistics come from | Inventory of reuse and extension decisions, known blockers, and the §8.5 contract mapped to real fields. No production mutation |
 | IN-1 Demand and portfolio | Opportunity research files and validator, lane allocation, scoring tests, initial candidate briefs | Existing demand engine and table reused; no unsupported rankings; owner selects the first slice |
 | IN-2 Source discovery | Metadata directory (research files), separation of candidates from source policy, source feasibility and rights workflow | At least two relevant source alternatives investigated for each pilot where available; an absent alternative is documented; no bulk payload intake |
 | IN-3 Staging and adapter contract | Bounded acquisition jobs (section and byte caps), deterministic adapter fixtures, loss reports, normalized manifest preview | Existing OpenStax and personal routes preserved; repeated runs are idempotent; unsupported content is reported explicitly; `CODEBASE_MAP.md` updated if owners move |
 | IN-4 Rights and quality gates | Explicit operation metadata, frozen discrepancy allowlist, pin and license-ID checks, fidelity and assessment gates, release and takedown tests | Missing or disallowed rights, placeholder pins and incorrect answers fail closed for applicable publication; no silent deletion of legacy material |
-| IN-5 Objective mapping and optimization | Coverage Matrix extended, concept matching, prerequisite and role mapping, coherent learning units | Teaching-only and check coverage kept separate; reuse before generation; accessibility and motivation criteria recorded |
-| IN-6 Pilot content and assessment | Selected math or numeracy slice; second task-family slice (Excel proposed) once approved; Bridges and independent checks | Both slices pass the applicable gates; learners can study without AI; no claim of complete credential readiness |
-| IN-7 Operator integration | Extend existing admin reports, queues, rights and freshness, review actions and quota flags | Unauthorized users denied; workflow restart, cancel and recovery tested; replacement continuity tested |
+| IN-5 Objective mapping and optimization | Coverage Matrix extended, concept matching, prerequisite and role mapping, coherent learning units; **(v1.2)** readiness integration (§8.5): blueprint placement, terms into the review queue, time estimates, notation profile (§8.9) | Teaching-only and check coverage kept separate; reuse before generation; accessibility and motivation criteria recorded; readiness view shows covered vs uncovered blueprint weight |
+| IN-6 Pilot content and assessment | Selected math or numeracy slice; second task-family slice (Excel proposed) once approved; Bridges and independent checks; **(v1.2)** bank depth per §8.6 (parametric families first) and one Excel performance task per §8.8 | Both slices pass the §8.5 acceptance test and their tier's gates (§9.2); learners can study without AI; readiness shown only where the §8.6 display rule allows; no claim of complete credential readiness |
+| IN-7 Operator integration | Extend existing admin reports, queues, rights and freshness, review actions and quota flags; **(v1.2)** wire the W14 item-statistics report and the §16.4 revision triggers | Unauthorized users denied; workflow restart, cancel and recovery tested; replacement continuity tested; a flagged item opens a revision item |
 | IN-8 Learner validation | Consented pilot, outcome and learning-efficiency metrics, comparison plan, evidence report, **privacy review (v1.1)** | Observed limitations reported; no claims of scale or efficacy from inadequate data |
 | IN-9 Selective expansion | New opportunity review, choice of next sources and adapter, maintenance and refresh | Owner approves based on demand, unmet need, capacity, quality and pilot evidence |
 
@@ -517,9 +618,11 @@ IN-1 and IN-2 can run at the same time once the IN-0 baseline is done. IN-3 and 
 6. Importer interface and fidelity fixtures.
 7. Separation of teaching-only and assessment content (College Algebra 1.4 and 1.5).
 8. Objective mapping and coverage.
-9. First selected content slice, with provenance.
-10. Gated operator integration.
-11. Learner-validation instrumentation and pilot review.
+9. **(v1.2)** Readiness integration: imported terms and steps into the review queue, blueprint placement, time estimates, the readiness coverage display rule.
+10. First selected content slice, with provenance and bank depth.
+11. **(v1.2)** Projected readiness date and per-domain view on the existing daily plan (§8.7), behind a default-OFF key if it changes learner-facing behavior.
+12. Gated operator integration, including the W14 item-statistics report and revision triggers.
+13. Learner-validation instrumentation and pilot review.
 
 ---
 
@@ -531,6 +634,8 @@ IN-1 and IN-2 can run at the same time once the IN-0 baseline is done. IN-3 and 
 - **Fidelity:** source-locator round trip; expected heading and exercise counts; tables; mathematical meaning; missing visual dependencies; skipped material; unsupported tags; lost answers; multipart alignment; representative renderer screenshots and manual accessibility checks as appropriate.
 - **Learning:** correct concept and depth; duplicate vs distinct concept; prerequisite cycles; route override; reading-only status; fallback for unsupported scoring; separation of independent assessment; remediation return anchor; resume on mobile and offline; learner choice and honest progress.
 - **Security and deployment:** clean and incremental migration tests if the schema changes; pgTAP and Flutter tests; linter and dry run; role denial; isolation of protected keys; wrong-project guard; backup and rollback; feature disable and re-enable; compatibility of existing legacy routes; hosted smoke checks after owner-authorized deployment.
+- **Readiness and motivation (v1.2):** a slice without held-out items does not change the readiness number; readiness is hidden below the coverage threshold and provisional between thresholds; uncovered blueprint weight is never counted as mastered or as zero; mock exams draw items by domain weight with no overlap between forms; practice items never appear as held-out checks; the projected date is shown as a range and moves sensibly when pace changes; no backlog penalty on return; time estimates are present on every unit; protected keys are absent from all client payloads.
+- **Revision loop (v1.2):** thresholds don't fire below the minimum response count; small groups are suppressed; a flagged held-out item leaves readiness scoring until resolved; an upheld dispute quarantines the check version.
 - **Lifecycle:** source version change; rights complaint; replacement with stable objective IDs; renamed, split or merged lessons; no duplicate progress; stale independent evidence; retired history retained. Never transfer mastery solely because titles match. Distinguish navigation continuity from evidence validity, and preserve source lineage.
 
 Before publication, capture the actual commit SHA, the exact manifest hash, source versions, applicable gate outcomes, test results, and the authorized reviewer's or owner's decision. No high-stakes validation claim without the appropriate evidence. New pilot content may be labeled clearly as source-attributed, automatically checked and unreviewed where allowed. Never invent a reviewer or imply an official endorsement.
@@ -551,6 +656,9 @@ Before publication, capture the actual commit SHA, the exact manifest hash, sour
 | Scoring defects | Invalid keys, unfair grading or leaked protected answers; critical defects block the affected scored use |
 | Maintenance effort | Operator minutes, plus storage, requests and CI use, per useful slice; stale-source backlog |
 | Reuse and avoided generation | Objectives served by existing assets or lawful external resources before new generation; measured by the role actually resolved, not by link clicks |
+| **Cycle time (v1.2)** | Calendar days and operator minutes from "objective selected" to "slice published", by tier. Proposed target for T1 slices: within one review cycle. A rising cycle time triggers a process review, not more gates |
+| **Readiness coverage (v1.2)** | Share of each active target's blueprint weight covered by readiness-contributing objectives (§8.5), and share meeting minimum bank depth (§8.6) |
+| **Bank health (v1.2)** | Items per objective, exposure per item, items flagged by statistics, time from flag to fix |
 
 ### 16.2 Learner outcome and motivation metrics
 
@@ -591,6 +699,27 @@ Measure both learning gain and effort. Account for baseline differences, attriti
 
 Stronger claims of educational effectiveness require enough comparative evidence and independent outcome validation. While evidence remains weak, extend to another bounded pilot instead of mass ingestion.
 
+**Cold start (v1.2).** There are few learners today, so comparative outcome evidence will take time. Outcome evidence (G8) must not block shipping T1 and T2 content that passes its gates; it blocks only **claims** and **scaling decisions**. Until enough learners exist:
+
+- validate slices by owner walk-through against the §8.5 acceptance test;
+- run the built-in calibration only where the existing engines support it, and report descriptive item statistics with their sample sizes;
+- link pilot recruitment to the [marketing and sustainability plan](LEARNINGAPP_MARKETING_ADVERTISING_FINANCIAL_SUSTAINABILITY_MASTER_PLAN.md) (for example, inviting volunteers for a specific target), under the consent rules above.
+
+### 16.4 Learner-signal revision loop (v1.2)
+
+Measurement must drive change. Signals open revision items in the existing queues automatically; nothing is auto-edited or auto-retired.
+
+| Signal | Proposed threshold (tunable; minimum responses before acting) | Action |
+|---|---|---|
+| Item far too easy or too hard (CTT p-value) | p > 0.95 or p < 0.20 after ≥ 30 independent responses | Review the item; check the key, wording and placement |
+| Low or negative discrimination | Point-biserial < 0.10 after ≥ 30 responses | Review the key and distractors; pull the item from readiness until fixed |
+| Distractor almost never chosen | < 2% after ≥ 50 responses | Rewrite the distractor (formative impact only) |
+| Learner reports, disputes, "confusing" chips | 3 independent reports, or any upheld dispute | Open a correction proposal; quarantine the check if a dispute is upheld (existing behavior) |
+| Objective where learners repeatedly fail after teaching | Many learners fail the check after completing the unit | Review teaching quality and Bridges before the items |
+| Unit time far off its estimate | Observed median outside the estimate range | Update the estimate (feeds §8.7 projections) |
+
+**Implementation note.** The CTT calculator and psychometrics sheet are built but not wired (W14). Wiring them as an admin report behind the existing admin role, under the parked-features process, is the IN-7 step that makes this loop real. Use only aggregated data, suppress small groups (under 5 accounts), and honor analytics consent.
+
 ---
 
 ## 17. Maintenance, correction and expansion governance
@@ -609,22 +738,45 @@ Review the portfolio at a regular cadence the owner sets: proposed monthly for a
 
 ## 18. Owner review decisions and definition of done
 
-### Decisions requested before implementation
+### Decisions (accepted 2026-11-24)
 
-| # | Decision | Proposed default |
-|---|---|---|
-| D-1 | Acquisition portfolio | 55% high-demand unmet need / 25% underserved / 20% reusable foundations, measured in operator minutes per cycle; adjustable |
-| D-2 | First research scope | US exam, education and workforce evidence plus broader open-source discovery; record language and geography explicitly; expand internationally based on need |
-| D-3 | First engineering pilot | The existing math and numeracy adapter on a selected objective slice (College Algebra 1.4 and 1.5 teaching-only, plus algebra Bridges). Second task family: Excel, unless the evidence picks another |
-| D-4 | Rights posture | Keep NC and SA adaptations blocked until a compatible policy and implementation exist; no blanket source approval |
-| D-5 **(v1.1)** | CLEP Psychology edition | Re-point `clep_introductory_psychology.yaml` and the two CLEP docs to **Psychology 1st edition** (CC BY, already approved for `adapt`); keep 2e as a link-only companion |
-| D-6 **(v1.1)** | Manifest source pins and licenses | Recompute every `sha256` from a lawfully retrieved copy, or drop it and use the convention `clep_college_algebra.yaml` already follows (`checksum_status: unverified_remote_document` plus a note); map license text to registry IDs; CI warns on placeholders now and fails for new or changed manifests after IN-0 |
-| D-7 **(v1.1)** | Close-to-verbatim OpenStax import | Either (a) approve `redistribute` for the three CC BY 1e sources (CC BY 4.0 permits it), or (b) keep `adapt` only and require the importer's change log to show real changes. **Proposed: (a)**, recorded in the registry with `decided_by`. Until decided, do not import beyond the pilot chapters |
-| D-8 | Operator economics | No new paid inference, reviewers, data feeds or hosting; enforce bounded jobs |
-| D-9 | Publication policy | Existing owner-controlled workflow, honest review labels, no automatic public promotion |
-| D-10 | Prioritization model | Existing demand ranking plus a separate provisional acquisition priority with confidence; revisit after the pilot |
-| D-11 **(v1.1)** | Demand evidence storage | Version-controlled research files first; a database migration only once the shape is stable and a database copy is needed |
-| D-12 | Scope boundary | No comprehensive web crawl, speculative all-format engine, full-textbook import requirement or parallel content platform |
+**State:** **The owner accepted every recommendation below (D-1 to D-15) as written on 2026-11-24.** Any later change is recorded here with its date and reason. The decisions fall into three groups.
+
+Accepting a decision does not by itself run anything in production. In particular:
+
+- **D-7:** the `redistribute` approval is applied to `data/content_sources.json` with `decided_by: "owner 2026-11-24"` in an implementation PR.
+- **D-13:** each production ingestion run still goes through the controlled workflow with its own approval.
+- **D-14 and D-15:** set the starting values; they are tunable.
+
+**Real choices, with trade-offs**
+
+| # | Decision | Recommendation | Why, and what it costs |
+|---|---|---|---|
+| D-5 | CLEP Psychology edition | **Re-point to Psychology 1st edition** (CC BY, already approved for `adapt` 2026-11-20); keep 2e as a link-only companion. Fix `clep_introductory_psychology.yaml`, `CLEP_PROGRAM_GUIDE.md` and `CLEP_LESSON_AND_ITEM_SPECIFICATION.md` | 2e is non-commercial, which conflicts with sponsorship and donation plans until the NC question is settled. Cost: 1e (2014) cites older research, so check the research-heavy sections against the current CLEP outline before relying on them |
+| D-7 | Close-to-verbatim OpenStax import | **Approve `redistribute`** for the three CC BY 1st-edition sources, recorded with `decided_by` | The importer copies section text closely, so labeling it `adapt` only is inaccurate. CC BY 4.0 permits redistribution with attribution and a changes note, both of which the importer already writes. No new legal exposure; the label becomes honest. Until decided, do not import beyond the pilot chapters |
+| D-3 | First engineering pilot | **College Algebra 1.4 and 1.5 as teaching-only, plus algebra Bridges (negative numbers, linear equations) and parametric practice; Excel as the second task family** | It reuses the importer, Bridges, the parametric families and the Excel simulation, and fixes a known gap. Excel proves the design on a skill target with a performance task (§8.8) |
+| D-13 **(v1.2)** | Which unpublished authored manifests to ingest (open since v2.6) | **Excel now**, after the §8.5 check. **CLEP College Algebra** after reconciling it with the imported textbook lessons. **Hold the other five** (Psychology, Security+, BS CS, Software Engineer, adult literacy) until D-6 pins are fixed and, for Psychology, D-5 is applied | Gets learner-useful content live soon without publishing manifests whose source pins are unverifiable |
+
+**Policy defaults, recommended as written**
+
+| # | Decision | Recommendation | Why |
+|---|---|---|---|
+| D-1 | Acquisition portfolio | Accept **55 / 25 / 20** as a guide, not a quota, for the first two cycles. Measure capacity in operator minutes | With one operator, the first cycles are simply algebra, Excel and adult literacy. Enforcing percentages before there is capacity to split adds bookkeeping, not value |
+| D-2 | First research scope | Accept: US exam, education and workforce evidence; English first; record language and geography | Matches the current catalog and demand data (BLS, IPEDS, CLEP, Florida regulators) |
+| D-4 | Rights posture | Accept: keep NC and SA adaptations blocked; no blanket source approvals | CC BY 1st editions cover the pilots, so this costs nothing now |
+| D-6 | Manifest pins and licenses | Accept: recompute each `sha256` from a lawfully retrieved copy, or replace it with `checksum_status: unverified_remote_document` plus a note (the convention `clep_college_algebra.yaml` already uses); map licenses to registry IDs; CI warns now and fails for new or changed manifests after IN-0 | Unverifiable pins undermine every provenance claim; this is a small, mechanical PR |
+| D-8 | Operator economics | Accept: no new paid inference, reviewers, data feeds or hosting; bounded jobs | Existing binding constraint |
+| D-9 | Publication policy | Accept: existing owner-controlled workflow, honest labels, no automatic promotion | Existing binding constraint |
+| D-11 | Demand evidence storage | Accept: research files first, migration later only if needed | Avoids a schema change before the shape is known |
+| D-12 | Scope boundary | Accept: no web crawl, all-format engine, full-textbook requirement or parallel platform | Keeps the work proportional to one operator |
+
+**Accept with a scale-down**
+
+| # | Decision | Recommendation | Why |
+|---|---|---|---|
+| D-10 | Prioritization model | Accept the §4.3 model, but **score by hand in the research file**. Build no scoring code until roughly 10 or more candidates compete for the same capacity | Below that scale, the formula costs more than it decides |
+| D-14 **(v1.2)** | Bank depth and readiness display thresholds (§8.6) | Accept the starting values: 10 practice and 6 held-out items per objective; readiness shown at 60% (provisional) and 90% (full) blueprint-weight coverage. Recalibrate after item statistics exist | Prevents readiness numbers built on a handful of memorizable items; thresholds are tunable |
+| D-15 **(v1.2)** | Risk tiers (§9.2) | Accept T1/T2/T3, with T1 publishing after automatic checks and one owner approval per batch | Without a fast lane, throughput is set by the strictest content type |
 
 ### Definition of done for this initiative
 
@@ -635,7 +787,11 @@ This covers the initiative, not every educational domain. The initiative is done
 - acquire only permitted, selected resources, with real source pins;
 - normalize them faithfully;
 - integrate them into the existing curriculum and learning architecture;
-- produce independent assessment where appropriate;
+- produce independent assessment where appropriate, with bank depth that supports repeated practice and non-overlapping mock exams **(v1.2)**;
+- feed the existing readiness, daily-plan and mock-exam engines, so a learner can see a believable projection of when they will be ready and which domains need work **(v1.2)**;
+- include authentic performance tasks for skill targets **(v1.2)**;
+- turn learner signals and item statistics into revision work **(v1.2)**;
+- publish low-risk teaching quickly through the fast lane while high-stakes content gets full review **(v1.2)**;
 - keep rights and quality labels honest;
 - enable motivated, efficient learner progress;
 - measure and improve real outcomes;
@@ -667,4 +823,4 @@ All existing product features and third-party integration goals remain intact.
 - Oregon State OER directory, University of Florida OER guide, Virginia Tech open textbook guide: for source discovery only; each publisher and edition needs its own rights decision.
 - IES WWC practice guide on organizing instruction and study, and MIT Teaching + Learning Lab: starting points for task-appropriate instructional design, not proof of LearningApp efficacy.
 
-*End of review draft v1.1.*
+*End of review draft v1.2.*
