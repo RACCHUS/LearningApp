@@ -18,7 +18,10 @@ What each section becomes:
     from the book's answer key (exercises without an answer are left out);
   * glossary terms the section defines, with the book's definitions;
   * a closing credit block (title, publisher, link, license, changes,
-    "not reviewed by a person").
+    "not reviewed by a person");
+  * a section with nothing that can be graded automatically is kept as a
+    teaching-only lesson (tag ``teaching-only`` and a "No graded questions
+    yet" note) instead of being dropped (ingestion plan v1.2 §7.4).
 Images are not copied (they can carry separate rights); the text points to
 the original section instead. End-of-section exercise sets are skipped.
 
@@ -45,7 +48,7 @@ REGISTRY = REPO / "data" / "content_sources.json"
 # Bump when importer output changes for the same book version, so the
 # corrected lessons publish as a new target version (published versions are
 # immutable). Publish it with retire_previous to replace the old one.
-IMPORT_REVISION = 3
+IMPORT_REVISION = 4
 
 # Topic tags per section, so "Learning help" offers the Bridges for that
 # topic (content/bridges/*.bridge.json `applies_to_tags`). A section that
@@ -634,6 +637,38 @@ def check_source(source_id: str) -> tuple[dict, dict]:
     return source, book
 
 
+TEACHING_ONLY_NOTE = (
+    "This section's exercises have answers written as expressions or in other forms that "
+    "LearningApp can't grade fairly yet, so there are no graded questions here. Use the practice "
+    "prompts and compare your work with the book's answer. Finishing this section doesn't count "
+    "toward exam readiness."
+)
+
+
+def mark_teaching_only(lesson: dict) -> bool:
+    """Keep a section with no gradable answer as teaching-only (plan v1.2 §7.4).
+
+    Returns False when the section has nothing to teach beyond its objectives
+    and credit, in which case it is left out. Otherwise tags the lesson
+    ``teaching-only`` and adds a visible note before the credit block, so the
+    assessment gap is shown rather than hidden.
+    """
+    blocks = lesson["blocks"]
+    body = [b for b in blocks[:-1]
+            if not (b["block_type"] == "markdown"
+                    and b["content"].get("text", "").startswith("### In this section, you will:"))]
+    if not body:
+        return False
+    blocks.insert(len(blocks) - 1, {
+        "sort_order": 0, "block_type": "callout",
+        "content": {"type": "info", "title": "No graded questions yet", "body": TEACHING_ONLY_NOTE},
+    })
+    for i, b in enumerate(blocks, start=1):
+        b["sort_order"] = i
+    lesson["tags"] = [*lesson["tags"][:-1], "teaching-only", lesson["tags"][-1]]
+    return True
+
+
 def import_book(source_id: str, chapters: set[int], delay: float) -> tuple[dict, list[str]]:
     source, book = check_source(source_id)
     meta = fetch(f"{ARCHIVE}{book['book']}.json")
@@ -644,6 +679,7 @@ def import_book(source_id: str, chapters: set[int], delay: float) -> tuple[dict,
     answer_key = next((c for c in tree if c.get("slug") == "answer-key"), None)
     all_warnings: list[str] = []
     left_out: list[str] = []
+    teaching_only: list[str] = []
     domains = []
     for node in tree:
         title = plain(node.get("title", ""))
@@ -679,8 +715,10 @@ def import_book(source_id: str, chapters: set[int], delay: float) -> tuple[dict,
             lesson, warnings = section_lesson(page["content"], info, answers, terms)
             all_warnings += [f"{sec_number}: {w}" for w in sorted(set(warnings))]
             if not lesson["assessment_items"]:
-                left_out.append(f"{sec_number} {sec_title}")
-                continue
+                if not mark_teaching_only(lesson):
+                    left_out.append(f"{sec_number} {sec_title}")
+                    continue
+                teaching_only.append(f"{sec_number} {sec_title}")
             concept = "open-" + re.sub(r"[^a-z0-9]+", "-", f"{source_id}-{sec_number}".lower()).strip("-")
             lesson["concept_slugs"] = [concept]
             for q in lesson["assessment_items"]:
@@ -745,8 +783,11 @@ def import_book(source_id: str, chapters: set[int], delay: float) -> tuple[dict,
         "domains": domains,
     }
     for title in left_out:
-        all_warnings.append(f"left out {title}: no answer can be graded automatically "
-                            "(it stays reachable as an open textbook link)")
+        all_warnings.append(f"left out {title}: nothing to teach and no answer can be graded "
+                            "automatically (it stays reachable as an open textbook link)")
+    for title in teaching_only:
+        all_warnings.append(f"teaching-only {title}: no answer can be graded automatically, so it has "
+                            "practice with answers to reveal but no graded questions")
     return manifest, all_warnings
 
 

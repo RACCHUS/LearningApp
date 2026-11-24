@@ -267,5 +267,39 @@ void main() {
       expect(linter3.issues.any((i) => i.rule == 'active-mapping-destination'), isTrue);
     });
   });
+
+  group('Teaching-only objectives (ingestion plan v1.2 §7.4)', () {
+    const path = 'content/open_openstax_prealgebra_1e.yaml';
+
+    Map<String, dynamic> firstLesson(Map<String, dynamic> manifest) {
+      final objective = ((manifest['domains'] as List).first['objectives'] as List).first as Map;
+      return ((objective['lessons'] as List).first as Map).cast<String, dynamic>();
+    }
+
+    List<LintIssue> lintWith(void Function(Map<String, dynamic> lesson) change) {
+      final manifest = loadManifest(path);
+      change(firstLesson(manifest));
+      return (ManifestLinter()..lint(path, manifest)).issues;
+    }
+
+    test('an objective with no items and no teaching-only tag is an error', () {
+      final issues = lintWith((l) => l['assessment_items'] = <dynamic>[]);
+      expect(issues.any((i) => i.rule == 'objective-assessment-coverage' && i.level == 'ERROR'), isTrue);
+    });
+
+    test('a declared teaching-only objective is a warning, not an error', () {
+      final issues = lintWith((l) {
+        l['assessment_items'] = <dynamic>[];
+        l['tags'] = [...(l['tags'] as List), 'teaching-only'];
+      });
+      expect(issues.any((i) => i.rule == 'objective-teaching-only' && i.level == 'WARNING'), isTrue);
+      expect(issues.where((i) => i.level == 'ERROR'), isEmpty);
+    });
+
+    test('a teaching-only lesson cannot carry assessment items', () {
+      final issues = lintWith((l) => l['tags'] = [...(l['tags'] as List), 'teaching-only']);
+      expect(issues.any((i) => i.rule == 'teaching-only-has-assessments' && i.level == 'ERROR'), isTrue);
+    });
+  });
 }
 

@@ -47,7 +47,7 @@ python tool/import_open_textbook.py --source openstax-college-algebra-1e --chapt
 - The tool imports only sources with `adapt` and `redistribute` allowed and status `approved`. Reading blocks stay close to the book's wording, so the manifest declares `use: redistribute` (owner decision D-7, 2026-11-24, for the three CC BY 1st editions).
 - It stops if the license the publisher reports differs from the registry.
 - It never turns an expression answer such as `(x-6)(x-1)` into a graded question: those stay as practice with the answer to reveal, so a correct but differently written answer is never marked wrong.
-- A section with no answer that can be graded automatically is left out and reported. It stays reachable as an open textbook link.
+- A section with no answer that can be graded automatically is kept as a **teaching-only** lesson: tag `teaching-only`, a "No graded questions yet" note saying it doesn't count toward exam readiness, and its practice prompts with answers to reveal. The linter accepts an objective with no assessment items only when all its lessons carry that tag, and reports it as a warning to review before publishing. A section with nothing to teach is still left out and stays reachable as an open textbook link.
 
 **Then:**
 1. Run the step 7 checks; `test/content/open_textbook_math_test.dart` also checks that every formula parses.
@@ -60,6 +60,7 @@ python tool/import_open_textbook.py --source openstax-college-algebra-1e --chapt
 
 **Pilot (2026-11-20):**
 - College Algebra chapter 1: 4 lessons, 27 graded questions. 1.4 Polynomials and 1.5 Factoring were left out because none of their answers is a single number.
+- **R4 (2026-11-24, not yet published):** 1.4 and 1.5 return as teaching-only lessons (8 practice prompts each, no graded questions); the other four lessons are unchanged. Publish with `retire_previous: true` and `replace_reason: "IMPORT_REVISION 4: sections 1.4 and 1.5 kept as teaching-only instead of dropped"`.
 - Prealgebra chapter 6 (Percents): 5 lessons, 49 graded questions.
 - Both published to production 2026-11-20 through the ingestion workflow; revision R2 fixed figure captions (repeated numbers) and replaced R1.
 
