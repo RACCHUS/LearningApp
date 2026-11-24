@@ -1,6 +1,6 @@
 # Held-out checks for general targets: design note
 
-**Status:** proposal, 2026-11-24. Needs owner decisions (below) before any schema change.
+**Status:** owner chose **option B** on 2026-11-24. Built in migration `20261124020000_held_out_item_reviews` (not yet deployed). Decisions 2 to 4 below are still open.
 **Context:** [ingestion plan v1.2](../../LEARNINGAPP_DEMAND_DRIVEN_CONTENT_INGESTION_PLAN_V1_2_2026-11-23.md) §8.6 and D-14; readiness coverage gate (migration `20261124010000`, switch `learning.readiness_coverage_gate`, OFF).
 
 ## The problem
@@ -12,7 +12,7 @@ The readiness gate counts an item as **held out** only when it has an approved, 
 - an **answer location** (section and page) for each item;
 - a **different, qualified reviewer** with evidence of access to that exact edition.
 
-That fits a Florida contractor code-book exam. It's a poor fit for College Algebra, where the answer is computed, not looked up. So the first draft set, [`content/drafts/held_out/open_openstax_college_algebra_1e_ch1.yaml`](../../content/drafts/held_out/open_openstax_college_algebra_1e_ch1.yaml), can't count toward readiness yet. It has 36 original items, 6 for each of sections 1.1 to 1.6, all checked by `tool/verify_held_out_items.py`.
+That fits a Florida contractor code-book exam. It's a poor fit for College Algebra, where the answer is computed, not looked up. So the first draft set, [`content/held_out/open_openstax_college_algebra_1e_ch1.yaml`](../../content/held_out/open_openstax_college_algebra_1e_ch1.yaml), can't count toward readiness yet. It has 36 original items, 6 for each of sections 1.1 to 1.6, all checked by `tool/verify_held_out_items.py`.
 
 A second gap: the manifest schema only allows assessment items **inside lessons**, and anything in a lesson is study material, not held out.
 
@@ -38,6 +38,14 @@ A second gap: the manifest schema only allows assessment items **inside lessons*
 2. **Reviewer:** each item needs approval by a **different, qualified person**, such as a math teacher or tutor. I wrote these items with AI, so I can't approve them. Name the reviewer or reviewers, or say how you want to find one.
 3. **Item statistics before counting:** plan §9.2 (tier T2) says held-out items need item statistics before they count toward readiness, but statistics need learners to have taken the items. Recommendation: count an item once a person approves it, then use the §16.4 statistics loop to pull weak items later.
 4. **Exposure:** a diagnostic shows held-out items to learners, so repeated diagnostics wear them out. Recommendation: cap how often each learner sees each item (the parametric-practice exposure limits are the pattern), and grow the set beyond 6 per objective over time.
+
+## How to approve and ingest (option B, as built)
+
+1. **Review:** a different, qualified person reviews each item in [`content/held_out/open_openstax_college_algebra_1e_ch1.yaml`](../../content/held_out/open_openstax_college_algebra_1e_ch1.yaml), checking the math, the wording, the distractors and that it isn't lesson practice.
+2. **Record:** add a `review` block to each approved item, with `reviewer_ref` (a handle, not the author), `reviewer_qualification`, `reviewed_on`, `review_status: approved` and `rights_review_status: approved`. CI runs `tool/verify_held_out_items.py`, which refuses an approval by the author, a missing qualification or a future date.
+3. **New version:** held-out items can only join a **draft** version, so the next College Algebra import becomes R5 (bump `IMPORT_REVISION`, re-import chapter 1).
+4. **Ingest:** run the *Controlled curriculum ingestion* workflow with the R5 manifest and `held_out: content/held_out/open_openstax_college_algebra_1e_ch1.yaml`. Only approved items are sent, each with its approval row and a fingerprint of its content. Then publish with `retire_previous`.
+5. **Count:** `get_target_readiness_coverage` counts an item while its approval is in place and its fingerprint still matches the item.
 
 ## What the 60% threshold means for College Algebra
 

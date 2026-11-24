@@ -32,6 +32,11 @@ on:
         required: false
         type: string
         default: ''
+      held_out:
+        description: 'Optional held-out check file in content/held_out/ (only approved items are added; ingestion plan D-14)'
+        required: false
+        type: string
+        default: ''
       confirm_project_ref:
         description: 'Type the hosted Supabase project ref xzvkdwebtbxlrxagtzlv'
         required: true
@@ -80,6 +85,7 @@ jobs:
           STOP_AFTER: ${{ inputs.stop_after }}
           RETIRE_PREVIOUS: ${{ inputs.retire_previous }}
           REPLACE_REASON: ${{ inputs.replace_reason }}
+          HELD_OUT: ${{ inputs.held_out }}
           CONFIRMED_REF: ${{ inputs.confirm_project_ref }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
@@ -116,6 +122,12 @@ jobs:
           if ! git ls-files --error-unmatch -- "${MANIFEST}" >/dev/null 2>&1; then
             echo "::error::${MANIFEST} is not a committed file on main."
             exit 2
+          fi
+          if [[ -n "${HELD_OUT}" ]]; then
+            if [[ ! "${HELD_OUT}" =~ ^content/held_out/[a-z0-9_]+\.ya?ml$ ]]                || ! git ls-files --error-unmatch -- "${HELD_OUT}" >/dev/null 2>&1; then
+              echo "::error::held_out must be a committed file directly in content/held_out/."
+              exit 2
+            fi
           fi
           # Target and version come from the manifest itself, never from typing.
           python3 - "${MANIFEST}" >> "$GITHUB_OUTPUT" <<'PY'
@@ -162,6 +174,21 @@ jobs:
           set -euo pipefail
           dart run tool/ingest_curriculum.dart --target "$SLUG" --version "$VERSION" --manifest "$MANIFEST" --apply
           echo "- Draft: ingested" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Add approved held-out check items
+        if: ${{ inputs.held_out != '' && inputs.stop_after != 'dry-run' }}
+        env:
+          HELD_OUT: ${{ inputs.held_out }}
+          SLUG: ${{ steps.target.outputs.slug }}
+          VERSION: ${{ steps.target.outputs.version }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          set -euo pipefail
+          python3 -m pip install --quiet 'sympy==1.14.0'
+          python3 tool/verify_held_out_items.py
+          dart run tool/ingest_curriculum.dart --target "$SLUG" --version "$VERSION" --held-out "$HELD_OUT"
+          echo "- Held-out checks: approved items added from \`$HELD_OUT\`" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Promote to review-ready
         if: ${{ inputs.stop_after == 'review-ready' || inputs.stop_after == 'published' }}

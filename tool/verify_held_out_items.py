@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
-"""Verify draft held-out check items (ingestion plan v1.2 §8.6, D-14).
+"""Verify held-out check items (ingestion plan v1.2 §8.6, D-14).
 
-Checks every file in content/drafts/held_out/:
+Checks every file in content/held_out/:
+  * authoring: author_ref and ai_drafted at file level, and an
+    objective_concepts map matching the published manifest's concepts;
+  * reviews: an approved `review` names a reviewer who is not the author,
+    their qualification, a past YYYY-MM-DD date and rights approval;
   * structure: ids unique and slug-shaped, known objectives, supported
-    interaction types, a keyed answer, an explanation;
+    interaction types, a keyed answer, an explanation and a citation;
   * depth: at least ``min_items_per_objective`` items for every objective of
     the target's published manifest (content/open_<source>.yaml);
   * independence: no prompt repeats a lesson item or practice prompt from
@@ -25,6 +29,7 @@ from __future__ import annotations
 import re
 import sys
 from collections import Counter
+from datetime import date
 from pathlib import Path
 
 import sympy as sp
@@ -32,7 +37,7 @@ import yaml
 from sympy.parsing.sympy_parser import parse_expr, standard_transformations
 
 REPO = Path(__file__).resolve().parents[1]
-DRAFTS = REPO / "content" / "drafts" / "held_out"
+DRAFTS = REPO / "content" / "held_out"
 TYPES = {"numeric_entry", "single_choice"}
 SYMBOLS = {name: sp.Symbol(name) for name in ("x", "y", "a", "b")}
 NAMES = {**SYMBOLS, "sqrt": sp.sqrt, "Rational": sp.Rational, "Abs": sp.Abs,
@@ -121,6 +126,42 @@ def check_item(item: dict) -> list[str]:
     return problems
 
 
+REVIEW_STATUSES = {"approved", "pending", "rejected"}
+
+
+def check_review(item: dict, author: str) -> list[str]:
+    """An optional review block must be complete and by someone else (D-14)."""
+    review = item.get("review")
+    iid = item.get("id", "?")
+    if review is None:
+        return []
+    if not isinstance(review, dict):
+        return [f"{iid}: review must be a mapping"]
+    problems = []
+    status = review.get("review_status")
+    if status not in REVIEW_STATUSES:
+        problems.append(f"{iid}: review_status must be one of {sorted(REVIEW_STATUSES)}")
+    if status != "approved":
+        return problems
+    reviewer = str(review.get("reviewer_ref") or "").strip()
+    if not 2 <= len(reviewer) <= 150:
+        problems.append(f"{iid}: reviewer_ref is required")
+    elif reviewer.lower() == author.strip().lower():
+        problems.append(f"{iid}: the reviewer cannot be the author")
+    if not 3 <= len(str(review.get("reviewer_qualification") or "").strip()) <= 500:
+        problems.append(f"{iid}: reviewer_qualification is required")
+    if review.get("rights_review_status") != "approved":
+        problems.append(f"{iid}: an approved item needs rights_review_status: approved")
+    on = review.get("reviewed_on")
+    try:
+        when = on if isinstance(on, date) else date.fromisoformat(str(on))
+        if when > date.today():
+            problems.append(f"{iid}: reviewed_on is in the future")
+    except ValueError:
+        problems.append(f"{iid}: reviewed_on must be YYYY-MM-DD")
+    return problems
+
+
 def published_manifest(source_release_id: str) -> dict:
     path = REPO / "content" / f"open_{source_release_id.replace('-', '_')}.yaml"
     return yaml.safe_load(path.read_text(encoding="utf-8"))
@@ -142,6 +183,17 @@ def check_file(path: Path) -> list[str]:
                 if b.get("block_type") == "practice_prompt":
                     seen_prompts.add(_norm((b.get("content") or {}).get("prompt", "")))
 
+    author = str(data.get("author_ref") or "").strip()
+    if not author:
+        problems.append(f"{name}: author_ref is required")
+    if not isinstance(data.get("ai_drafted"), bool):
+        problems.append(f"{name}: ai_drafted must be true or false")
+    mapped = data.get("objective_concepts") or {}
+    for code, o in objectives.items():
+        expected = sorted(c["slug"] for c in o.get("concepts") or [])
+        if sorted(mapped.get(code) or []) != expected:
+            problems.append(f"{name}: objective_concepts[{code}] must be {expected}")
+
     ids = Counter(i.get("id") for i in items)
     for iid, n in ids.items():
         if n > 1:
@@ -158,6 +210,9 @@ def check_file(path: Path) -> list[str]:
             problems.append(f"{name}: {iid} has unsupported type {item.get('interaction_type')}")
         if not str(item.get("explanation", "")).strip():
             problems.append(f"{name}: {iid} needs an explanation")
+        if not str(item.get("citation", "")).strip():
+            problems.append(f"{name}: {iid} needs a citation")
+        problems += [f"{name}: {p}" for p in check_review(item, author)]
         if _norm(item.get("prompt", "")) in seen_prompts:
             problems.append(f"{name}: {iid} repeats a lesson prompt, so it isn't held out")
         per_objective[item.get("objective")] += 1

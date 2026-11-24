@@ -53,6 +53,31 @@ class ItemMathTests(unittest.TestCase):
         self.assertEqual(v.keyed_value(item("ca1e-ho-1-6-d")), 3)
 
 
+class ReviewTests(unittest.TestCase):
+    def approved(self, **changes):
+        review = {"reviewer_ref": "reviewer-001", "reviewer_qualification": "Certified math teacher",
+                  "reviewed_on": "2026-11-20", "review_status": "approved",
+                  "rights_review_status": "approved", **changes}
+        it = item("ca1e-ho-1-1-a")
+        it["review"] = review
+        return v.check_review(it, "ai-drafted-by-claude")
+
+    def test_a_complete_approval_passes(self):
+        self.assertEqual(self.approved(), [])
+
+    def test_no_review_is_fine_until_approval(self):
+        self.assertEqual(v.check_review(item("ca1e-ho-1-1-a"), "ai-drafted-by-claude"), [])
+
+    def test_the_author_cannot_approve(self):
+        self.assertTrue(any("cannot be the author" in p for p in self.approved(reviewer_ref="AI-Drafted-by-Claude")))
+
+    def test_approval_needs_qualification_rights_and_a_past_date(self):
+        self.assertTrue(any("qualification" in p for p in self.approved(reviewer_qualification="")))
+        self.assertTrue(any("rights_review_status" in p for p in self.approved(rights_review_status="pending")))
+        self.assertTrue(any("YYYY-MM-DD" in p for p in self.approved(reviewed_on="last week")))
+        self.assertTrue(any("future" in p for p in self.approved(reviewed_on="2999-01-01")))
+
+
 class FileTests(unittest.TestCase):
     def check(self, data):
         with tempfile.TemporaryDirectory() as d:
@@ -71,6 +96,19 @@ class FileTests(unittest.TestCase):
         data = copy.deepcopy(REAL)
         data["items"][0]["prompt"] = lesson_prompt
         self.assertTrue(any("repeats a lesson prompt" in p for p in self.check(data)))
+
+    def test_concept_map_must_match_the_manifest(self):
+        data = copy.deepcopy(REAL)
+        data["objective_concepts"]["1.3"] = ["some-other-concept"]
+        self.assertTrue(any("objective_concepts[1.3]" in p for p in self.check(data)))
+
+    def test_authoring_fields_are_required(self):
+        data = copy.deepcopy(REAL)
+        del data["author_ref"]
+        data["ai_drafted"] = "yes"
+        problems = self.check(data)
+        self.assertTrue(any("author_ref is required" in p for p in problems))
+        self.assertTrue(any("ai_drafted must be" in p for p in problems))
 
     def test_duplicate_ids_fail(self):
         data = copy.deepcopy(REAL)
