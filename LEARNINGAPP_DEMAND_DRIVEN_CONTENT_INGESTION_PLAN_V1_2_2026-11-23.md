@@ -86,7 +86,7 @@ What this changes:
 4. **High-stakes content is where AI review is not enough** (T3: regulated, licensing, health, safety, legal). It stays link-only or teaching-only until a person's review is available, which is an extension slot, not a requirement to ship anything else.
 5. **Every paid or people-dependent capability is an optional extension** (§1.2).
 
-Applied so far: held-out check approvals accept `reviewer_kind: ai` (migration `20261124030000`), and the coverage function reports `review_basis` so the app labels AI-reviewed checks.
+Applied so far: held-out check approvals accept `reviewer_kind: ai` (migration `20261124030000`, deployed to production 2026-11-24, 161/161), and the coverage function reports `review_basis` so the app labels AI-reviewed checks.
 
 ---
 
