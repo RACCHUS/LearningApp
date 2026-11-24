@@ -18,11 +18,17 @@ Counts come from the files as of 2026-11-20.
 
 | Objective | Lesson | Teach | Example | Practice | Check | Bridge | Sources (use) |
 |---|---|---|---|---|---|---|---|
-| SPREADSHEET-1.1 | Budget Totals in Excel | 2 blocks | 1 call-out, 1 practice prompt, 1 simulation | 2 questions, 3 terms | none | 4 percent Bridges (fraction↔decimal, percent change, percent of a number, Excel percent format), each with a link-only companion | Microsoft Support (link, reference); OpenStax Prealgebra 2e (link) |
+| SPREADSHEET-1.1 | Budget Totals in Excel | 2 blocks (sample data now in the lesson) | 1 call-out, 1 practice prompt with a worked answer, 1 simulation | 6 questions, 3 terms, 5 flashcards | none | 4 percent Bridges (fraction↔decimal, percent change, percent of a number, Excel percent format), each with a link-only companion | Microsoft Support (link, reference); OpenStax Prealgebra 2e (link) |
 
 **Gaps:**
 - There's only one lesson, so most Excel skills are uncovered: cell references, AVERAGE/COUNT, sorting and filtering, charts, IF.
-- There are no independent check items.
+- There are no independent check items, so readiness can't be shown for this target (plan D-14).
+- **Prepared for ingestion 2026-11-24 (D-13):**
+  - the sample data is now typed into the lesson (the CSV it used to point to was never downloadable in the app);
+  - the call-out uses the field names the renderer reads;
+  - the practice prompt has a worked answer (=SUM(C2:C9), total 440);
+  - 4 more practice questions and 5 flashcards, all with stable IDs.
+- The 4 percent Bridges are tagged `excel`/`spreadsheet`, so help in this SUM lesson offers percent topics. Scope them more tightly when more Excel lessons exist.
 - **Sources:** Microsoft documentation is proprietary, so we write all text ourselves and link to it.
 
 **Next supply:** more Excel lessons written in-house from Microsoft's documentation, used as references. Percent Bridges can build on OpenStax Prealgebra 1st edition (CC BY, approved for adapting).
