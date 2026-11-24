@@ -1,0 +1,7 @@
+from sympy import *
+x=symbols('x')
+print(factor(x**2+3*x-28), expand((x-7)*(x+4)), expand((x+14)*(x-2)), expand((x+4)*(x+7)))
+print(factor(12*x**3-18*x**2), expand(6*x**2*(2*x+3)))
+e=(x**2+x-20)/(x**2-7*x+12); print(cancel(e), factor(x**2+x-20), factor(x**2-7*x+12))
+for o in [(x-5)/(x+3),(x+5)/(x+3),(x-20)/(-7*x+12),(x+5)/(x-3)]: print(simplify(e-o)==0)
+b=x/(x+2)*(x**2-4)/x**2; print(cancel(b), [simplify(b-o)==0 for o in [(x-2)/x,(x+2)/x,x-2,(x-2)/x**2]])

@@ -121,6 +121,18 @@ class FileTests(unittest.TestCase):
         self.assertTrue(any("author_ref is required" in p for p in problems))
         self.assertTrue(any("ai_drafted must be" in p for p in problems))
 
+    def test_reusing_a_lesson_example_expression_fails(self):
+        # The first draft of 1.5-a factored x^2 + 2x - 15, the lesson's own
+        # Example 2; the independent AI review caught it (2026-11-24).
+        data = copy.deepcopy(REAL)
+        it = next(i for i in data["items"] if i["id"] == "ca1e-ho-1-5-a")
+        it["prompt"] = "Factor $x^2 + 2x - 15$."
+        self.assertTrue(any("reuses $x^2+2x-15$" in p for p in self.check(data)))
+
+    def test_short_expressions_are_not_flagged(self):
+        self.assertEqual(v.math_segments("Expand $(x - 4)^2$ and $(2x - 3)(x + 5)$."), ["(2x-3)(x+5)"])
+        self.assertEqual(v.math_segments("Is $x^2 - 4$ prime?"), [])
+
     def test_duplicate_ids_fail(self):
         data = copy.deepcopy(REAL)
         data["items"][1]["id"] = data["items"][0]["id"]
