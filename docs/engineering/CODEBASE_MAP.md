@@ -216,7 +216,7 @@ Gate `learning.reinforcement_suggestions` (OFF, read-only): the §5.5 list in Re
 Read to understand; no refactor proposals.
 
 <!-- map-ref path="tool/ingest_curriculum.dart" role="owner" lines="1-56" -->
-- Owner: `tool/ingest_curriculum.dart` (pipeline doc 1-56; schema validation 128-145).
+- Owner: `tool/ingest_curriculum.dart` (pipeline doc 1-56; schema validation 132-149).
 <!-- map-ref path="tool/lint_manifest.dart" role="contract" -->
 - Contracts: `tool/lint_manifest.dart` (stable item IDs), `content/schema/curriculum_manifest.schema.json`, `tool/ci/check_algebra_manifest_parity.py`.
 <!-- map-ref path="test/tool/curriculum_stable_ids_test.dart" role="test" -->

@@ -12,7 +12,7 @@ Columns are **static text signals**, not proof. Read a test before relying on it
 - **RLS checks**: assertions that row-level security is enabled (`relrowsecurity`).
 - A file has a **security signal** if it has any denial, privilege or RLS check, or at least two identity switches (cross-user tests often assert that another learner's rows count as zero).
 
-**Totals:** 100 test files, 2132 planned assertions, plus 4 files using `no_plan()` (counted only when run; pg_prove reports the full total in the database job).
+**Totals:** 101 test files, 2153 planned assertions, plus 4 files using `no_plan()` (counted only when run; pg_prove reports the full total in the database job).
 
 ## By area
 
@@ -27,7 +27,7 @@ Columns are **static text signals**, not proof. Read a test before relying on it
 | Catalog, taxonomy & versioning | 15 | 270 | 5 | 4 | 77 | 41 | 12 |
 | Feature controls & cost | 2 | 54 | 2 | 1 | 18 | 0 | 0 |
 | Schema integrity | 1 | 8 | 0 | 0 | 0 | 0 | 0 |
-| Other | 22 | 343 | 5 | 15 | 109 | 21 | 1 |
+| Other | 23 | 364 | 5 | 15 | 120 | 26 | 1 |
 
 ## Files with no security signal
 
@@ -136,6 +136,7 @@ No denial, privilege or RLS check and fewer than two identity switches. These ma
 | `curriculum_lesson_tags_test.sql` | Other | 8 | — | 0 | 5 | 2 | 0 |
 | `device_avatar_customizer_flag_test.sql` | Other | 3 | — | 0 | 0 | 0 | 0 |
 | `generated_lesson_feedback_test.sql` | Other | 13 | authenticated | 4 | 6 | 1 | 0 |
+| `held_out_item_reviews_test.sql` | Other | 21 | authenticated | 1 | 11 | 5 | 0 |
 | `learner_progress_version_carry_test.sql` | Other | 16 | authenticated | 1 | 4 | 3 | 0 |
 | `learning_check_disputes_test.sql` | Other | 22 | anon, authenticated | 4 | 12 | 3 | 1 |
 | `learning_xp_achievements_test.sql` | Other | 24 | anon, authenticated | 7 | 6 | 0 | 0 |

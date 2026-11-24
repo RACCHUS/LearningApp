@@ -48,6 +48,10 @@ import 'lint_manifest.dart';
 ///     --version SY0-701 \
 ///     --publish
 ///
+///   # 7. Add approved held-out check items to a DRAFT TargetVersion
+///   #    (ingestion plan D-14; run after --apply, before --stage-review):
+///   dart run tool/ingest_curriculum.dart ///     --target open-openstax-college-algebra-1e ///     --version OPENSTAX-EBC5BEB-R5 ///     --held-out content/held_out/open_openstax_college_algebra_1e_ch1.yaml
+///
 /// Note: Publication strictly requires "review_ready" staging status.
 
 // ----------------------------------------------------------------------------
@@ -378,6 +382,7 @@ void main(List<String> args) async {
   bool isApply = false;
   bool isStageReview = false;
   bool isPublish = false;
+  String? heldOutPath;
   bool retirePrevious = false;
   String? replaceReason;
   String? customUrl;
@@ -401,6 +406,8 @@ void main(List<String> args) async {
       isStageReview = true;
     } else if (arg == '--publish') {
       isPublish = true;
+    } else if (arg == '--held-out' && i + 1 < args.length) {
+      heldOutPath = args[++i];
     } else if (arg == '--retire-previous') {
       retirePrevious = true;
     } else if (arg == '--replace-reason' && i + 1 < args.length) {
@@ -412,13 +419,15 @@ void main(List<String> args) async {
     }
   }
 
-  final selectedModes = [isDryRun, isApply, isStageReview, isPublish].where((b) => b).length;
+  final isHeldOut = heldOutPath != null;
+  final selectedModes = [isDryRun, isApply, isStageReview, isPublish, isHeldOut].where((b) => b).length;
   if (selectedModes != 1) {
     print('Error: You must specify exactly one mode:');
     print('  --dry-run      : Validate manifest(s) against JSON Schema & blueprint alignment');
     print('  --apply        : Ingest manifest(s) into draft TargetVersion(s) (service role)');
     print('  --stage-review : Promote draft TargetVersion to review_ready staging status');
     print('  --publish      : Promote review_ready TargetVersion to published immutable status');
+    print('  --held-out <f> : Add approved held-out check items to a draft TargetVersion');
     exit(1);
   }
 
@@ -554,7 +563,7 @@ void main(List<String> args) async {
     print('Error: Missing required --version <version_code>');
     exit(1);
   }
-  if (!isPublish && !isStageReview && (manifestPath == null || manifestPath.isEmpty)) {
+  if (!isPublish && !isStageReview && !isHeldOut && (manifestPath == null || manifestPath.isEmpty)) {
     print('Error: Missing required --manifest <path> for dry-run or apply mode');
     exit(1);
   }
@@ -562,7 +571,7 @@ void main(List<String> args) async {
   print('Target Slug  : $targetArg');
   print('Target Vers  : $versionArg');
   if (manifestPath != null) print('Manifest File: $manifestPath');
-  print('Mode         : ${isDryRun ? "DRY-RUN" : isApply ? "APPLY (Draft Ingestion)" : isStageReview ? "STAGE-REVIEW" : "PUBLISH"}');
+  print('Mode         : ${isDryRun ? "DRY-RUN" : isApply ? "APPLY (Draft Ingestion)" : isStageReview ? "STAGE-REVIEW" : isHeldOut ? "HELD-OUT (Draft)" : "PUBLISH"}');
   print('Endpoint     : $supabaseUrl');
 
   Map<String, dynamic>? manifest;
@@ -615,6 +624,15 @@ void main(List<String> args) async {
     print('\n✅ Staging complete! TargetVersion is now review_ready for QA and beta evaluation.');
     print('Next step: Promote to published immutable status:');
     print('  dart run tool/ingest_curriculum.dart --target $targetArg --version $versionArg --publish');
+    exit(0);
+  }
+
+  // MODE 5: HELD-OUT (approved held-out check items into a draft version)
+  if (isHeldOut) {
+    print('\n--- Adding Approved Held-Out Check Items ---');
+    await _executeHeldOut(client, targetArg, versionArg, heldOutPath);
+    print('\n✅ Held-out check items added to the draft version.');
+    print('Next step: dart run tool/ingest_curriculum.dart --target $targetArg --version $versionArg --stage-review');
     exit(0);
   }
 
@@ -1454,6 +1472,92 @@ List<Map<String, Object>> _lessonTags(Map<String, dynamic> manifest) {
 // ----------------------------------------------------------------------------
 // Staging & Publication Logic
 // ----------------------------------------------------------------------------
+
+/// Builds the ingest_held_out_items payload from a held-out file (ingestion
+/// plan D-14). Only items whose `review` is approved, with rights approved,
+/// are included; the database refuses anything else. Returns the items and
+/// how many were skipped as not yet approved.
+({List<Map<String, dynamic>> items, int skipped}) buildHeldOutPayload(
+  Map<String, dynamic> file, {
+  required String targetSlug,
+}) {
+  if (file['target_slug'] != targetSlug) {
+    throw Exception('Held-out file is for "${file['target_slug']}", not "$targetSlug".');
+  }
+  final author = (file['author_ref'] ?? '').toString().trim();
+  final aiDrafted = file['ai_drafted'];
+  if (author.isEmpty || aiDrafted is! bool) {
+    throw Exception('Held-out file needs author_ref and ai_drafted (true/false).');
+  }
+  final concepts = (file['objective_concepts'] as Map?)?.cast<String, dynamic>() ?? {};
+  final out = <Map<String, dynamic>>[];
+  var skipped = 0;
+  for (final raw in (file['items'] as List? ?? const [])) {
+    final item = (raw as Map).cast<String, dynamic>();
+    final review = (item['review'] as Map?)?.cast<String, dynamic>();
+    if (review == null ||
+        review['review_status'] != 'approved' ||
+        review['rights_review_status'] != 'approved') {
+      skipped++;
+      continue;
+    }
+    final slugs = (concepts[item['objective']?.toString()] as List?)?.map((e) => e.toString()).toList();
+    if (slugs == null || slugs.isEmpty) {
+      throw Exception('Held-out item ${item['id']}: no concepts for objective ${item['objective']}.');
+    }
+    out.add({
+      'key': item['id'],
+      'interaction_type': item['interaction_type'],
+      'prompt': item['prompt'],
+      if (item['response_spec'] != null) 'response_spec': item['response_spec'],
+      'scoring_spec': item['scoring_spec'],
+      'explanation': item['explanation'],
+      'difficulty': item['difficulty'],
+      'cognitive_level': item['cognitive_level'],
+      'citation': item['citation'],
+      'concept_slugs': slugs,
+      'review': {
+        'author_ref': author,
+        'ai_drafted': aiDrafted,
+        'reviewer_ref': review['reviewer_ref'],
+        'reviewer_qualification': review['reviewer_qualification'],
+        'reviewed_on': review['reviewed_on']?.toString(),
+        'review_status': 'approved',
+        'rights_review_status': 'approved',
+      },
+    });
+  }
+  return (items: out, skipped: skipped);
+}
+
+Future<void> _executeHeldOut(
+  SupabaseRestClient client,
+  String targetSlug,
+  String versionCode,
+  String path,
+) async {
+  final file = _parseManifest(path);
+  final payload = buildHeldOutPayload(file, targetSlug: targetSlug);
+  print('Approved items: ${payload.items.length}; not yet approved (skipped): ${payload.skipped}');
+  if (payload.items.isEmpty) {
+    throw Exception('No approved held-out items in $path; nothing to add.');
+  }
+  final targetList = asList((await client.restGet('learning_targets?slug=eq.$targetSlug&limit=1'))['body']);
+  if (targetList.isEmpty) throw Exception('Target "$targetSlug" not found.');
+  final targetId = (targetList.first as Map)['id'];
+  final versionList = asList(
+      (await client.restGet('target_versions?target_id=eq.$targetId&version_code=eq.$versionCode'))['body']);
+  if (versionList.isEmpty) throw Exception('TargetVersion "$versionCode" not found.');
+  final versionId = (versionList.first as Map)['id'];
+  final res = await client.restRpc('ingest_held_out_items', {
+    'p_target_version_id': versionId,
+    'p_items': payload.items,
+  });
+  if ((res['statusCode'] as int) >= 400) {
+    throw Exception('ingest_held_out_items failed (${res['statusCode']}): ${res['body']}');
+  }
+  print('Added ${(res['body'] as Map?)?['held_out_items']} held-out item(s) to "$versionCode".');
+}
 
 Future<void> _executeStageReview(
   SupabaseRestClient client,
