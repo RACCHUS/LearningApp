@@ -1,0 +1,50 @@
+# Opportunity brief (ingestion plan v1.2 §4.2). Aggregate public data only.
+# Unknown is null, not zero. Validate: python tool/verify_research.py
+id: open-prealgebra-ch6
+title: Prealgebra chapter 6, percents (open textbook pilot)
+target_slug: open-openstax-prealgebra-1e
+lane: underserved
+intended_learner: Adult learners rebuilding everyday numeracy (percents, tax, discounts, interest)
+locale: en-US
+outcome: Solving percent, tax, commission, discount and simple-interest problems, measured by held-out checks
+demand_status: unmeasured
+observations: []
+factors:
+  demand:
+    score: null
+    evidence: &id001 []
+    rated_by: null
+  underserved_need:
+    score: null
+    evidence: *id001
+    rated_by: null
+  outcome_value:
+    score: null
+    evidence: *id001
+    rated_by: null
+  cross_goal_reuse:
+    score: null
+    evidence: *id001
+    rated_by: null
+  source_feasibility:
+    score: 5
+    evidence:
+    - 'data/content_sources.json: openstax-prealgebra-1e is approved (CC BY 4.0) with adapt and redistribute'
+    rated_by: 'ai-drafted-by-claude (method: registry status and allowed uses)'
+  improvement_potential:
+    score: null
+    evidence: *id001
+    rated_by: null
+gates:
+  permitted_operation: true
+  source_trust: true
+  outcome_defined: true
+  safety_ok: true
+  capacity_ok: null
+  validation_feasible: true
+effort:
+  size: S
+  reason: 'Live (R6): improvements only'
+  operator_minutes: null
+recommendation: improve
+notes: The underserved lane is editorial until need is documented with evidence.

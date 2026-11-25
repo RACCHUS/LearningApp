@@ -336,6 +336,11 @@ jobs:
           "$CI_TEST_PYTHON" tool/verify_held_out_items.py
           "$CI_TEST_PYTHON" -m unittest discover -s tool/tests -p 'test_verify_held_out_items.py' -v
 
+      - name: Validate demand research and source discovery files (plan v1.2 §4-§5)
+        run: |
+          "$CI_TEST_PYTHON" tool/verify_research.py
+          "$CI_TEST_PYTHON" -m unittest discover -s tool/tests -p 'test_verify_research.py' -v
+
       - name: Verify original practice items (SymPy, merged and deep enough)
         run: |
           "$CI_TEST_PYTHON" tool/verify_practice_items.py
