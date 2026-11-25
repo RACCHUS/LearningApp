@@ -11,6 +11,7 @@ source_releases:
     objective alignment. CLEP and College Board are registered trademarks of the College
     Board.
   metadata:
+    use: reference
     role: blueprint_authority
     bank: simulation_exam
     checksum_status: unverified_remote_document

@@ -13,6 +13,7 @@ source_release:
   license_name: "Unknown (link and reference only)"
   rights_note: "ACM and IEEE-CS joint curriculum guidelines used for undergraduate program taxonomy and learning objective structure."
   metadata:
+    use: "reference"  # declared operation (plan v1.2 §6; slice 5)
     checksum_status: "unverified_remote_document"
     checksum_verification_note: "Online report. No archived artifact is pinned; the earlier sha256 value was a placeholder and was removed (ingestion plan D-6, 2026-11-24)."
     cip_code: "11.0701"

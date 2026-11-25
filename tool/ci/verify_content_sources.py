@@ -18,6 +18,13 @@ Runbook: docs/content_intelligence/CONTENT_INGESTION_RUNBOOK.md.
    a digest of a common word, and not shared with another source. A source
    without one records why in ``metadata.checksum_status`` (or is pinned by
    the importer's archive version); otherwise that is a warning.
+6. Every manifest source release declares its operation in
+   ``metadata.use`` (plan v1.2 §6, slice 5): a reference citation must not
+   hide an adaptation, so there is no silent default. An undeclared release
+   fails unless it is in data/rights_discrepancy_allowlist.json, tied to an
+   open decision; an allowlist entry that no longer matches also fails, so
+   the frozen list can only shrink. ``--publish-check <manifest>`` fails for
+   a manifest that still has an allowlisted discrepancy (run before publishing).
 
 Exit 0 when clean (warnings allowed), 1 on any problem.
 """
@@ -33,6 +40,7 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
 REGISTRY = REPO / "data" / "content_sources.json"
+ALLOWLIST = REPO / "data" / "rights_discrepancy_allowlist.json"
 USES = {"link", "reference", "quote", "adapt", "redistribute", "ai_transform"}
 STATUSES = {"approved", "proposed", "candidate", "restricted"}
 POSTURE_TO_USE = {
@@ -199,9 +207,34 @@ def check_pins(releases: list[tuple[str, dict]], problems: list[str], warnings: 
                                 f"{_SHARED_RUN}-character run, so at least one is not real")
 
 
+def load_allowlist(root: Path) -> list[dict]:
+    path = root / "data" / "rights_discrepancy_allowlist.json"
+    if not path.exists():
+        return []
+    return json.loads(path.read_text(encoding="utf-8")).get("entries") or []
+
+
+def check_declared_uses(undeclared: set[tuple[str, str]], allowlist: list[dict],
+                        problems: list[str]) -> None:
+    """Rule 6: every manifest release declares metadata.use, unless frozen."""
+    listed = set()
+    for e in allowlist:
+        key = (str(e.get("manifest")), str(e.get("release_id")))
+        if e.get("issue") != "undeclared_use" or not str(e.get("open_decision") or "").strip():
+            problems.append(f"rights allowlist: {key} needs issue 'undeclared_use' and an open_decision")
+        listed.add(key)
+        if key not in undeclared:
+            problems.append(f"rights allowlist: {key[0]} / {key[1]} is no longer a discrepancy; "
+                            "remove it from data/rights_discrepancy_allowlist.json")
+    for manifest, release in sorted(undeclared - listed):
+        problems.append(f"{manifest}: source release {release!r} must declare metadata.use "
+                        "(link, reference, quote, adapt, redistribute or ai_transform)")
+
+
 def scan(reg: dict, root: Path) -> tuple[list[str], list[str]]:
     problems: list[str] = []
     warnings: list[str] = []
+    undeclared: set[tuple[str, str]] = set()
     for path in sorted(glob.glob(str(root / "content" / "bridges" / "*.json"))):
         data = json.loads(Path(path).read_text(encoding="utf-8"))
         for s in data.get("sources") or []:
@@ -223,20 +256,42 @@ def scan(reg: dict, root: Path) -> tuple[list[str], list[str]]:
                 [data["source_release"]] if data.get("source_release") else []
             )
             for s in releases:
-                # A manifest uses its sources as alignment references unless
-                # it declares otherwise (imported open textbooks: "redistribute").
-                use = (s.get("metadata") or {}).get("use", "reference")
+                # Rule 6: the operation must be declared. An allowlisted,
+                # undeclared release is still checked as a reference.
+                declared = (s.get("metadata") or {}).get("use")
+                if declared is None:
+                    undeclared.add((Path(path).name, str(s.get("id"))))
+                use = declared or "reference"
                 check_use(reg, Path(path).name, s.get("source_url"), s.get("license"),
                           use, problems, warnings)
                 all_releases.append((Path(path).name, s))
     check_pins(all_releases, problems, warnings)
+    check_declared_uses(undeclared, load_allowlist(root), problems)
     return problems, warnings
+
+
+def publish_check(root: Path, manifest: str) -> list[str]:
+    """A manifest with a frozen rights discrepancy cannot be published."""
+    name = Path(manifest).name
+    return [f"{name}: cannot be published while {e.get('release_id')!r} has an open rights "
+            f"question ({e.get('open_decision')})"
+            for e in load_allowlist(root) if e.get("manifest") == name]
 
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--root", type=Path, default=REPO)
+    ap.add_argument("--publish-check", metavar="MANIFEST",
+                    help="fail if this manifest still has an allowlisted rights discrepancy")
     args = ap.parse_args(argv)
+    if args.publish_check:
+        blocked = publish_check(args.root, args.publish_check)
+        for b in blocked:
+            print(f"ERROR: {b}")
+        if blocked:
+            return 1
+        print(f"Publish rights check PASS: {Path(args.publish_check).name} has no open rights question.")
+        return 0
     reg = json.loads((args.root / "data" / "content_sources.json").read_text(encoding="utf-8"))
     problems = validate_registry(reg)
     found, warnings = scan(reg, args.root)

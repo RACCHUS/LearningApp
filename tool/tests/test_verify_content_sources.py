@@ -176,5 +176,60 @@ class PinTests(unittest.TestCase):
         self.assertTrue(any("checksum_status must be one of" in p for p in problems))
 
 
+
+class DeclaredUseTests(unittest.TestCase):
+    """Rule 6 (plan v1.2 §6, slice 5): declared operations and the frozen allowlist."""
+
+    URL = "https://openstax.org/books/college-algebra/pages/preface"
+
+    def manifest(self, use=None):
+        meta = {"checksum_status": "unverified_remote_document"}
+        if use:
+            meta["use"] = use
+        return {"source_releases": [{"id": "oc", "source_url": self.URL, "license": "CC BY 4.0", "metadata": meta}]}
+
+    def allowlist(self, *entries):
+        return {"entries": [dict(manifest="m.yaml", release_id="oc", issue="undeclared_use",
+                                 open_decision="D-test", **e) for e in entries]}
+
+    def scan(self, files):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            for rel, data in files.items():
+                path = root / rel
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(json.dumps(data), encoding="utf-8")
+            problems, _ = v.scan(REAL, root)
+            return problems, v.publish_check(root, "content/m.yaml")
+
+    def test_a_declared_use_passes(self):
+        self.assertEqual(self.scan({"content/m.yaml": self.manifest("reference")}), ([], []))
+
+    def test_an_undeclared_use_fails(self):
+        problems, _ = self.scan({"content/m.yaml": self.manifest()})
+        self.assertTrue(any("must declare metadata.use" in p for p in problems))
+
+    def test_an_allowlisted_release_passes_but_cannot_be_published(self):
+        problems, blocked = self.scan({"content/m.yaml": self.manifest(),
+                                       "data/rights_discrepancy_allowlist.json": self.allowlist({})})
+        self.assertEqual(problems, [])
+        self.assertTrue(blocked and "cannot be published" in blocked[0])
+
+    def test_a_stale_allowlist_entry_fails(self):
+        problems, _ = self.scan({"content/m.yaml": self.manifest("reference"),
+                                 "data/rights_discrepancy_allowlist.json": self.allowlist({})})
+        self.assertTrue(any("no longer a discrepancy" in p for p in problems))
+
+    def test_an_entry_needs_an_open_decision(self):
+        bad = {"entries": [{"manifest": "m.yaml", "release_id": "oc", "issue": "undeclared_use"}]}
+        problems, _ = self.scan({"content/m.yaml": self.manifest(), "data/rights_discrepancy_allowlist.json": bad})
+        self.assertTrue(any("open_decision" in p for p in problems))
+
+    def test_the_real_allowlist_blocks_only_its_manifests(self):
+        root = Path(__file__).resolve().parents[2]
+        self.assertTrue(v.publish_check(root, "content/clep_college_algebra.yaml"))
+        self.assertEqual(v.publish_check(root, "content/excel_fundamentals.yaml"), [])
+
+
 if __name__ == "__main__":
     unittest.main()

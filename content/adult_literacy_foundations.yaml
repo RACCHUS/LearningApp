@@ -13,6 +13,7 @@ source_release:
   license_name: "Unknown (link and reference only)"
   rights_note: "Synthesises 15 peer-reviewed adult literacy studies (Tighe et al., 2026) with untimed decoding mastery and environmental safety vocabulary."
   metadata:
+    use: "reference"  # declared operation (plan v1.2 §6; slice 5)
     checksum_status: "unverified_remote_document"
     checksum_verification_note: "Public PDF. No archived artifact is pinned; the earlier sha256 value was a placeholder and was removed (ingestion plan D-6, 2026-11-24)."
     track: "sublexical_orthographic"

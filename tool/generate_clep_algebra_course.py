@@ -64,6 +64,7 @@ def build_manifest() -> dict:
                 "license_name": "Proprietary Examination Blueprint",
                 "rights_note": "Referenced under fair use for educational curriculum architecture and objective alignment. CLEP and College Board are registered trademarks of the College Board.",
                 "metadata": {
+                    "use": "reference",
                     "role": "blueprint_authority",
                     "bank": "simulation_exam",
                     "checksum_status": "unverified_remote_document",
