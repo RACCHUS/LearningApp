@@ -121,8 +121,9 @@ class OutsideStudyFinishLine extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final plan = ref.watch(activeOutsideStudyPlanProvider).valueOrNull;
-    if (plan == null || plan.remainingMinutes == 0)
+    if (plan == null || plan.remainingMinutes == 0) {
       return const SizedBox.shrink();
+    }
     final days = dailyGoalMinutes > 0
         ? (plan.remainingMinutes / dailyGoalMinutes).ceil()
         : null;
