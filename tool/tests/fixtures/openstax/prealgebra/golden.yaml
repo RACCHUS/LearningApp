@@ -18,7 +18,7 @@ source_releases:
 target:
   slug: open-openstax-prealgebra-1e
   title: Prealgebra (open textbook)
-  version_code: OPENSTAX-EB2E29D-R6
+  version_code: OPENSTAX-EB2E29D-R7
   version_title: Prealgebra by OpenStax, CC BY 4.0
   version_description: Open textbook sections imported as LearningApp lessons.
   volatility_class: V0
@@ -682,3 +682,28 @@ domains:
         - open-openstax-prealgebra-1e-6-3
       concept_slugs:
       - open-openstax-prealgebra-1e-6-3
+    flashcards:
+    - front: What does “commission” mean?
+      back: A commission is a percentage of total sales as determined by the rate of commission.
+      concept_slugs:
+      - open-openstax-prealgebra-1e-6-3
+      citation: Prealgebra (OpenStax), Section 6.3, https://openstax.org/books/prealgebra/pages/6-3-solve-sales-tax-commission-and-discount-applications, CC BY 4.0
+      source_release_id: openstax-prealgebra-1e
+    - front: What does “discount” mean?
+      back: An amount of discount is a percent off the original price, determined by the discount rate.
+      concept_slugs:
+      - open-openstax-prealgebra-1e-6-3
+      citation: Prealgebra (OpenStax), Section 6.3, https://openstax.org/books/prealgebra/pages/6-3-solve-sales-tax-commission-and-discount-applications, CC BY 4.0
+      source_release_id: openstax-prealgebra-1e
+    - front: What does “sales tax” mean?
+      back: The sales tax is a percent of the purchase price.
+      concept_slugs:
+      - open-openstax-prealgebra-1e-6-3
+      citation: Prealgebra (OpenStax), Section 6.3, https://openstax.org/books/prealgebra/pages/6-3-solve-sales-tax-commission-and-discount-applications, CC BY 4.0
+      source_release_id: openstax-prealgebra-1e
+    - front: What does “mark-up” mean?
+      back: The mark-up is the amount added to the wholesale price, determined by the mark-up rate.
+      concept_slugs:
+      - open-openstax-prealgebra-1e-6-3
+      citation: Prealgebra (OpenStax), Section 6.3, https://openstax.org/books/prealgebra/pages/6-3-solve-sales-tax-commission-and-discount-applications, CC BY 4.0
+      source_release_id: openstax-prealgebra-1e

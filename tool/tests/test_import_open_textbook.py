@@ -310,6 +310,41 @@ class AdapterFixtureTests(unittest.TestCase):
         self.assertNotEqual(a["import_key"], key_all)
 
 
+class TermFlashcardTests(unittest.TestCase):
+    """Plan v1.2 §8.5 item 2: glossary terms reach the review queue."""
+
+    LESSON = {"citation": "Book (OpenStax), Section 1.2, https://x, CC BY 4.0",
+              "terms": [{"term": "base", "definition": "in exponential notation, the expression multiplied"},
+                        {"term": "Base", "definition": "duplicate with other casing"},
+                        {"term": "exponent", "definition": ""},
+                        {"term": "radicand", "definition": "The number under the radical symbol"}]}
+
+    def test_one_concept_tagged_cited_card_per_term(self):
+        cards = t.term_flashcards(self.LESSON, "concept-1-2", "src")
+        self.assertEqual([c["front"] for c in cards],
+                         ["What does “base” mean?", "What does “radicand” mean?"])
+        self.assertEqual(cards[0]["back"], "In exponential notation, the expression multiplied")
+        for c in cards:
+            self.assertEqual(c["concept_slugs"], ["concept-1-2"])
+            self.assertEqual(c["citation"], self.LESSON["citation"])
+            self.assertEqual(c["source_release_id"], "src")
+
+    def test_a_term_is_carded_once_across_sections(self):
+        seen: set[str] = set()
+        first = t.term_flashcards(self.LESSON, "c1", "src", seen)
+        again = t.term_flashcards({"citation": "c", "terms": [{"term": "base", "definition": "again"},
+                                                              {"term": "index", "definition": "root number"}]},
+                                  "c2", "src", seen)
+        self.assertEqual(len(first), 2)
+        self.assertEqual([c["front"] for c in again], ["What does “index” mean?"])
+
+    def test_imported_objectives_carry_their_cards(self):
+        manifest = AdapterFixtureTests().replay("college_algebra", "openstax-college-algebra-1e", 1, "1.3")[0]
+        obj = manifest["domains"][0]["objectives"][0]
+        self.assertEqual(len(obj["flashcards"]), len(obj["lessons"][0]["terms"]))
+        self.assertTrue(all(c["concept_slugs"] == obj["lessons"][0]["concept_slugs"] for c in obj["flashcards"]))
+
+
 class SourceGateTests(unittest.TestCase):
     def test_only_approved_cc_by_sources_can_be_imported(self):
         t.check_source("openstax-college-algebra-1e")
