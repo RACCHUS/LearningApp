@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:learning_pwa/models/companion/learner_resource.dart';
 import 'package:learning_pwa/models/learning_support/external_companion.dart';
 import 'package:learning_pwa/providers/learner_resource_provider.dart';
+import 'package:learning_pwa/screens/companion/goal_gaps_screen.dart';
 import 'package:learning_pwa/screens/companion/learner_resource_screen.dart';
 import 'package:learning_pwa/services/companion/learner_resource_store.dart';
 import 'package:learning_pwa/theme/design_tokens.dart';
@@ -11,10 +12,16 @@ import 'package:learning_pwa/theme/design_tokens.dart';
 /// learner's own courses, videos and books for this goal. Shown only while
 /// `content.learner_resources` is on; otherwise it takes no space.
 class LearnerResourcesCard extends ConsumerWidget {
-  const LearnerResourcesCard({super.key, required this.targetId, required this.targetVersionId});
+  const LearnerResourcesCard({
+    super.key,
+    required this.targetId,
+    required this.targetVersionId,
+    required this.targetSlug,
+  });
 
   final String targetId;
   final String targetVersionId;
+  final String targetSlug;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -23,17 +30,14 @@ class LearnerResourcesCard extends ConsumerWidget {
     final resources = ref.watch(learnerResourcesProvider(targetId));
     final stranded = ref.watch(strandedLocalResourcesProvider).valueOrNull ?? 0;
     final muted = theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant);
+    final GoalRef goal = (targetId: targetId, targetVersionId: targetVersionId, targetSlug: targetSlug);
 
     Future<void> add() async {
       final id = await showLearnerResourceDialog(context, ref, targetId: targetId);
       if (id == null || !context.mounted) return;
       await Navigator.of(context).push(
         MaterialPageRoute<void>(
-          builder: (_) => LearnerResourceScreen(
-            targetId: targetId,
-            targetVersionId: targetVersionId,
-            resourceId: id,
-          ),
+          builder: (_) => LearnerResourceScreen(goal: goal, resourceId: id),
         ),
       );
     }
@@ -101,14 +105,11 @@ class LearnerResourcesCard extends ConsumerWidget {
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () => Navigator.of(context).push(
                     MaterialPageRoute<void>(
-                      builder: (_) => LearnerResourceScreen(
-                        targetId: targetId,
-                        targetVersionId: targetVersionId,
-                        resourceId: r.id,
-                      ),
+                      builder: (_) => LearnerResourceScreen(goal: goal, resourceId: r.id),
                     ),
                   ),
                 ),
+              if ((resources.valueOrNull ?? const []).isNotEmpty) _GoalCoverageSummary(goal: goal),
               if (stranded > 0) ...[
                 const SizedBox(height: DesignTokens.space2),
                 Text(
@@ -132,6 +133,52 @@ class LearnerResourcesCard extends ConsumerWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// How the goal is covered once the learner has added something: the share
+/// in what they use, the share LearningApp can fill, and the share nothing
+/// covers yet, with a way to the gaps.
+class _GoalCoverageSummary extends ConsumerWidget {
+  const _GoalCoverageSummary({required this.goal});
+  final GoalRef goal;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final c = ref.watch(goalCoverageProvider(goal)).valueOrNull;
+    if (c == null || c.outline.itemCount == 0) return const SizedBox.shrink();
+    final theme = Theme.of(context);
+    final p = c.percents;
+    final basis = c.outline.usesWeights ? 'by weight' : 'by number of objectives';
+    return Padding(
+      padding: const EdgeInsets.only(top: DesignTokens.space2),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'How this goal is covered ($basis)',
+            style: theme.textTheme.labelLarge?.copyWith(fontWeight: FontWeight.bold),
+          ),
+          Text('In what you use: ${p.outside}%', key: const Key('goal_coverage_outside')),
+          if (c.appContentKnown) ...[
+            Text(
+              'Not in what you use, but LearningApp has lessons: ${p.appOnly}%',
+              key: const Key('goal_coverage_app_only'),
+            ),
+            Text('Not covered by anything yet: ${p.nothing}%', key: const Key('goal_coverage_nothing')),
+          ] else
+            Text('Not in what you use: ${100 - p.outside}%', key: const Key('goal_coverage_rest')),
+          TextButton.icon(
+            key: const Key('goal_coverage_gaps'),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(builder: (_) => GoalGapsScreen(goal: goal)),
+            ),
+            icon: const Icon(Icons.checklist_rtl, size: 18),
+            label: const Text('See the gaps'),
+          ),
+        ],
       ),
     );
   }

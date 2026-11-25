@@ -391,6 +391,7 @@ class TargetDetailScreen extends ConsumerWidget {
                         LearnerResourcesCard(
                           targetId: target.id,
                           targetVersionId: ver.id,
+                          targetSlug: target.slug,
                         ),
                         if (ver.isPublished) ...[
                           TargetCoverageCard(

@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:learning_pwa/models/companion/learner_resource.dart';
+import 'package:learning_pwa/models/content_generation/coverage_matrix.dart';
 import 'package:learning_pwa/models/curriculum_node.dart';
 import 'package:learning_pwa/models/objective_readiness.dart';
 import 'package:learning_pwa/providers/learner_resource_provider.dart';
 import 'package:learning_pwa/providers/learning_target_provider.dart';
+import 'package:learning_pwa/providers/target_coverage_provider.dart';
 import 'package:learning_pwa/providers/target_readiness_provider.dart';
 import 'package:learning_pwa/services/companion/learner_resource_store.dart';
 import 'package:learning_pwa/widgets/companion/learner_resources_card.dart';
@@ -67,11 +69,13 @@ Future<void> pump(WidgetTester tester, {bool enabled = true, bool account = fals
         learnerResourceStoreProvider.overrideWithValue(LocalLearnerResourceStore()),
         targetCurriculumNodesProvider.overrideWith((ref, id) async => nodes),
         objectiveReadinessProvider.overrideWith((ref, id) async => readiness),
+        // No published Coverage Matrix here; goal_coverage_flow_test covers it.
+        targetCoverageProvider.overrideWith((ref, slug) async => CoverageSummary([])),
       ],
       child: const MaterialApp(
         home: Scaffold(
           body: SingleChildScrollView(
-            child: LearnerResourcesCard(targetId: 't1', targetVersionId: 'v1'),
+            child: LearnerResourcesCard(targetId: 't1', targetVersionId: 'v1', targetSlug: 's1'),
           ),
         ),
       ),
