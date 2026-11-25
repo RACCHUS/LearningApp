@@ -1,3 +1,4 @@
+import 'package:learning_pwa/screens/companion/add_resource_screen.dart';
 import 'package:learning_pwa/screens/companion/companion_screen.dart';
 import 'package:learning_pwa/screens/settings_screen.dart';
 import 'package:learning_pwa/screens/governance/moderation_queue_screen.dart'
@@ -179,6 +180,16 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: 'target-outline',
         builder: (context, state) =>
             TargetOutlineScreen(targetId: state.pathParameters['targetId']!),
+      ),
+      // The link and title arrive in the query of the hash route, which is
+      // part of the URL fragment and is never sent to a server.
+      GoRoute(
+        path: '/add-resource',
+        name: 'add-resource',
+        builder: (context, state) => AddResourceScreen(
+          initialUrl: state.uri.queryParameters['url'],
+          initialTitle: state.uri.queryParameters['title'],
+        ),
       ),
       GoRoute(
         path: '/target/:targetId/companion/:resourceId',
