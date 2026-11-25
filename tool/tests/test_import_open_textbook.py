@@ -240,6 +240,76 @@ class PracticeMergeTests(unittest.TestCase):
                 self.assertTrue(q["id"].startswith("ca1e-pr-"))
 
 
+class AdapterFixtureTests(unittest.TestCase):
+    """Plan v1.2 §7.3 (slice 6): offline replay, golden output, loss report."""
+
+    FIX = Path(__file__).resolve().parent / "fixtures" / "openstax"
+    CASES = [("prealgebra", "openstax-prealgebra-1e", 6, "6.3"),
+             ("college_algebra", "openstax-college-algebra-1e", 1, "1.3")]
+
+    def replay(self, folder, source, chapter, section, report=None, sections=None):
+        import tempfile
+        t.set_fetch_mode("replay", self.FIX / folder)
+        try:
+            with tempfile.TemporaryDirectory() as empty:
+                return t.import_book(source, {chapter}, 0.0,
+                                     sections=sections if sections is not None else {section},
+                                     practice_dir=Path(empty), retrieved_at="2026-11-25T00:00:00Z",
+                                     report=report)
+        finally:
+            t.set_fetch_mode("live")
+
+    def test_replay_reproduces_the_golden_manifest_exactly(self):
+        import tempfile
+        for folder, source, chapter, section in self.CASES:
+            manifest, _ = self.replay(folder, source, chapter, section)
+            with tempfile.TemporaryDirectory() as d:
+                out = Path(d) / "m.yaml"
+                t.write_manifest(manifest, out)
+                self.assertEqual(out.read_text(encoding="utf-8"),
+                                 (self.FIX / folder / "golden.yaml").read_text(encoding="utf-8"), folder)
+
+    def test_replay_is_deterministic(self):
+        a, _ = self.replay(*self.CASES[0])
+        b, _ = self.replay(*self.CASES[0])
+        self.assertEqual(a, b)
+
+    def test_replay_never_fetches(self):
+        t.set_fetch_mode("replay", self.FIX / "prealgebra")
+        try:
+            with self.assertRaises(t.ImportProblem):
+                t.fetch("https://openstax.org/apps/archive/not-recorded.json")
+        finally:
+            t.set_fetch_mode("live")
+
+    def test_sections_filter_imports_only_the_selection(self):
+        manifest, _ = self.replay(*self.CASES[0])
+        codes = [o["code"] for d in manifest["domains"] for o in d["objectives"]]
+        self.assertEqual(codes, ["6.3"])
+        with self.assertRaises(t.ImportProblem):
+            self.replay("prealgebra", "openstax-prealgebra-1e", 6, "", sections={"9.9"})
+
+    def test_loss_report_separates_parsed_from_faithful(self):
+        report = {}
+        self.replay(*self.CASES[0], report=report)
+        self.assertEqual(report["adapter"], "openstax-archive")
+        self.assertEqual(report["adapter_revision"], t.IMPORT_REVISION)
+        (s,) = report["section_reports"]
+        self.assertEqual((s["number"], s["status"]), ("6.3", "graded"))
+        self.assertGreater(s["graded_questions"], 0)
+        self.assertTrue(s["source_locator"].startswith("https://openstax.org/books/prealgebra/pages/6-3"))
+        self.assertEqual(s["faithful"], not s["unsupported_math"] and s["figures_not_carried_over"] == 0)
+        self.assertEqual(report["faithful"], s["faithful"])
+
+    def test_import_key_is_stable_and_scope_sensitive(self):
+        a, b, c = {}, {}, {}
+        self.replay(*self.CASES[0], report=a)
+        self.replay(*self.CASES[0], report=b)
+        self.assertEqual(a["import_key"], b["import_key"])
+        key_all = t.import_key("openstax-prealgebra-1e", a["archive_book"], {6}, None, Path("nowhere"))
+        self.assertNotEqual(a["import_key"], key_all)
+
+
 class SourceGateTests(unittest.TestCase):
     def test_only_approved_cc_by_sources_can_be_imported(self):
         t.check_source("openstax-college-algebra-1e")
