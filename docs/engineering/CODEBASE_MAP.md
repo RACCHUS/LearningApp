@@ -223,7 +223,7 @@ Read to understand; no refactor proposals.
 
 ## Outside-resource companion {#companion}
 
-Gate `content.learner_resources` (OFF). Plan: `LEARNINGAPP_EXTERNAL_RESOURCE_COMPANION_PLAN_V1_0_2026-11-25.md`. "Studied" is self-report and never feeds readiness.
+Gate `content.learner_resources`. Plan: `LEARNINGAPP_EXTERNAL_RESOURCE_COMPANION_PLAN_V1_0_2026-11-25.md`. "Studied" is self-report and never feeds readiness.
 <!-- map-ref path="lib/screens/companion/learner_resource_screen.dart" role="owner" -->
 - Owner: that screen; card `widgets/companion/learner_resources_card.dart`; storage `services/companion/learner_resource_store.dart` (account or device); bundled companions stay in `learning_support/`.
 <!-- map-ref path="supabase/migrations/20261125030000_learner_external_resources.sql" role="contract" -->
