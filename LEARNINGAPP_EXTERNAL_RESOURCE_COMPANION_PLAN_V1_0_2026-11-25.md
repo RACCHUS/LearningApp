@@ -1,0 +1,427 @@
+# LearningApp — Companion to External Resources (Path C)
+
+## Implementation Plan — v1.0 (proposed, 2026-11-25)
+
+**Status:** accepted by the owner 2026-11-25 ("Start EX-0"). EX-0 is done (§8.1). No learner-facing feature is built yet.
+**Baseline:** `origin/main` at `d4a62a60`, 173 migrations.
+**Relation to other plans:** this plan expands Path C of the master plan v2.6 (§9) and §12 of the ingestion plan v1.2. It changes no decision in either. Their binding constraints apply here unchanged: one owner with AI doing the building and reviewing, zero spend, honest labels, append-only migrations through the guarded deploy path, default-OFF feature switches with real server gates, no feature removal, three navigation destinations.
+
+---
+
+## 1. Summary
+
+LearningApp has three ways to serve a learner: its own content (Path A), ingested open content (Path B), and content that stays outside the app (Path C). Path C exists today only in a narrow form. This plan makes it a full product mode.
+
+**The one idea the plan rests on:** the unit of companionship is the **objective of the learner's goal**, not the outside resource. LearningApp does not need to see, host or parse a video, course or book to be useful beside it. It needs to know which objectives of the goal the resource is meant to cover. From that it can supply everything the resource lacks:
+
+1. **Proof of readiness** (primary). Independent checks per objective, readiness by blueprint weight, and an honest statement of what the resource does not cover.
+2. **Supplement** (secondary). Fill-in lessons, practice and worked examples where the resource is thin or silent.
+3. **Structure and motivation** (third). The resource placed inside the path to a license, job, exam or degree, with a daily plan, a projected finish and a return point.
+
+**Recommended order of work:**
+
+- First, "bring your own resource" on the existing PWA, which works on every device with no install (EX-1 to EX-4).
+- Second, the resource catalog and recommendations (EX-5).
+- Third, device add-ons in order of reach per unit of effort: Android share target, an in-app player for embeddable video, a floating check window on desktop, then a browser extension (EX-6 to EX-9).
+
+The extension comes last on purpose. Section 5 explains why it is the smallest part of the answer, not the main one.
+
+---
+
+## 2. What exists today, and the gap
+
+Verified in the repository:
+
+| Capability | Where | State |
+|---|---|---|
+| Link record, focus note, independent checks (levels 0–2) | `lib/models/learning_support/external_companion.dart`, `content/companions/` (12 files) | Live; `content.external_companion` ON |
+| Learner picks the depth | `lib/providers/companion_depth_provider.dart` | Live, device-local |
+| Bridge as fill-in lesson (level 3) | `content/bridges/` | Live |
+| Ordered companion plan (level 4) | `lib/models/learning_support/companion_plan.dart`, `content/companion_plans/` (3 plans) | Live; ticks are device-local and never count |
+| Weekly dead-link check | `.github/workflows/external-link-check.yml` | Live |
+| Readiness by objective, coverage gate, projected finish | ingestion plan §8.5–§8.7 | Live for College Algebra, Prealgebra, Excel |
+| Objective-to-source mapping with review | `data/concept_mappings/`, `tool/verify_concept_mappings.py` | One mapping (CLEP College Algebra to OpenStax) |
+| Source and opportunity research files | `data/research/` | Seeded |
+| Companion prompt for the learner's own AI chat | master plan Appendix A.7 | Written, provisional |
+
+**The gap.** Every companion today is authored by the maintainer, bundled in the build, hangs off a Bridge, and points at OpenStax. A learner cannot say "I am taking this course" or "I am watching this playlist". So today:
+
+| Need | Missing |
+|---|---|
+| Any resource | A learner cannot add their own video, course, book or class |
+| Readiness | Outside study does not connect to the goal's readiness view. The learner cannot see "this course covers 60% of the exam" |
+| Supplement | Fill-ins exist only where a Bridge was hand-written for that companion |
+| Structure | Outside study is not in the daily plan or the projected finish |
+| Recommendation | No catalog of outside resources, no quality or cost comparison |
+| Devices | No capture from other apps, no in-app player, no side-by-side layout, no extension |
+| Sync | Companion state is device-local only, so it does not follow the learner from phone to laptop |
+
+---
+
+## 3. Product model
+
+### 3.1 The companion loop
+
+Every outside resource, on every device, goes through the same loop. Each step works without the others.
+
+| Step | What the learner sees | Engine reused |
+|---|---|---|
+| **Place** | "This course covers these parts of your goal. It does not cover these." | Blueprint weights, Coverage Matrix |
+| **Before** | Optional short diagnostic: "You already know sections 2 and 3. Start at 4." | Scoped diagnostic sessions (EXM-03) |
+| **During** | For each section: what to look for, in LearningApp's words. Notes. A check at the end of the section. | Companion focus notes, scratchpad |
+| **After** | Independent checks on the objectives just studied. Key terms enter spaced review. | Held-out checks, FSRS queue |
+| **Fill** | "The course skips percent format in spreadsheets. Here is a 6-minute lesson." | Bridges, lessons, parametric practice, manual AI generation |
+| **Goal** | Readiness by objective and a projected finish that include the outside study time | Objective readiness view, readiness projection |
+
+### 3.2 Evidence rules (unchanged, restated because the whole mode depends on them)
+
+- LearningApp cannot observe study that happens outside it. "I finished section 3" is **self-report**. It schedules the check and moves the plan forward. It never counts as mastery or readiness.
+- Only LearningApp's own independent checks count toward readiness, under the existing rules (6 held-out checks per objective, coverage gate at 60% of blueprint weight).
+- Checks are written independently of the resource. They are never copied from a course's quizzes or a book's exercises.
+- Where LearningApp has no checks for an objective, the readiness view says "not yet available", with the outside resource shown as the way to study it. It is never shown as done or as zero.
+
+### 3.3 Three kinds of resource record
+
+| Kind | Who creates it | Visible to | Review |
+|---|---|---|---|
+| **Catalog resource** | Maintainer (AI-authored, independent AI review) | Everyone | `reviewer_kind` recorded and shown |
+| **Learner resource** | The learner ("I'm using this") | Only that learner | None needed; it is private |
+| **Nominated resource** | A learner proposes their resource for the catalog | Moderators, then everyone | Existing contribution moderation |
+
+A learner resource needs only a title. A link, a kind (video, course, book, class, podcast, other), and the access cost are optional. This is what "support any and all content" means in practice: a paper textbook or an evening class is a valid resource.
+
+### 3.4 Mapping a resource to objectives
+
+The mapping is the hard part. It is a ladder, and every rung works with zero cost:
+
+| Rung | How | Quality | Cost |
+|---|---|---|---|
+| 0. No mapping | The learner studies outside and uses the goal's checks and readiness view directly | Goal-level only | None |
+| 1. Learner ticks | The learner ticks which objectives the resource covers, from the goal's list | Coarse, honest | None |
+| 2. Outline match | The learner pastes the table of contents or syllabus. The Reuse Gate's word-overlap matcher proposes objectives per section; the learner confirms | Section-level, unverified | None (on device) |
+| 3. Learner's own AI | Prompt pack A.7: the learner pastes the outline into their own AI chat and pastes back a structured map, which is validated like any generated slot | Section-level, AI-labelled | None to the operator |
+| 4. Reviewed catalog map | Maintainer-authored, independently AI-reviewed, in `data/resource_maps/`, checked in CI like `data/concept_mappings/` | Section-level with depth and confidence | Maintainer time |
+
+Rungs 2 and 3 use only what the learner pastes. LearningApp fetches nothing. Rung 4 uses public facts only (titles, section names, durations, stated outcomes).
+
+Every map records, per objective: the resource section or time range, the depth (introduces, teaches, practises), whether the resource has practice, and confidence. "Teaches but has no practice" is the trigger for a supplement.
+
+### 3.5 Recommendations
+
+The learner's benefit is the only ranking input. A catalog resource is scored for one goal at a time on:
+
+| Factor | Measure |
+|---|---|
+| Coverage | Share of the goal's blueprint weight mapped at "teaches" or deeper |
+| Authority and accuracy | Publisher type, review result, known errata |
+| Practice | Whether the resource gives meaningful practice |
+| Access cost | Free without sign-in, free with sign-in, paid. For paid: a price band and the date it was checked, never a live price |
+| Time | Stated length against blueprint weight covered |
+| Accessibility | Captions, transcript, language, reading level, works on a phone |
+| Freshness | Edition or publish date against the goal's current blueprint |
+
+Rules:
+
+- For every goal the app shows the **best free route** first, then the best overall route with its cost stated. A paid resource is never shown without the free alternative beside it.
+- LearningApp's own lessons and ingested lessons compete in the same list on the same factors. The app recommends an outside course over its own lesson when the outside course is better for that learner.
+- No paid placement, ever. `marketing.affiliate_links` stays a separate switch, stays OFF, and is barred from the ranking code by a test. If the owner ever turns it on, the label says so on every link it touches.
+- Every recommendation states why ("covers 82% of the exam, free, has practice, captions") and when it was last checked.
+- High-stakes goals (licensing, health, safety, legal) keep the ingestion plan's T3 rule: link-only, and no recommendation claim beyond what a person reviewed.
+
+---
+
+## 4. Research findings that shape the design
+
+Checked on 2026-11-25. Sources are listed in §13. Items marked "to verify" were not confirmed and are assigned to EX-0.
+
+| Finding | Consequence |
+|---|---|
+| iOS and iPadOS Safari do not support the Web Share Target API. The WebKit bug has been open since 2019 with no timeline. Android Chrome supports it for installed PWAs. | Capture from other apps is an Android add-on. iPhone and iPad use paste-a-link, plus an optional Apple Shortcut that opens the app with the link |
+| Chrome on Android phones still has no extension support. Google's extension work targets desktop-style Android only. Firefox for Android has an open extension ecosystem. | An extension cannot be the phone answer. It reaches desktop browsers and Firefox on Android |
+| Chrome's side panel API (`chrome.sidePanel`, Chrome 114+) and Firefox's `sidebar_action` are not compatible. | The extension is a thin shell around the web app, with two small manifests, not two products |
+| Document Picture-in-Picture: Chrome and Edge desktop; Firefox from version 151 (May 2026); not Safari; not mobile. | A floating check-and-timer window is a desktop enhancement only |
+| YouTube's developer policies forbid modifying, covering or blocking the embedded player, its controls, links or ads. Minimum player size 200×200. | The in-app player puts checks beside or below the video, never over it. Standard controls stay |
+| YouTube `captions.download` needs edit permission on the video and costs 200 of the default 10,000 daily quota units. | No transcripts. Mapping uses titles, chapters and the learner's own input. No Data API key is needed for the pilot |
+| Udemy closed its Affiliate API to new clients on 2025-01-01. Its remaining APIs serve instructors and business customers. | No provider catalog API can be assumed. The catalog is hand-curated research files, like `data/research/sources/` |
+| Median MOOC completion was 12.6% across 221 courses (Jordan, 2015). Among learners who intended to finish, 19.5% did (Reich). | Structure and motivation are a real gap in outside courses, not a nice-to-have. But completion is not the goal; readiness is |
+| Interpolated testing during video lectures improved learning in the original study (Szpunar et al., 2013). Later work found mixed effects on attention. | Section-end checks are justified by retrieval practice. The app makes no claim that they improve attention |
+| Prequestions before authentic lecture videos showed limited benefit (Toftness et al.). | The "Before" diagnostic is offered to skip known material, not as a learning boost, and is optional |
+
+**EX-0 results (2026-11-25).**
+
+| Item | Result |
+|---|---|
+| Chrome Web Store fee | Confirmed: a one-time US$5 developer registration fee, required before the dashboard can be used at all. X-11 stays an owner decision |
+| YouTube title lookup without a key | Confirmed by a direct request: the oEmbed endpoint answered a cross-origin request with title, author and thumbnail and no key. It is a third-party request from the learner's browser, so it runs only after the learner pastes a link and stays behind `content.learner_resources` |
+| Safari extensions on iOS | No sidebar support found; popup support not confirmed. No effect: the Safari extension stays an unbuilt paid slot (X-12) |
+| Coursera and edX catalog access | Both gate catalog access behind an application (Coursera: affiliates and partners; edX: a reviewed request). Sources for Coursera were unofficial and disagreed. Conclusion unchanged: the catalog is hand-curated |
+| Khan Academy | Its terms limit use to personal, non-commercial use and bar distributing its content to third parties. Link-only; no embed assumed |
+| Modern States | Free, self-paced, aligned to CLEP College Algebra, account needed, exam-fee voucher after its final exam at 75% or more. Its terms of service were not found, so it is link-only |
+| Evidence register | `ER-11` added (MOOC completion, descriptive). Interpolated-testing studies were **not** registered: both primary sources refused automated access. Section-end checks rest on `ER-01` and the optional diagnostic on `ER-10` until those are read |
+
+---
+
+## 5. Device strategy
+
+The question raised was how to be a capable companion on phones and tablets, where an extension does not reach. The answer is to treat the **web app as the companion on every device**, and to treat everything else as an optional shortcut into it.
+
+### 5.1 Layers
+
+| Layer | What it is | Phone | Tablet | Laptop / desktop | Cost |
+|---|---|---|---|---|---|
+| **L0 Bookend** | Open the resource in its own app or tab. LearningApp gives the brief before and the check after. A "Back to your plan" return point always shows. | Yes | Yes | Yes | None |
+| **L1 Side-by-side** | A compact companion layout that stays usable in a narrow pane: iPad Split View or Slide Over, Android split screen, two desktop windows | Android split screen only; small | Yes, the main tablet mode | Yes | None |
+| **L2 Capture** | Send a link from another app into LearningApp | Android: share sheet. iPhone: paste, or Apple Shortcut | Same split as phone | Paste, bookmarklet, extension | None |
+| **L3 In-app player** | For embeddable video only: the player on top, the section brief and checks below | Yes, the main phone mode for such video | Yes | Yes | None |
+| **L4 Floating window** | A small always-on-top window with the timer, the current focus note and the next check | No | No | Chrome, Edge, Firefox 151+ | None |
+| **L5 Extension** | A side panel that shows the companion for the current tab | Firefox for Android only | No | Chrome, Edge, Firefox | See §5.4 |
+| **L6 Native wrapper** | Store apps with native share and picture-in-picture | — | — | — | Paid developer accounts; **extension slot, not built** |
+
+### 5.2 Phones
+
+A phone shows one thing at a time, so the phone companion is built around **moments**, not a second pane:
+
+- **Before:** a one-screen brief (what this section is for, what to look for, 15 to 40 minutes).
+- **During:** nothing on screen. An optional reminder at the planned end time through the existing study-reminder web push.
+- **After:** the learner returns (from the reminder, the home-screen icon or the share sheet) straight into the check for that section.
+- **Embeddable video** plays inside the app (L3), so the brief, the video and the check are one screen and no app switching is needed.
+
+### 5.3 Tablets
+
+Tablets are the best side-by-side device and need no new technology, only layout work. The companion route must stay fully usable at about 320dp wide: one column, large targets, no navigation rail, the section list collapsed to a stepper. The ≥900dp rail rule is unaffected because the companion pane is narrow by definition; the Help control stays in the top right.
+
+### 5.4 The extension, scoped
+
+The extension is a convenience for desktop study. It is deliberately thin:
+
+- It contains almost no logic. The side panel loads the web app's compact companion route.
+- It uses `activeTab` only. It reads the current tab's address when the learner clicks the button, and nothing else. No content scripts, no page reading, no history, no background tracking. This keeps the store review simple and the privacy promise short.
+- If the address matches a resource the learner has, the panel opens that resource's companion. If not, it offers "Add this as a resource".
+- Order: Firefox (desktop and Android; listing is free), then Chrome and Edge. The Chrome Web Store charges a one-time US$5 developer registration fee (confirmed in EX-0). Under the zero-cost rule that is an owner decision. Until then the Chrome build ships as a documented manual install for testers only.
+- Safari extensions need a paid Apple developer account. Extension slot; not built.
+
+### 5.5 What the companion never does
+
+- No scraping of pages, transcripts, quizzes or answer banks.
+- No reading of what the learner does on another site, in any layer.
+- No capture of signed-in sessions.
+- No server-side fetch of a learner's link (see §7.3).
+- No automatic "completed" from watch time, even in the in-app player. Playing a video is not evidence.
+
+---
+
+## 6. Learner experience
+
+Navigation stays Learn, Library, Progress. No new destination, and no badge on a destination.
+
+| Place | Addition |
+|---|---|
+| **Learn** | Next Action can be an outside step: "Watch section 4 (about 25 min), then a 5-minute check". The daily plan counts its time estimate |
+| **Library** | "Add something you're using" in the Create chooser. On a goal: a "Ways to study this" list (LearningApp, open textbook, outside) with the §3.5 reasons |
+| **Target detail** | "Your resources for this goal", each with its coverage of the blueprint. One combined view: covered by a resource, covered by LearningApp, not covered by anything yet |
+| **Progress** | Readiness by objective already exists. Each objective gains a quiet source line ("studied in: <resource>") and the self-reported / checked distinction |
+| **Companion route** | `/companion/<resource>`: the stepper of sections, each with brief, open, done-studying, check, fill-in. Compact layout by default under 600dp |
+
+Copy rules, carried from the existing companion screens: "Open (leaves LearningApp)" on every outside link; the access label on every resource; "studied" and "checked" are different words everywhere; AI-reviewed is never shown as person-reviewed.
+
+Guests can use everything on one device. Signing in adds sync across devices, which matters more here than elsewhere because the usual pattern is video on one device and checks on another.
+
+---
+
+## 7. Architecture
+
+### 7.1 Principles
+
+- One objective identity. Resource maps point at the same objective and concept IDs as lessons, Bridges and held-out checks. No second taxonomy, no second progress ledger.
+- Catalog data lives in the repository first (`data/`, validated in CI) and moves to the database only when its shape is stable, as the research files did.
+- Learner data is private by RLS, exportable and deletable, and never enters analytics.
+
+### 7.2 Data
+
+**Repository (no migration):**
+
+- `data/external_resources/<id>.yaml` — catalog resource: publisher, title, kind, link, edition or publish date, access, price band with as-of date, language, accessibility facts, rights posture (`link_only` by default), embed permission, `last_checked_at`, `reviewer_kind`.
+- `data/resource_maps/<target>__<resource>.yaml` — per objective: sections or time ranges, depth, has-practice, confidence, plus the review record. Same shape and checker pattern as `data/concept_mappings/`.
+- `tool/verify_external_resources.py` in CI: schema, https links, access and price-band rules, map objectives exist in the target manifest, review present, no ranking field that could carry a paid placement.
+- The existing link check covers the new files.
+
+**Database (additive migrations, guarded deploy):**
+
+| Table | Holds | Access |
+|---|---|---|
+| `learner_external_resources` | The learner's resources: title, kind, optional link, optional catalog ID, goal | Owner only |
+| `learner_resource_sections` | The learner's outline and their confirmed objective map (rungs 1–3) | Owner only |
+| `learner_resource_progress` | Self-reported "studied" per section, with time; resume point | Owner only |
+| `external_resource_nominations` | A learner's proposal to add a resource to the catalog; reuses the contribution moderation states | Owner and moderators |
+
+No table stores anything read from an outside site. Self-report rows are a new evidence tier that the readiness functions ignore by construction; a database test asserts that no readiness or coverage function reads `learner_resource_progress`.
+
+Guests use the same shapes in device-local storage, moved to the account on sign-in. EX-1 confirms whether an existing guest-to-account path can carry this or a small one is needed.
+
+### 7.3 Privacy and security
+
+- A learner's list of resources shows what they are studying and why. It is personal data: private, in the data export, erased with the account.
+- Links are normalized on the device before saving: https only, tracking parameters removed, known redirectors refused.
+- A link arriving by share, Shortcut or extension travels in the URL **fragment** of the hash-routed app, so it never reaches the server or its logs until the learner saves it.
+- The server never fetches a learner-supplied link. That removes server-side request forgery, cost and terms-of-service risk in one decision. Titles are typed, pasted, or filled from the catalog match.
+- The in-app player loads a third party. It uses the provider's privacy-enhanced embed, loads only after the learner taps play, and sits behind its own switch. The production CSP gains exactly one `frame-src` entry; test it on a preview channel, because only a release build served there enforces the real CSP.
+- Pasted outlines are text. They are length-capped, rendered as text only, and treated as untrusted input to the matcher and to any prompt.
+- Nominations go through moderation before anything is public, with the DMCA policy unchanged.
+
+### 7.4 Feature controls
+
+`content.external_companion` (ON) keeps covering the bundled companions. New keys, each seeded OFF, each with a server gate at its write boundary and a bypass test:
+
+| Key | Covers | OFF behaviour |
+|---|---|---|
+| `content.learner_resources` | Adding, mapping and tracking the learner's own resources; companion route | Bundled companions and plans work as today; saved data is kept |
+| `content.resource_recommendations` | Catalog list and "Ways to study this" ranking | Goals show LearningApp content only |
+| `content.companion_capture` | Share target, Shortcut and bookmarklet entry | Paste-a-link still works |
+| `content.companion_embeds` | In-app third-party player | "Open (leaves LearningApp)" |
+| `content.companion_extension` | The route and handshake the extension uses | Extension shows "not available" |
+
+All five are no-cost features. None is a paid extension slot. The native wrappers and the Safari extension are the paid slots and get keys only if they are ever built.
+
+### 7.5 Code placement
+
+Following `AGENTS.md`: models in `lib/models/companion/`, services in `lib/services/companion/`, providers in `lib/providers/`, widgets in `lib/widgets/companion/`, the route screen in `lib/screens/companion/`. The existing `learning_support` companion files stay where they are; the new mode reads them, it does not move them. Add a "Companion to external resources" section to `docs/engineering/CODEBASE_MAP.md` in the first PR that adds an owner. The extension gets its own top-level `extension/` folder, created only when EX-9 starts.
+
+---
+
+## 8. Work packages
+
+Each package is one or a few PRs, lands behind its switch, and is verified as a guest and signed in, on phone width, tablet split width and desktop.
+
+| ID | Package | Delivers | Depends on |
+|---|---|---|---|
+| **EX-0** | Verification and contracts | Confirm the "to verify" items (§4, §5.4); evidence-register entries; schemas for resources and maps; pilot selection (§9); CODEBASE_MAP section | — |
+| **EX-1** | Outside study on a goal (rung 0–1) | "I'm studying this elsewhere" on a target; learner resources; tick objectives; "studied" self-report; checks and readiness by objective reachable from the resource; `content.learner_resources` | EX-0 |
+| **EX-2** | Coverage and gaps | The combined coverage view; "not covered by your course"; fill-in routing to existing lessons, Bridges, parametric practice, Wanted Board and the prompt cart | EX-1 |
+| **EX-3** | Outline mapping (rungs 2–3) | Paste an outline; on-device matching; confirm screen; A.7 prompt pack round trip with validation | EX-1 |
+| **EX-4** | Plan and motivation | Outside steps in Next Action and the daily plan; time estimates in the projected finish; resume point; reminder at planned end; compact companion route for split view (L0, L1) | EX-1 |
+| **EX-5** | Catalog and recommendations | `data/external_resources/`, `data/resource_maps/`, CI checker; "Ways to study this"; best free route rule; ranking-isolation test; nominations; `content.resource_recommendations` | EX-0; first maps from §9 |
+| **EX-6** | Capture (L2) | `share_target` in `web/manifest.json` (Android); fragment-based add route; bookmarklet; published Apple Shortcut; `content.companion_capture` | EX-1 |
+| **EX-7** | In-app player (L3) | Compliant embed for one provider; brief above, checks below; time-range pointers; CSP change; `content.companion_embeds` | EX-4 |
+| **EX-8** | Floating window (L4) | Document Picture-in-Picture companion on supporting desktop browsers, hidden elsewhere | EX-4 |
+| **EX-9** | Extension (L5) | Thin side-panel shell; Firefox first; Chrome build pending the fee decision; `content.companion_extension` | EX-4, EX-6 |
+| **EX-10** | Evaluation | Descriptive outcome report (§10) through the existing consented analytics, with small-group suppression | EX-1 to EX-5 |
+
+### 8.1 Status
+
+| Package | Status |
+|---|---|
+| EX-0 | **Done 2026-11-25.** Verification results in §4. Contracts: `data/external_resources/` and `data/resource_maps/` with `tool/verify_external_resources.py` in CI (21 tests). Pilot P1 selected and seeded (§9). `ER-11` registered. **Not done:** the CODEBASE_MAP section. The map is at its size cap (250 of 250 lines, 20,477 of 20,480 bytes), so a new section needs either a higher cap in `tool/verify_codebase_map.py` or cuts to other sections. That is decided in EX-1, which adds the first app owner. The catalog checker was planned for EX-5 and was brought forward so the schemas are enforced from the first file; EX-5 keeps the app-side list, ranking and the dead-link check for catalog links |
+| EX-1 to EX-10 | Not started |
+
+**Acceptance, common to all:** switch OFF leaves existing behaviour and data intact; bypass attempts against the server gate fail; no readiness number changes from self-report alone; `flutter analyze`, `flutter test`, `supabase test db` and every verify-job step pass locally before push; accessibility checks at phone width and 200% text.
+
+**Acceptance story for the first milestone (EX-1 to EX-4).** A learner preparing for CLEP College Algebra adds a free video course. They tick or paste its sections. The app shows that the course covers part of the blueprint and names what it leaves out. Next Action says which section to watch. They watch it in the provider's app on a tablet with LearningApp in split view, mark it studied, and take the independent check. Readiness by objective moves because of the check, not the tick. The gap list offers a LearningApp lesson for a skipped objective. The projected finish includes the remaining video time. The same state appears on their phone.
+
+---
+
+## 9. Pilot
+
+Three resource types, chosen to stress different parts of the design. All on goals that already have full held-out coverage, so readiness is real from day one.
+
+| Pilot | Goal | Resource type | Tests |
+|---|---|---|---|
+| P1 | CLEP College Algebra | **Selected in EX-0:** Modern States "College Algebra" (`data/external_resources/modern-states-college-algebra.yaml`): free with an account, aligned to the same exam, and its voucher covers the exam fee. Link-only; record and map are not yet reviewed | Map quality, best free route, bookend and split-view modes |
+| P2 | Excel Fundamentals | A paid course the learner brings (no catalog entry, no embed) | Rungs 1–3, bookend and split-view modes, cost honesty |
+| P3 | Prealgebra | A printed or PDF textbook the learner already owns | A resource with no link at all; outline paste; phone bookend mode |
+
+P1 cannot be embedded, so it does not test the in-app player. The embeddable-video resource for EX-7 is chosen when EX-7 starts, from a provider whose terms allow embedding.
+
+The limit to plan around: readiness is only as wide as LearningApp's own check bank. Companion mode on a goal with no held-out checks gives structure and supplement but can only say "not enough checks yet". That is the ingestion plan's §8.6 bank-depth constraint, and this plan raises its priority: every new goal offered for companion use needs checks before lessons.
+
+---
+
+## 10. Measurement
+
+Descriptive only, from opted-in learners, with groups under 5 withheld, as in the learner-signal report.
+
+- Share of learners with a goal who add an outside resource; which rung of mapping they reach.
+- Share of "studied" sections followed by a check within 7 days, and the check results.
+- Share of gap offers opened, and whether the objective later reaches "strong".
+- Readiness coverage reached by learners using outside resources against those using only LearningApp content. Reported side by side with no causal claim.
+- Return rate after a break, and dead-link and re-resolution counts.
+- Never collected: which outside pages a learner visits, watch time, or resource links in analytics events.
+
+---
+
+## 11. Risks
+
+| Risk | Handling |
+|---|---|
+| Provider terms change, or an embed is refused | Embeds are one optional layer behind a switch. L0 always works |
+| Checks drift into copying a course's own quizzes | Independent authoring rule, the existing verbatim-overlap audit pattern, AI review checklist item |
+| A wrong map tells a learner a course covers what it does not | Confidence and review labels on every map; the check, not the map, decides readiness; learners can report a wrong map (extend the check-disputes flow, which covers Bridge checks only today) |
+| Recommendations look like endorsements or ads | Reasons and check dates shown; best free route always shown; ranking-isolation test; "not affiliated with <provider>" wording |
+| Prices go stale | Price bands with as-of dates; freshness queue raises a review when the date ages out |
+| Learners treat "studied" as "ready" | Two different words and two different visuals everywhere; readiness only from checks |
+| Maintainer time for catalog maps | Rungs 0–3 need no maintainer. Catalog maps are built only for demand-ranked goals, with AI authoring and independent AI review |
+| Scope: five device layers | Layers are independent and ordered. EX-1 to EX-5 deliver the product; EX-6 to EX-9 can stop at any point |
+| High-stakes goals | T3 rule: link-only, no readiness claim beyond what a person reviewed |
+
+---
+
+## 12. Decisions
+
+Recommended defaults. Under the owner's standing delegation these stand unless the owner changes them; the items marked **owner** involve money or production activation and are not delegated by this document.
+
+| ID | Decision | Recommendation |
+|---|---|---|
+| X-1 | Unit of companionship | The goal's objectives, not the resource (§1) |
+| X-2 | First milestone | EX-1 to EX-4: bring your own resource on the PWA, all devices |
+| X-3 | Extension priority | Last, thin, `activeTab` only |
+| X-4 | Server fetch of learner links | Never |
+| X-5 | Transcripts and page content | Never read; mapping from learner input and public outlines only |
+| X-6 | Self-report | Its own tier; moves the plan; never readiness |
+| X-7 | Ranking | Learner benefit only; best free route always shown; affiliate code barred from ranking |
+| X-8 | Catalog storage | Repository files first, database later |
+| X-9 | Sync | Server tables for signed-in learners; device-local for guests |
+| X-10 | Pilots | P1–P3 in §9 |
+| X-11 | Chrome Web Store fee | **Owner.** Until decided: Firefox listing plus manual Chrome install for testers |
+| X-12 | Native apps and Safari extension | **Owner.** Paid extension slots; not built |
+| X-13 | Switching each new key ON in production | **Owner**, per key, after browser verification as guest and signed in |
+
+---
+
+## 13. Sources
+
+Platform and policy:
+
+- [WebKit bug 194593: Web Share Target](https://bugs.webkit.org/show_bug.cgi?id=194593)
+- [MDN: `share_target` manifest member](https://developer.mozilla.org/en-US/docs/Web/Manifest/Reference/share_target)
+- [Chrome: Receiving shared data with the Web Share Target API](https://developer.chrome.com/docs/capabilities/web-apis/web-share-target)
+- [Android Authority: desktop Chrome for Android and extensions](https://www.androidauthority.com/try-new-chrome-for-android-with-extensions-3569268)
+- [Android Central: Chrome for Android is getting extensions, but not as expected](https://www.androidcentral.com/apps-software/chrome-for-android-is-getting-extensions-but-not-like-youd-expect)
+- [Mozilla: preparing desktop extensions for Firefox on Android](https://blog.mozilla.org/addons/2023/08/10/prepare-your-firefox-desktop-extension-for-the-upcoming-android-release/)
+- [Chrome: `chrome.sidePanel` API](https://developer.chrome.com/docs/extensions/reference/api/sidePanel)
+- [MDN: `sidebarAction`](https://developer.mozilla.org/en-US/Add-ons/WebExtensions/API/sidebarAction)
+- [Chrome: Document Picture-in-Picture](https://developer.chrome.com/docs/web-platform/document-picture-in-picture)
+- [Mozilla: intent to ship Document Picture-in-Picture](https://groups.google.com/a/mozilla.org/g/dev-platform/c/ZYhF7VNXwQU)
+- [YouTube API Services: Developer Policies](https://developers.google.com/youtube/terms/developer-policies)
+- [YouTube API Services: Required Minimum Functionality](https://developers.google.com/youtube/terms/required-minimum-functionality)
+- [YouTube Data API: quota costs](https://developers.google.com/youtube/v3/determine_quota_cost)
+- [YouTube Data API: `captions.download`](https://developers.google.com/youtube/data/reference/rest/v3/captions/download)
+- [Udemy provider listing (Affiliate API closed to new clients)](https://apis.io/providers/udemy/)
+
+Learning research:
+
+- [Jordan (2015), MOOC completion rates revisited](https://dx.doi.org/10.19173/irrodl.v16i3.2112)
+- [Chronicle: Rethinking low completion rates in MOOCs (Reich)](https://www.chronicle.com/blogs/wiredcampus/rethinking-low-completion-rates-in-moocs)
+- [Szpunar, Khan and Schacter (2013), interpolated tests in online lectures](https://pmc.ncbi.nlm.nih.gov/articles/PMC3631699)
+- [Welhaf et al. (2022), interpolated testing and pretesting during a video lecture](https://cognitiveresearchjournal.springeropen.com/articles/10.1186/s41235-022-00372-y)
+- [Toftness et al., limited effects of prequestions with authentic lecture videos](https://pure.royalholloway.ac.uk/files/30437641/JARMAC_Toftness_et_al.pdf)
+
+EX-0 verification (2026-11-25):
+
+- [Chrome Web Store: register your developer account](https://developer.chrome.com/docs/webstore/register)
+- [Chromium Blog: developer dashboard and registration fee](https://blog.chromium.org/2020/03/new-developer-dashboard-and.html)
+- [Modern States: College Algebra](https://modernstates.org/course/college_algebra/) and [FAQ](https://modernstates.org/faq/)
+- [Khan Academy: using its videos, name, materials and links](https://support.khanacademy.org/hc/en-us/articles/202262954-Can-I-use-Khan-Academy-s-videos-name-materials-links-)
+- [Apple: assessing a Safari web extension's browser compatibility](https://developer.apple.com/documentation/safariservices/assessing-your-safari-web-extension-s-browser-compatibility)
+- [edX Course Catalog API: authentication and access request](https://course-catalog-api-guide.readthedocs.io/en/latest/authentication/)
+- [Coursera Catalog API listing (unofficial)](https://apis.io/apis/coursera/coursera-catalog-api/)
+
+**Still not verified:** the Modern States terms of service; Safari popup support on iOS; Coursera's official catalog terms; the full text of Jordan (2015), Szpunar et al. (2013) and Welhaf et al. (2022). None blocks EX-1.
