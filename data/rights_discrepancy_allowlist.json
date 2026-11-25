@@ -1,20 +1,19 @@
 {
   "about": "Frozen list of known rights discrepancies (ingestion plan v1.2 §6, slice 5). Every curriculum manifest source release must declare its operation in metadata.use; an undeclared release fails CI unless it is listed here, tied to an open decision. An entry that no longer matches a real discrepancy also fails, so this list can only shrink. A manifest with an entry here cannot be published (tool/ci/verify_content_sources.py --publish-check).",
   "frozen_on": "2026-11-25",
-  "entries": [
+  "entries": [],
+  "resolved": [
     {
       "manifest": "clep_college_algebra.yaml",
       "release_id": "openstax-college-algebra-1e",
-      "issue": "undeclared_use",
-      "detail": "The release calls OpenStax an 'instructional foundation for algebraic principles, definitions, worked examples, and pedagogical explanations' and says exposition 'adheres to' the 1st edition, so the lessons may be adapted rather than referenced. Compare the lesson text with the 1st edition and declare reference or adapt (adapt is allowed for this source) before publication.",
-      "open_decision": "D-13: reconcile CLEP College Algebra with the imported textbook lessons before ingesting it"
+      "resolved_on": "2026-11-25",
+      "resolution": "Declared reference after a verbatim-overlap audit against OpenStax College Algebra 1e and 2e (data/rights_audits/2026-11-25_clep_openstax.json)."
     },
     {
       "manifest": "clep_introductory_psychology.yaml",
       "release_id": "openstax-psychology-1e",
-      "issue": "undeclared_use",
-      "detail": "The release says lesson text was not re-verified line by line against the 1st edition after the D-5 re-point from Psychology 2e (CC BY-NC-SA 4.0, link and reference only). Confirm whether any lesson text is adapted and from which edition, then declare the use, before publication.",
-      "open_decision": "D-5 follow-up: verify Psychology lesson text against the 1st edition before publication"
+      "resolved_on": "2026-11-25",
+      "resolution": "Declared reference after a verbatim-overlap audit against OpenStax Psychology 1e and 2e (data/rights_audits/2026-11-25_clep_openstax.json); no 2e text."
     }
   ]
 }

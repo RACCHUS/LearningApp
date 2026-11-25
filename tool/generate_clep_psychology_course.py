@@ -108,8 +108,10 @@ def build_manifest() -> dict:
                 "retrieved_at": "2026-11-20T00:00:00Z",
                 "license": "Creative Commons Attribution 4.0 International (CC BY 4.0)",
                 "license_name": "CC BY 4.0",
-                "rights_note": "Senior Contributing Authors: Rose M. Spielman (Content Lead), Kathryn Dumper, William Jenkins, Arlene Lacombe, Marilyn Lovett, Marion Perlmutter (OpenStax, Rice University; from the 1st-edition preface). Instructional reference for concepts and section alignment. Re-pointed from Psychology 2e (CC BY-NC-SA 4.0) to the 1st edition by owner decision D-5 on 2026-11-24. Section citations keep their numbers; each cited 1e section was checked against its lesson topic, but lesson text was not re-verified line by line against 1e.",
+                "rights_note": "Senior Contributing Authors: Rose M. Spielman (Content Lead), Kathryn Dumper, William Jenkins, Arlene Lacombe, Marilyn Lovett, Marion Perlmutter (OpenStax, Rice University; from the 1st-edition preface). Instructional reference for concepts and section alignment. Re-pointed from Psychology 2e (CC BY-NC-SA 4.0) to the 1st edition by owner decision D-5 on 2026-11-24. Section citations keep their numbers; each cited 1e section was checked against its lesson topic. The lessons are written independently, not adapted from either edition (verbatim-overlap audit 2026-11-25 against 1e and 2e: 0.06% of 8-word shingles, standard terms only; nothing taken from 2e).",
                 "metadata": {
+                    "use": "reference",
+                    "use_evidence": "data/rights_audits/2026-11-25_clep_openstax.json",
                     "role": "instructional_reference",
                     "edition": "1st Edition",
                     "checksum_status": "unverified_remote_document",
