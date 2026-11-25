@@ -115,7 +115,9 @@ CREATE TEMP TABLE ana001b_interval_one AS
 SELECT is((SELECT payload->'results'->0->>'status'
   FROM ana001b_interval_one),'accepted',
  'Valid 60-second active interval accepted');
-SELECT is((SELECT active_seconds FROM public.learner_activity_progress
+-- Rows are per UTC day: a run within ~80 s after UTC midnight splits these
+-- intervals across two days, so total across days (the union is per day).
+SELECT is((SELECT sum(active_seconds)::integer FROM public.learner_activity_progress
   WHERE content_id='prog_01_variables'
     AND user_id='ab100000-0000-4000-8000-000000000001'),
  60,'One valid active-study interval yields exactly 60 seconds');
@@ -129,7 +131,7 @@ CREATE TEMP TABLE ana001b_interval_two AS
    'interval_start',(now()-interval '60 seconds')::text,
    'interval_end',(now()-interval '10 seconds')::text)
  ]) AS payload;
-SELECT is((SELECT active_seconds FROM public.learner_activity_progress
+SELECT is((SELECT sum(active_seconds)::integer FROM public.learner_activity_progress
   WHERE content_id='prog_01_variables'
     AND user_id='ab100000-0000-4000-8000-000000000001'),
  70,'Overlapping device intervals count union, not sum');
