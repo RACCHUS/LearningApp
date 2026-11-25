@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/governance/site_feature_keys.dart';
+import '../models/objective_readiness.dart';
 import '../models/readiness_coverage.dart';
 import '../models/user_concept_state.dart';
 import '../services/concept_evidence_service.dart';
@@ -51,6 +52,50 @@ final readinessCoverageProvider =
     return ReadinessCoverage.fromJson(json);
   } catch (_) {
     return const ReadinessCoverage.unavailable();
+  }
+});
+
+/// Reads readiness by objective for a target version (plan v1.2 §8.7).
+abstract class ObjectiveReadinessApi {
+  Future<Map<String, dynamic>?> fetch(String targetVersionId);
+}
+
+class SupabaseObjectiveReadinessApi implements ObjectiveReadinessApi {
+  @override
+  Future<Map<String, dynamic>?> fetch(String targetVersionId) async {
+    final res = await Supabase.instance.client.rpc(
+      'get_target_objective_readiness',
+      params: {'p_target_version_id': targetVersionId},
+    );
+    return res == null ? null : Map<String, dynamic>.from(res as Map);
+  }
+}
+
+final objectiveReadinessApiProvider = Provider<ObjectiveReadinessApi>(
+  (ref) => SupabaseObjectiveReadinessApi(),
+);
+
+/// Switch `learning.objective_readiness_view` (default OFF).
+final objectiveReadinessViewEnabledProvider = Provider<bool>((ref) {
+  return isSiteFeatureEnabled(
+    ref.watch(siteFeatureSnapshotProvider).valueOrNull,
+    SiteFeatureKeys.learningObjectiveReadinessView,
+    runtimeReady: SiteFeatureRuntime.snapshotEnabled,
+  );
+});
+
+/// Null while the switch is off or when the view can't be read: the card is
+/// then simply not shown (it adds detail; nothing else depends on it).
+final objectiveReadinessProvider =
+    FutureProvider.family<TargetObjectiveReadiness?, String>((ref, targetVersionId) async {
+  if (!ref.watch(objectiveReadinessViewEnabledProvider) || targetVersionId.isEmpty) {
+    return null;
+  }
+  try {
+    final json = await ref.watch(objectiveReadinessApiProvider).fetch(targetVersionId);
+    return json == null ? null : TargetObjectiveReadiness.fromJson(json);
+  } catch (_) {
+    return null;
   }
 });
 
