@@ -11,6 +11,7 @@ import 'package:learning_pwa/providers/learning_target_provider.dart';
 import 'package:learning_pwa/providers/target_readiness_provider.dart';
 import 'package:learning_pwa/theme/design_tokens.dart';
 import 'package:learning_pwa/screens/companion/goal_gaps_screen.dart';
+import 'package:learning_pwa/screens/companion/resource_outline_screen.dart';
 import 'package:learning_pwa/widgets/companion/learner_resources_card.dart';
 
 /// One outside resource beside its goal (companion plan v1.0, EX-1): the
@@ -183,14 +184,32 @@ class LearnerResourceScreen extends ConsumerWidget {
             style: muted,
           ),
           const SizedBox(height: DesignTokens.space2),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: OutlinedButton.icon(
-              key: const Key('learner_resource_check'),
-              onPressed: () => context.push('/target/$targetId/outline'),
-              icon: const Icon(Icons.fact_check_outlined),
-              label: const Text('Check yourself in LearningApp'),
-            ),
+          Wrap(
+            spacing: DesignTokens.space2,
+            runSpacing: DesignTokens.space2,
+            children: [
+              OutlinedButton.icon(
+                key: const Key('learner_resource_check'),
+                onPressed: () => context.push('/target/$targetId/outline'),
+                icon: const Icon(Icons.fact_check_outlined),
+                label: const Text('Check yourself in LearningApp'),
+              ),
+              if (outline.itemCount > 0)
+                OutlinedButton.icon(
+                  key: const Key('learner_resource_outline'),
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => ResourceOutlineScreen(goal: goal, resourceId: resource.id),
+                    ),
+                  ),
+                  icon: const Icon(Icons.format_list_numbered),
+                  label: Text(
+                    resource.sections.isEmpty
+                        ? 'Paste its outline to tick faster'
+                        : 'Edit outline (${resource.sections.length == 1 ? '1 part' : '${resource.sections.length} parts'})',
+                  ),
+                ),
+            ],
           ),
           if (nodes.isLoading)
             const Padding(
@@ -206,6 +225,7 @@ class LearnerResourceScreen extends ConsumerWidget {
                 covered: covered.contains(item.key),
                 studied: resource.objectives[item.key] != null,
                 status: item.code == null ? null : statusByCode[item.code],
+                sections: covered.contains(item.key) ? resource.sectionTitlesFor(item.key) : const [],
                 onCovers: (v) => run(
                   () => store.setObjectives(resource.id, v ? {...covered, item.key} : ({...covered}..remove(item.key))),
                 ),
@@ -256,7 +276,11 @@ class _ObjectiveRow extends StatelessWidget {
     required this.onStudied,
     required this.onCheck,
     required this.hasIndependentChecks,
+    this.sections = const [],
   });
+
+  /// Where in the resource the learner said this is, from their outline.
+  final List<String> sections;
 
   final ResourceOutlineItem item;
   final bool covered;
@@ -291,6 +315,14 @@ class _ObjectiveRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(item.label, style: theme.textTheme.bodyMedium),
+                if (sections.isNotEmpty)
+                  Text(
+                    sections.length > 2
+                        ? 'In: ${sections.take(2).join('; ')} and ${sections.length - 2} more'
+                        : 'In: ${sections.join('; ')}',
+                    key: Key('sections_${item.key}'),
+                    style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                  ),
                 if (status != null)
                   Text(
                     'LearningApp checks: ${status!.label}',
