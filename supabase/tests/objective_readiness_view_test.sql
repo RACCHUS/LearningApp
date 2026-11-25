@@ -79,9 +79,13 @@ create function pg_temp.dom(p_label text, p_code text) returns jsonb language sq
   select d from ov, jsonb_array_elements(result->'domains') d where label = p_label and d->>'code' = p_code;
 $$;
 
--- 1. The switch is seeded off and computes nothing while off.
-select is((select enabled from private.site_feature_controls where feature_key = 'learning.objective_readiness_view'),
-  false, 'the switch is seeded off');
+-- 1. Activated by migration 20261124080000 (audited); while off it computes nothing.
+select ok(exists(select 1 from private.site_feature_change_audit
+                 where feature_key = 'learning.objective_readiness_view' and next_enabled
+                   and reason like '%20261124080000%'),
+  'the activation is recorded in the feature audit');
+update private.site_feature_controls set enabled = false
+  where feature_key = 'learning.objective_readiness_view';
 select pg_temp.snap('off', 'authenticated', 'd5400000-0000-4000-8000-000000000001');
 select is((select result from ov where label = 'off'), '{"enabled": false}'::jsonb, 'while off it returns only enabled: false');
 
