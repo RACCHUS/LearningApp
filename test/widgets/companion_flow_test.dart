@@ -210,7 +210,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(
         textOf(tester, 'companion_summary'),
-        '0 of 1 parts studied. About 10 min of outside study left.',
+        '0 of 1 part studied. About 10 min of outside study left.',
       );
       final saved = (await LocalLearnerResourceStore().list('t1')).single;
       expect(saved.sections.single.studied, isFalse);

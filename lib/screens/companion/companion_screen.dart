@@ -177,7 +177,7 @@ class CompanionScreen extends ConsumerWidget {
           : ' At least ${formatStudyMinutes(remaining)} of outside study left '
                 '($noEstimate ${noEstimate == 1 ? 'part has' : 'parts have'} no time estimate).';
       summary =
-          '${resource.studiedSectionCount} of ${sections.length} parts studied.$time';
+          '${resource.studiedSectionCount} of ${sections.length} ${sections.length == 1 ? 'part' : 'parts'} studied.$time';
     }
 
     return Scaffold(
