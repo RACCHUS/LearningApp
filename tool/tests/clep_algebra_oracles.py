@@ -848,8 +848,10 @@ def prompt_fingerprint(prompt: str) -> str:
 # and the fingerprint updated in the same change.
 PROMPT_SHA256: dict[str, str] = {
     "alg-sim-rational-exponent-power-of-monomial": "82123e80e598c618",
-    "alg-sim-simplify-radical-72x5y6": "9c84c0ddc6ca233c",
-    "alg-sim-scientific-notation-quotient": "b3ff0ab56d79f3cc",
+    # 2026-11-25: $...$ delimiters added (notation profile); the math, and so the oracle, is unchanged.
+    "alg-sim-simplify-radical-72x5y6": "5442399e0cb558b4",
+    # 2026-11-25: $...$ delimiters added (notation profile); the math, and so the oracle, is unchanged.
+    "alg-sim-scientific-notation-quotient": "f754cb76ec48d834",
     "alg-sim-factor-gcf-then-difference-of-squares": "dd04ace5918f1ff9",
     "alg-sim-factor-difference-of-cubes": "0f4341217d4378bb",
     "alg-sim-factor-by-grouping-four-terms": "a78231cd1da8c838",
@@ -956,6 +958,11 @@ def verify_item(item_id: str, prompt: str, options: list[str], key: int) -> list
     if oracle is None:
         return [f"{item_id}: no oracle"]
     problems = []
+    # An option wrapped whole in $...$ (notation profile, plan v1.2 §8.9) is
+    # the same mathematics as its reviewed text: the delimiters only make
+    # the app render it as math.
+    options = [o[1:-1] if len(o) > 2 and o.startswith("$") and o.endswith("$") and o.count("$") == 2 else o
+               for o in options]
     if PROMPT_SHA256.get(item_id) != prompt_fingerprint(prompt):
         problems.append(f"{item_id}: prompt changed since its oracle was derived; re-derive and update PROMPT_SHA256")
     if len(set(options)) != len(options):

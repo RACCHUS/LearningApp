@@ -24,7 +24,7 @@ DOMAIN_04 = {
             "description": "Distinguish rational and irrational numbers, apply commutative, associative, distributive, and identity properties, and find prime factorizations.",
             "sort_order": 1,
             "importance": "core",
-            "citation": "OpenStax College Algebra 1e, Section 1.1: Real Numbers: Algebra Essentials",
+            "citation": "OpenStax College Algebra 1e, Section 1.1: Real Numbers: Algebra Essentials (divisibility and primes are original LearningApp content)",
             "concepts": [
                 {
                     "slug": "alg-real-number-subsets",
@@ -46,7 +46,7 @@ DOMAIN_04 = {
                     "name": "Divisibility and Prime Factorization",
                     "short_definition": "The Fundamental Theorem of Arithmetic and prime factor decomposition.",
                     "description": "Every integer greater than 1 factors uniquely into a product of prime powers, used to find GCF and LCM.",
-                    "citation": "OpenStax College Algebra 1e, Section 1.1",
+                    "citation": "Original LearningApp content; divisibility and primes are not covered in OpenStax College Algebra 1e",
                     "prerequisites": ["alg-real-number-subsets"],
                 },
             ],
@@ -197,7 +197,7 @@ DOMAIN_04 = {
                             "explanation": "Decompose 360 into prime factors: 360 = 10 * 36 = (2 * 5) * (4 * 9) = 2 * 5 * 2^2 * 3^2 = 2^3 * 3^2 * 5. All bases (2, 3, 5) are prime.",
                             "difficulty": "beginner",
                             "cognitive_level": "comprehension",
-                            "citation": "OpenStax College Algebra 1e, Section 1.1",
+                            "citation": "Original LearningApp content; divisibility and primes are not covered in OpenStax College Algebra 1e",
                             "concept_slugs": ["alg-divisibility-primes"],
                         },
                     ],
@@ -427,7 +427,7 @@ DOMAIN_04 = {
             "description": "Find nth terms of arithmetic and geometric sequences, compute partial sums of arithmetic and geometric series, and determine convergence of infinite geometric series.",
             "sort_order": 3,
             "importance": "core",
-            "citation": "OpenStax College Algebra 1e, Section 9.1: Sequences and Notations; Section 9.2: Arithmetic Sequences; Section 9.3: Geometric Sequences",
+            "citation": "OpenStax College Algebra 1e, Section 9.1: Sequences and Their Notations; Section 9.2: Arithmetic Sequences; Section 9.3: Geometric Sequences; Section 9.4: Series and Their Notations",
             "concepts": [
                 {
                     "slug": "alg-arithmetic-sequences",
@@ -449,7 +449,7 @@ DOMAIN_04 = {
                     "name": "Infinite Geometric Series Convergence",
                     "short_definition": "An infinite geometric series converges if and only if |r| < 1, with sum S_inf = a1 / (1 - r).",
                     "description": "If |r| >= 1, the infinite series diverges and has no finite sum.",
-                    "citation": "OpenStax College Algebra 1e, Section 9.3",
+                    "citation": "OpenStax College Algebra 1e, Section 9.4",
                     "prerequisites": ["alg-geometric-sequences"],
                 },
             ],
@@ -600,7 +600,7 @@ DOMAIN_04 = {
                             "explanation": "Identify first term a_1 = 12 and common ratio r = 4/12 = 1/3. Since |r| = 1/3 < 1, the infinite geometric series converges. Use sum formula S_inf = a_1 / (1 - r): S_inf = 12 / (1 - 1/3) = 12 / (2/3) = 12 * (3/2) = 18.",
                             "difficulty": "intermediate",
                             "cognitive_level": "comprehension",
-                            "citation": "OpenStax College Algebra 1e, Section 9.3",
+                            "citation": "OpenStax College Algebra 1e, Section 9.4",
                             "concept_slugs": ["alg-infinite-geometric-series"],
                         },
                     ],
@@ -630,7 +630,7 @@ DOMAIN_04 = {
             "description": "Compute factorials and combinations nCr, apply the Binomial Theorem to expand powers of binomials, and find specific coefficients and terms.",
             "sort_order": 4,
             "importance": "core",
-            "citation": "OpenStax College Algebra 1e, Section 9.5: Counting Principles; Section 9.6: The Binomial Theorem",
+            "citation": "OpenStax College Algebra 1e, Section 9.5: Counting Principles; Section 9.6: Binomial Theorem",
             "concepts": [
                 {
                     "slug": "alg-factorials-permutations",

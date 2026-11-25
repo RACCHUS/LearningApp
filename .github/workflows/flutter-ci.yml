@@ -341,6 +341,10 @@ jobs:
         run: |
           "$CI_TEST_PYTHON" tool/verify_research.py
           "$CI_TEST_PYTHON" -m unittest discover -s tool/tests -p 'test_verify_research.py' -v
+          "$CI_TEST_PYTHON" tool/verify_concept_mappings.py
+          "$CI_TEST_PYTHON" -m unittest discover -s tool/tests -p 'test_verify_concept_mappings.py' -v
+          "$CI_TEST_PYTHON" tool/check_notation.py
+          "$CI_TEST_PYTHON" -m unittest discover -s tool/tests -p 'test_check_notation.py' -v
 
       - name: Verify original practice items (SymPy, merged and deep enough)
         run: |

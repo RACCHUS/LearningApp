@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../models/assessment.dart';
 import '../../providers/assessment_provider.dart';
+import '../../widgets/lesson/blocks/markdown_math.dart';
 
 /// Displays the assessment results after submission: score, level change,
 /// question-by-question breakdown, and retry/done actions.
@@ -273,7 +274,7 @@ class _QuestionResultCard extends StatelessWidget {
                       else
                         const SizedBox(width: 16),
                       const SizedBox(width: 8),
-                      Expanded(child: Text(option)),
+                      Expanded(child: mathAwareText(option, null)),
                     ],
                   ),
                 );

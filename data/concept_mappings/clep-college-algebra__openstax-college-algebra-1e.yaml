@@ -1,0 +1,567 @@
+# Validate: python tool/verify_concept_mappings.py
+about: 'Reviewed mapping from CLEP College Algebra objectives to OpenStax College Algebra 1e sections (ingestion
+  plan v1.2 §8.1; D-13 reconciliation). match: exact, partial, prerequisite, supplementary or unrelated; depth compares
+  the source section with the objective. Concepts are never merged on title alone: CLEP keeps its own concepts,
+  and this file records where each objective''s content lives in the open textbook. Check: python tool/verify_concept_mappings.py'
+from:
+  manifest: clep_college_algebra.yaml
+  target_slug: clep-college-algebra
+to:
+  source_release_id: openstax-college-algebra-1e
+  archive_book: 9b08c294-057f-4201-9f48-5d6ad992740d@ebc5beb
+  imported_manifest: open_openstax_college_algebra_1e.yaml
+method: Section titles from the pinned archive's table of contents; topic coverage checked by term counts in each
+  section's text (for example 'symmetr' in 3.3 vs 3.5), then read. The CLEP manifest's citations were corrected
+  to match (2026-11-25).
+authored_by: ai-drafted-by-claude
+review:
+  status: approved
+  reviewer_kind: ai
+  reviewer_model: claude-sonnet-5-5
+  reviewed_on: '2026-11-25'
+  notes: 'Independent AI review (different model from the author), checked against the pinned 1e section text. First
+    pass: changes required on 8 entries plus 4 missing sections (5.4, 3.6, 4.2, 6.1); all applied. Second pass:
+    approved, 44 entries. Evidence: data/concept_mappings/reviews/2026-11-25_clep-college-algebra.json'
+mappings:
+- objective: '1.1'
+  sections:
+  - section: '1.2'
+    title: Exponents and Scientific Notation
+    match: exact
+    depth: same
+    roles:
+    - teach
+    - example
+    - practice
+    locator: https://openstax.org/books/college-algebra/pages/1-2-exponents-and-scientific-notation
+    confidence: high
+    imported_in_learningapp: true
+  - section: '1.3'
+    title: Radicals and Rational Exponents
+    match: exact
+    depth: same
+    roles:
+    - teach
+    - example
+    - practice
+    locator: https://openstax.org/books/college-algebra/pages/1-3-radicals-and-rational-exponents
+    confidence: high
+    imported_in_learningapp: true
+- objective: '1.2'
+  sections:
+  - section: '1.4'
+    title: Polynomials
+    match: partial
+    depth: same
+    roles:
+    - teach
+    - example
+    - practice
+    locator: https://openstax.org/books/college-algebra/pages/1-4-polynomials
+    confidence: high
+    imported_in_learningapp: true
+    note: Polynomial arithmetic except division
+  - section: '1.5'
+    title: Factoring Polynomials
+    match: exact
+    depth: same
+    roles:
+    - teach
+    - example
+    - practice
+    locator: https://openstax.org/books/college-algebra/pages/1-5-factoring-polynomials
+    confidence: high
+    imported_in_learningapp: true
+  - section: '5.4'
+    title: Dividing Polynomials
+    match: partial
+    depth: same
+    roles:
+    - teach
+    - example
+    - practice
+    locator: https://openstax.org/books/college-algebra/pages/5-4-dividing-polynomials
+    confidence: high
+    imported_in_learningapp: false
+    note: Polynomial long and synthetic division
+- objective: '1.3'
+  sections:
+  - section: '1.6'
+    title: Rational Expressions
+    match: exact
+    depth: same
+    roles:
+    - teach
+    - example
+    - practice
+    locator: https://openstax.org/books/college-algebra/pages/1-6-rational-expressions
+    confidence: high
+    imported_in_learningapp: true
+    note: Operations and complex rational expressions; domain restrictions are not discussed here
+  - section: '3.2'
+    title: Domain and Range
+    match: partial
+    depth: source_deeper
+    roles:
+    - teach
+    - example
+    locator: https://openstax.org/books/college-algebra/pages/3-2-domain-and-range
+    confidence: medium
+    imported_in_learningapp: false
+    note: Domain of expressions with denominators, as part of a full domain treatment
+- objective: '1.4'
+  sections:
+  - section: '1.1'
+    title: 'Real Numbers: Algebra Essentials'
+    match: prerequisite
+    depth: source_shallower
+    roles:
+    - teach
+    locator: https://openstax.org/books/college-algebra/pages/1-1-real-numbers-algebra-essentials
+    confidence: low
+    imported_in_learningapp: true
+    note: 'Real numbers only: absolute value bars appear as grouping symbols, not defined'
+  - section: '2.6'
+    title: Other Types of Equations
+    match: partial
+    depth: same
+    roles:
+    - teach
+    - example
+    - practice
+    locator: https://openstax.org/books/college-algebra/pages/2-6-other-types-of-equations
+    confidence: high
+    imported_in_learningapp: false
+    note: Absolute value equations
+  - section: '2.7'
+    title: Linear Inequalities and Absolute Value Inequalities
+    match: partial
+    depth: source_deeper
+    roles:
+    - teach
+    - example
+    - practice
+    locator: https://openstax.org/books/college-algebra/pages/2-7-linear-inequalities-and-absolute-value-inequalities
+    confidence: high
+    imported_in_learningapp: false
+    note: Absolute value as distance, and absolute value inequalities
+  - section: '3.6'
+    title: Absolute Value Functions
+    match: partial
+    depth: source_deeper
+    roles:
+    - teach
+    - example
+    - practice
+    locator: https://openstax.org/books/college-algebra/pages/3-6-absolute-value-functions
+    confidence: medium
+    imported_in_learningapp: false
+    note: Absolute value functions; the piecewise definition is covered only briefly in 1e
+- objective: '1.5'
+  sections:
+  - section: '6.3'
+    title: Logarithmic Functions
+    match: exact
+    depth: same
+    roles:
+    - teach
+    - example
+    - practice
+    locator: https://openstax.org/books/college-algebra/pages/6-3-logarithmic-functions
+    confidence: high
+    imported_in_learningapp: false
+  - section: '6.5'
+    title: Logarithmic Properties
+    match: exact
+    depth: same
+    roles:
+    - teach
+    - example
+    - practice
+    locator: https://openstax.org/books/college-algebra/pages/6-5-logarithmic-properties
+    confidence: high
+    imported_in_learningapp: false
+    note: Includes change of base
+- objective: '2.1'
+  sections:
+  - section: '2.2'
+    title: Linear Equations in One Variable
+    match: exact
+    depth: same
+    roles:
+    - teach
+    - example
+    - practice
+    locator: https://openstax.org/books/college-algebra/pages/2-2-linear-equations-in-one-variable
+    confidence: high
+    imported_in_learningapp: false
+    note: Also covers slope-intercept form
+  - section: '2.3'
+    title: Models and Applications
+    match: partial
+    depth: same
+    roles:
+    - example
+    - practice
+    locator: https://openstax.org/books/college-algebra/pages/2-3-models-and-applications
+    confidence: medium
+    imported_in_learningapp: false
+    note: Word problems solved with linear equations, and formulas
+  - section: '2.7'
+    title: Linear Inequalities and Absolute Value Inequalities
+    match: exact
+    depth: same
+    roles:
+    - teach
+    - example
+    - practice
+    locator: https://openstax.org/books/college-algebra/pages/2-7-linear-inequalities-and-absolute-value-inequalities
+    confidence: high
+    imported_in_learningapp: false
+    note: Linear inequalities and interval notation
+  - section: '4.1'
+    title: Linear Functions
+    match: supplementary
+    depth: source_deeper
+    roles:
+    - teach
+    locator: https://openstax.org/books/college-algebra/pages/4-1-linear-functions
+    confidence: medium
+    imported_in_learningapp: false
+    note: Linear functions and rate of change
+  - section: '4.2'
+    title: Modeling with Linear Functions
+    match: partial
+    depth: same
+    roles:
+    - teach
+    - example
+    - practice
+    locator: https://openstax.org/books/college-algebra/pages/4-2-modeling-with-linear-functions
+    confidence: high
+    imported_in_learningapp: false
+    note: Building linear models from verbal descriptions
+- objective: '2.2'
+  sections:
+  - section: '2.5'
+    title: Quadratic Equations
+    match: exact
+    depth: same
+    roles:
+    - teach
+    - example
+    - practice
+    locator: https://openstax.org/books/college-algebra/pages/2-5-quadratic-equations
+    confidence: high
+    imported_in_learningapp: false
+    note: Factoring, square roots, completing the square, quadratic formula, discriminant
+  - section: '5.1'
+    title: Quadratic Functions
+    match: partial
+    depth: source_deeper
+    roles:
+    - example
+    locator: https://openstax.org/books/college-algebra/pages/5-1-quadratic-functions
+    confidence: medium
+    imported_in_learningapp: false
+    note: Vertex and maximum height problems for the projectile model
+- objective: '2.3'
+  sections:
+  - section: '2.2'
+    title: Linear Equations in One Variable
+    match: partial
+    depth: same
+    roles:
+    - teach
+    - example
+    - practice
+    locator: https://openstax.org/books/college-algebra/pages/2-2-linear-equations-in-one-variable
+    confidence: high
+    imported_in_learningapp: false
+    note: Rational equations, clearing denominators with the LCD
+  - section: '2.6'
+    title: Other Types of Equations
+    match: exact
+    depth: same
+    roles:
+    - teach
+    - example
+    - practice
+    locator: https://openstax.org/books/college-algebra/pages/2-6-other-types-of-equations
+    confidence: high
+    imported_in_learningapp: false
+    note: Radical, rational-exponent and absolute value equations
+- objective: '2.4'
+  sections:
+  - section: '7.1'
+    title: 'Systems of Linear Equations: Two Variables'
+    match: exact
+    depth: same
+    roles:
+    - teach
+    - example
+    - practice
+    locator: https://openstax.org/books/college-algebra/pages/7-1-systems-of-linear-equations-two-variables
+    confidence: high
+    imported_in_learningapp: false
+  - section: '7.3'
+    title: 'Systems of Nonlinear Equations and Inequalities: Two Variables'
+    match: exact
+    depth: same
+    roles:
+    - teach
+    - example
+    - practice
+    locator: https://openstax.org/books/college-algebra/pages/7-3-systems-of-nonlinear-equations-and-inequalities-two-variables
+    confidence: high
+    imported_in_learningapp: false
+- objective: '2.5'
+  sections:
+  - section: '6.1'
+    title: Exponential Functions
+    match: partial
+    depth: source_deeper
+    roles:
+    - teach
+    - example
+    - practice
+    locator: https://openstax.org/books/college-algebra/pages/6-1-exponential-functions
+    confidence: high
+    imported_in_learningapp: false
+    note: Compound and continuous interest formulas
+  - section: '6.6'
+    title: Exponential and Logarithmic Equations
+    match: exact
+    depth: same
+    roles:
+    - teach
+    - example
+    - practice
+    locator: https://openstax.org/books/college-algebra/pages/6-6-exponential-and-logarithmic-equations
+    confidence: high
+    imported_in_learningapp: false
+  - section: '6.7'
+    title: Exponential and Logarithmic Models
+    match: exact
+    depth: same
+    roles:
+    - teach
+    - example
+    - practice
+    locator: https://openstax.org/books/college-algebra/pages/6-7-exponential-and-logarithmic-models
+    confidence: high
+    imported_in_learningapp: false
+    note: Exponential and logarithmic models; compound interest is in 6.1
+- objective: '3.1'
+  sections:
+  - section: '3.1'
+    title: Functions and Function Notation
+    match: exact
+    depth: same
+    roles:
+    - teach
+    - example
+    - practice
+    locator: https://openstax.org/books/college-algebra/pages/3-1-functions-and-function-notation
+    confidence: high
+    imported_in_learningapp: false
+  - section: '3.2'
+    title: Domain and Range
+    match: exact
+    depth: same
+    roles:
+    - teach
+    - example
+    - practice
+    locator: https://openstax.org/books/college-algebra/pages/3-2-domain-and-range
+    confidence: high
+    imported_in_learningapp: false
+- objective: '3.2'
+  sections:
+  - section: '3.4'
+    title: Composition of Functions
+    match: exact
+    depth: same
+    roles:
+    - teach
+    - example
+    - practice
+    locator: https://openstax.org/books/college-algebra/pages/3-4-composition-of-functions
+    confidence: high
+    imported_in_learningapp: false
+- objective: '3.3'
+  sections:
+  - section: '2.1'
+    title: The Rectangular Coordinate Systems and Graphs
+    match: partial
+    depth: same
+    roles:
+    - teach
+    - example
+    locator: https://openstax.org/books/college-algebra/pages/2-1-the-rectangular-coordinate-systems-and-graphs
+    confidence: medium
+    imported_in_learningapp: false
+    note: Intercepts of graphs
+  - section: '3.3'
+    title: Rates of Change and Behavior of Graphs
+    match: partial
+    depth: same
+    roles:
+    - teach
+    - example
+    - practice
+    locator: https://openstax.org/books/college-algebra/pages/3-3-rates-of-change-and-behavior-of-graphs
+    confidence: high
+    imported_in_learningapp: false
+    note: Increasing and decreasing intervals, extrema
+  - section: '3.5'
+    title: Transformation of Functions
+    match: partial
+    depth: same
+    roles:
+    - teach
+    - example
+    locator: https://openstax.org/books/college-algebra/pages/3-5-transformation-of-functions
+    confidence: medium
+    imported_in_learningapp: false
+    note: 'Symmetry: even and odd functions'
+- objective: '3.4'
+  sections:
+  - section: '3.5'
+    title: Transformation of Functions
+    match: exact
+    depth: same
+    roles:
+    - teach
+    - example
+    - practice
+    locator: https://openstax.org/books/college-algebra/pages/3-5-transformation-of-functions
+    confidence: high
+    imported_in_learningapp: false
+- objective: '3.5'
+  sections:
+  - section: '3.7'
+    title: Inverse Functions
+    match: exact
+    depth: same
+    roles:
+    - teach
+    - example
+    - practice
+    locator: https://openstax.org/books/college-algebra/pages/3-7-inverse-functions
+    confidence: high
+    imported_in_learningapp: false
+- objective: '3.6'
+  sections:
+  - section: '5.6'
+    title: Rational Functions
+    match: exact
+    depth: same
+    roles:
+    - teach
+    - example
+    - practice
+    locator: https://openstax.org/books/college-algebra/pages/5-6-rational-functions
+    confidence: high
+    imported_in_learningapp: false
+- objective: '4.1'
+  sections:
+  - section: '1.1'
+    title: 'Real Numbers: Algebra Essentials'
+    match: partial
+    depth: same
+    roles:
+    - teach
+    - example
+    - practice
+    locator: https://openstax.org/books/college-algebra/pages/1-1-real-numbers-algebra-essentials
+    confidence: high
+    imported_in_learningapp: true
+    note: Classifying real numbers and their properties; divisibility and primes have no OpenStax 1e source
+- objective: '4.2'
+  sections:
+  - section: '2.4'
+    title: Complex Numbers
+    match: partial
+    depth: same
+    roles:
+    - teach
+    - example
+    - practice
+    locator: https://openstax.org/books/college-algebra/pages/2-4-complex-numbers
+    confidence: high
+    imported_in_learningapp: false
+    note: Powers of i, conjugates and the complex plane; modulus is not covered
+- objective: '4.3'
+  sections:
+  - section: '9.1'
+    title: Sequences and Their Notations
+    match: partial
+    depth: same
+    roles:
+    - teach
+    - example
+    locator: https://openstax.org/books/college-algebra/pages/9-1-sequences-and-their-notations
+    confidence: high
+    imported_in_learningapp: false
+  - section: '9.2'
+    title: Arithmetic Sequences
+    match: partial
+    depth: same
+    roles:
+    - teach
+    - example
+    - practice
+    locator: https://openstax.org/books/college-algebra/pages/9-2-arithmetic-sequences
+    confidence: high
+    imported_in_learningapp: false
+    note: The sequence only; its series sums are in 9.4
+  - section: '9.3'
+    title: Geometric Sequences
+    match: partial
+    depth: same
+    roles:
+    - teach
+    - example
+    - practice
+    locator: https://openstax.org/books/college-algebra/pages/9-3-geometric-sequences
+    confidence: high
+    imported_in_learningapp: false
+    note: The sequence only; its series sums are in 9.4
+  - section: '9.4'
+    title: Series and Their Notations
+    match: partial
+    depth: same
+    roles:
+    - teach
+    - example
+    - practice
+    locator: https://openstax.org/books/college-algebra/pages/9-4-series-and-their-notations
+    confidence: high
+    imported_in_learningapp: false
+    note: Summation notation, arithmetic and finite geometric series sums, and infinite geometric series
+- objective: '4.4'
+  sections:
+  - section: '9.5'
+    title: Counting Principles
+    match: partial
+    depth: same
+    roles:
+    - teach
+    - example
+    - practice
+    locator: https://openstax.org/books/college-algebra/pages/9-5-counting-principles
+    confidence: high
+    imported_in_learningapp: false
+    note: Factorials, permutations and combinations; the Binomial Theorem is in 9.6
+  - section: '9.6'
+    title: Binomial Theorem
+    match: exact
+    depth: same
+    roles:
+    - teach
+    - example
+    - practice
+    locator: https://openstax.org/books/college-algebra/pages/9-6-binomial-theorem
+    confidence: high
+    imported_in_learningapp: false

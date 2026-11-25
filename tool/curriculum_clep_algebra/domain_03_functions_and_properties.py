@@ -423,21 +423,21 @@ DOMAIN_03 = {
             "description": "Find x- and y-intercepts algebraically, determine even/odd function symmetry, and identify local extrema and intervals of increase and decrease.",
             "sort_order": 3,
             "importance": "core",
-            "citation": "OpenStax College Algebra 1e, Section 3.3: Rates of Change and Behavior of Graphs",
+            "citation": "OpenStax College Algebra 1e, Section 2.1: The Rectangular Coordinate Systems and Graphs; Section 3.3: Rates of Change and Behavior of Graphs; Section 3.5: Transformation of Functions",
             "concepts": [
                 {
                     "slug": "alg-function-intercepts",
                     "name": "Intercepts of Functions",
                     "short_definition": "Algebraic determination of y-intercept f(0) and x-intercepts f(x) = 0.",
                     "description": "The y-intercept is where graph crosses the y-axis (at most one for functions); x-intercepts are real zeros of the function.",
-                    "citation": "OpenStax College Algebra 1e, Section 3.3",
+                    "citation": "OpenStax College Algebra 1e, Section 2.1",
                 },
                 {
                     "slug": "alg-function-symmetry",
                     "name": "Even and Odd Function Symmetry",
                     "short_definition": "Even functions f(-x) = f(x) have y-axis symmetry; odd functions f(-x) = -f(x) have origin symmetry.",
                     "description": "Tested algebraically by replacing x with -x and simplifying. Most functions are neither even nor odd.",
-                    "citation": "OpenStax College Algebra 1e, Section 3.3",
+                    "citation": "OpenStax College Algebra 1e, Section 3.5",
                     "prerequisites": ["alg-function-intercepts"],
                 },
                 {
@@ -553,7 +553,7 @@ DOMAIN_03 = {
                             "explanation": "Substitute (-x) for x: f(-x) = 3(-x)^4 - 2(-x)^2 + 5. Since (-x)^4 = x^4 and (-x)^2 = x^2, this simplifies to 3x^4 - 2x^2 + 5 = f(x). Because f(-x) = f(x) for all x, the function is even (and symmetric across the y-axis).",
                             "difficulty": "beginner",
                             "cognitive_level": "comprehension",
-                            "citation": "OpenStax College Algebra 1e, Section 3.3",
+                            "citation": "OpenStax College Algebra 1e, Section 3.5",
                             "concept_slugs": ["alg-function-symmetry"],
                         },
                         {
@@ -572,7 +572,7 @@ DOMAIN_03 = {
                             "explanation": "For x-intercepts, set f(x) = 0: x^2 - 6x + 8 = 0 => (x - 2)(x - 4) = 0 => x = 2 and x = 4, yielding points (2, 0) and (4, 0). For the y-intercept, set x = 0: f(0) = 0^2 - 6(0) + 8 = 8, yielding point (0, 8).",
                             "difficulty": "beginner",
                             "cognitive_level": "application",
-                            "citation": "OpenStax College Algebra 1e, Section 3.3",
+                            "citation": "OpenStax College Algebra 1e, Section 2.1",
                             "concept_slugs": ["alg-function-intercepts"],
                         },
                         {
@@ -591,7 +591,7 @@ DOMAIN_03 = {
                             "explanation": "Compute g(-x) = 2(-x)^3 - 5(-x) = 2(-x^3) + 5x = -2x^3 + 5x = -(2x^3 - 5x) = -g(x). Because g(-x) = -g(x) for all x, the function is odd (symmetric about the origin).",
                             "difficulty": "intermediate",
                             "cognitive_level": "comprehension",
-                            "citation": "OpenStax College Algebra 1e, Section 3.3",
+                            "citation": "OpenStax College Algebra 1e, Section 3.5",
                             "concept_slugs": ["alg-function-symmetry"],
                         },
                     ],

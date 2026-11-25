@@ -18,7 +18,7 @@ source_releases:
 target:
   slug: open-openstax-college-algebra-1e
   title: College Algebra (open textbook)
-  version_code: OPENSTAX-EBC5BEB-R8
+  version_code: OPENSTAX-EBC5BEB-R9
   version_title: College Algebra by OpenStax, CC BY 4.0
   version_description: Open textbook sections imported as LearningApp lessons.
   volatility_class: V0
@@ -729,10 +729,10 @@ domains:
         block_type: practice_prompt
         content:
           prompt: |
-            A photograph with length *L* and width *W* is placed in a mat of width 8 centimeters (cm). The area of the mat (in square centimeters, or cm^2) is found to be $A=(L+16)(W+16)-L\cdot W.$ See Figure 4. Find the area of a mat for a photograph with length 32 cm and width 24 cm.
+            A photograph with length *L* and width *W* is placed in a mat of width 8 centimeters (cm). The area of the mat (in square centimeters, or cm²) is found to be $A=(L+16)(W+16)-L\cdot W.$ See Figure 4. Find the area of a mat for a photograph with length 32 cm and width 24 cm.
 
             _(Figure in the original section.)_
-          answer: 1,152 cm^2
+          answer: 1,152 cm²
           explanation: Answer from the book's answer key.
       - sort_order: 42
         block_type: markdown
@@ -3143,7 +3143,7 @@ domains:
 
             $$\begin{array}{lll}A & = & lw \\ & = & x\cdot 1 \\ & = & x\end{array}$$
 
-            The area of the front of the doghouse can be found by adding the areas of the square and the triangle, and then subtracting the area of the rectangle. When we do this, we get $4x^2+\frac{3}{2}x-x\;{\text{ft}}^2,$ or $4x^2+\frac{1}{2}x$ ft^2.
+            The area of the front of the doghouse can be found by adding the areas of the square and the triangle, and then subtracting the area of the rectangle. When we do this, we get $4x^2+\frac{3}{2}x-x\;{\text{ft}}^2,$ or $4x^2+\frac{1}{2}x$ ft².
 
             In this section, we will examine expressions such as this one, which combine several variable terms.
       - sort_order: 3
@@ -3905,9 +3905,9 @@ domains:
 
             $$\begin{array}{lll}A & = & lw \\ & = & 10x\cdot 6x \\ & = & 60x^2{\;\text{units}}^2\end{array}$$
 
-            The areas of the portions that do not require grass seed need to be subtracted from the area of the entire region. The two square regions each have an area of $A=s^2=4^2=16$ units^2. The other rectangular region has one side of length $10x-8$ and one side of length $4,$ giving an area of $A=lw=4(10x-8)=40x-32$ units^2. So the region that must be subtracted has an area of $2(16)+40x-32=40x$ units^2.
+            The areas of the portions that do not require grass seed need to be subtracted from the area of the entire region. The two square regions each have an area of $A=s^2=4^2=16$ units². The other rectangular region has one side of length $10x-8$ and one side of length $4,$ giving an area of $A=lw=4(10x-8)=40x-32$ units². So the region that must be subtracted has an area of $2(16)+40x-32=40x$ units².
 
-            The area of the region that requires grass seed is found by subtracting $60x^2-40x$ units^2. This area can also be expressed in factored form as $20x(3x-2)$ units^2. We can confirm that this is an equivalent expression by multiplying.
+            The area of the region that requires grass seed is found by subtracting $60x^2-40x$ units². This area can also be expressed in factored form as $20x(3x-2)$ units². We can confirm that this is an equivalent expression by multiplying.
 
             Many polynomial expressions can be written in simpler forms by factoring. In this section, we will look at a variety of methods that can be used to factor polynomial expressions.
       - sort_order: 3
@@ -4424,7 +4424,7 @@ domains:
 
             For the following exercises, consider this scenario:
 
-            Charlotte has appointed a chairperson to lead a city beautification project. The first act is to install statues and fountains in one of the city’s parks. The park is a rectangle with an area of $98x^2+105x-27$ m^2, as shown in the figure below. The length and width of the park are perfect factors of the area.
+            Charlotte has appointed a chairperson to lead a city beautification project. The first act is to install statues and fountains in one of the city’s parks. The park is a rectangle with an area of $98x^2+105x-27$ m², as shown in the figure below. The length and width of the park are perfect factors of the area.
 
             Factor by grouping to find the length and width of the park.
 
@@ -4434,7 +4434,7 @@ domains:
 
             For the following exercise, consider the following scenario:
 
-            A school is installing a flagpole in the central plaza. The plaza is a square with side length 100 yd. as shown in the figure below. The flagpole will take up a square plot with area $x^2-6x+9$ yd^2.
+            A school is installing a flagpole in the central plaza. The plaza is a square with side length 100 yd. as shown in the figure below. The flagpole will take up a square plot with area $x^2-6x+9$ yd².
 
             Find the length of the base of the flagpole by factoring.
 
@@ -5099,11 +5099,11 @@ domains:
 
             $\frac{\frac{x}{y}-\frac{y}{x}}{\frac{x}{y}+\frac{y}{x}}$
 
-            Brenda is placing tile on her bathroom floor. The area of the floor is $15x^2-8x-7$ ft^2. The area of one tile is $x^2-2x+1{\text{ft}}^2.$ To find the number of tiles needed, simplify the rational expression: $\frac{15x^2-8x-7}{x^2-2x+1}.$
+            Brenda is placing tile on her bathroom floor. The area of the floor is $15x^2-8x-7$ ft². The area of one tile is $x^2-2x+1{\text{ft}}^2.$ To find the number of tiles needed, simplify the rational expression: $\frac{15x^2-8x-7}{x^2-2x+1}.$
 
-            The area of Sandy’s yard is $25x^2-625$ ft^2. A patch of sod has an area of $x^2-10x+25$ ft^2. Divide the two areas and simplify to find how many pieces of sod Sandy needs to cover her yard.
+            The area of Sandy’s yard is $25x^2-625$ ft². A patch of sod has an area of $x^2-10x+25$ ft². Divide the two areas and simplify to find how many pieces of sod Sandy needs to cover her yard.
 
-            Aaron wants to mulch his garden. His garden is $x^2+18x+81$ ft^2. One bag of mulch covers $x^2-81$ ft^2. Divide the expressions and simplify to find how many bags of mulch Aaron needs to mulch his garden.
+            Aaron wants to mulch his garden. His garden is $x^2+18x+81$ ft². One bag of mulch covers $x^2-81$ ft². Divide the expressions and simplify to find how many bags of mulch Aaron needs to mulch his garden.
 
             For the following exercises, perform the given operations and simplify.
 

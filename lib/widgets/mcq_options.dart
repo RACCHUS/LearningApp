@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:learning_pwa/widgets/answer_feedback.dart';
+import 'package:learning_pwa/widgets/lesson/blocks/markdown_math.dart';
 
 class McqOptions extends StatelessWidget {
   final List<String> options;
@@ -207,7 +208,8 @@ class McqOptions extends StatelessWidget {
         final color =
             mark == null ? null : answerColor(context, correct: mark);
         return ListTile(
-          title: Text(text),
+          // Options may be $...$ math (notation profile, plan v1.2 §8.9).
+          title: mathAwareText(text, null),
           onTap: () => onChanged(originalIdx),
           leading: Radio<int>(
             value: originalIdx,
