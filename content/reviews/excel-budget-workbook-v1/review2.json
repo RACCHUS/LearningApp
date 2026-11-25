@@ -1,0 +1,5 @@
+{"item":"excel-budget-workbook-v1","verdict":"approved",
+"checks":{"excel_facts":"pass","arithmetic":"pass","consistency":"pass","clarity":"pass","honesty":"pass","completeness":"pass","originality":"pass"},
+"required_changes":[],
+"suggestions":["Optional: block 2 could name the file Budget-practice.xlsx so the lesson text and the task deliverable use the same name from the start."],
+"notes":"Re-read blocks 2, 4, 5. All three required changes applied. The desktop/web split in saved.how_to_check is correct (Excel for the web has no file-type choice, always .xlsx, name shown at top). Numbers re-verified: sum 440, C6 60->75 gives 455, C2 20->25 gives 445. Block 2 now asks for Total in B10, matching deliverable, rubric and exemplar. Body list and exemplar match the rubric. Honesty statement unchanged and adequate."}

@@ -9,6 +9,7 @@ import 'package:learning_pwa/widgets/lesson/blocks/example_block_widget.dart';
 import 'package:learning_pwa/widgets/lesson/blocks/practice_prompt_block_widget.dart';
 import 'package:learning_pwa/widgets/lesson/blocks/image_block_widget.dart';
 import 'package:learning_pwa/widgets/lesson/blocks/simulation_block_widget.dart';
+import 'package:learning_pwa/widgets/lesson/blocks/performance_task_block_widget.dart';
 
 /// Polymorphic Lesson Block Dispatcher
 ///
@@ -57,6 +58,11 @@ class LessonBlockRenderer extends StatelessWidget {
         return ImageBlockWidget(block: block, fontSizeFactor: fontSizeFactor);
       case LessonBlockType.simulation:
         return SimulationBlockWidget(
+          block: block,
+          fontSizeFactor: fontSizeFactor,
+        );
+      case LessonBlockType.performanceTask:
+        return PerformanceTaskBlockWidget(
           block: block,
           fontSizeFactor: fontSizeFactor,
         );
