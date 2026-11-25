@@ -139,6 +139,11 @@ void main() {
         reason: 'later parts start closed',
       );
       expect(find.text('In this part, look for:'), findsOneWidget);
+      expect(
+        tester.getTopLeft(find.text('In this part, look for:')).dx,
+        lessThan(60),
+        reason: 'the opened part reads from the left edge, not the middle',
+      );
       expect(find.text('1.1 Exponents'), findsOneWidget);
       expect(find.byKey(const Key('help-action')), findsOneWidget);
       expect(

@@ -267,6 +267,7 @@ class CompanionScreen extends ConsumerWidget {
                   DesignTokens.space3,
                 ),
                 expandedCrossAxisAlignment: CrossAxisAlignment.start,
+                expandedAlignment: Alignment.centerLeft,
                 children: [
                   Text(
                     s.objectiveKeys.any(labelByKey.containsKey)
