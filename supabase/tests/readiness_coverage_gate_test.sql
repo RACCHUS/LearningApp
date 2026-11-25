@@ -2,7 +2,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(18);
+select plan(20);
 
 -- All fixtures are fictional, transaction-local, and rolled back.
 insert into auth.users (id, email) values
@@ -111,14 +111,27 @@ select pg_temp.snap('off');
 select is((select result from coverage_fixture where label = 'off'), '{"enabled": false}'::jsonb,
   'while off the function returns only {"enabled": false}');
 
--- 2. Access.
-select ok(not has_function_privilege('anon', 'public.get_target_readiness_coverage(uuid)', 'execute'),
-  'anonymous visitors cannot call it');
-set local role authenticated;
+-- 2. Access (20261124060000): coverage describes published content, so a
+-- signed-out guest may read it for published or retired versions of public
+-- targets; anything else still needs a signed-in user.
+insert into public.target_versions (id, target_id, version_code, status)
+values ('d1400000-0000-4000-8000-000000000013',
+  'd1400000-0000-4000-8000-000000000011', 'coverage-v2-draft', 'draft');
+select ok(has_function_privilege('anon', 'public.get_target_readiness_coverage(uuid)', 'execute'),
+  'signed-out guests may call it');
+set local role anon;
 select set_config('request.jwt.claim.sub', '', true);
-select throws_ok($$ select public.get_target_readiness_coverage('d1400000-0000-4000-8000-000000000012') $$,
-  '42501', null, 'a call without a signed-in user is refused');
+select is(public.get_target_readiness_coverage('d1400000-0000-4000-8000-000000000012'),
+  '{"enabled": false}'::jsonb, 'a guest can read a published public version');
+select throws_ok($$ select public.get_target_readiness_coverage('d1400000-0000-4000-8000-000000000013') $$,
+  '42501', null, 'a guest cannot read a draft version');
 reset role;
+update public.learning_targets set is_public = false where id = 'd1400000-0000-4000-8000-000000000011';
+set local role anon;
+select throws_ok($$ select public.get_target_readiness_coverage('d1400000-0000-4000-8000-000000000012') $$,
+  '42501', null, 'a guest cannot read a private target');
+reset role;
+update public.learning_targets set is_public = true where id = 'd1400000-0000-4000-8000-000000000011';
 
 update private.site_feature_controls set enabled = true, release_ready = true
   where feature_key = 'learning.readiness_coverage_gate';
