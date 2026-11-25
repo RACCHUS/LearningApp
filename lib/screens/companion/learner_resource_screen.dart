@@ -1,0 +1,282 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:learning_pwa/models/companion/learner_resource.dart';
+import 'package:learning_pwa/models/objective_readiness.dart';
+import 'package:learning_pwa/providers/learner_resource_provider.dart';
+import 'package:learning_pwa/providers/learning_support_controller_provider.dart';
+import 'package:learning_pwa/providers/learning_target_provider.dart';
+import 'package:learning_pwa/providers/target_readiness_provider.dart';
+import 'package:learning_pwa/theme/design_tokens.dart';
+import 'package:learning_pwa/widgets/companion/learner_resources_card.dart';
+
+/// One outside resource beside its goal (companion plan v1.0, EX-1): the
+/// learner ticks which objectives it covers and marks parts studied. A
+/// "studied" mark is the learner's own note. Only LearningApp's checks move
+/// readiness, which is shown here read-only next to each objective.
+class LearnerResourceScreen extends ConsumerWidget {
+  const LearnerResourceScreen({
+    super.key,
+    required this.targetId,
+    required this.targetVersionId,
+    required this.resourceId,
+  });
+
+  final String targetId;
+  final String targetVersionId;
+  final String resourceId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final resources = ref.watch(learnerResourcesProvider(targetId));
+    final nodes = ref.watch(targetCurriculumNodesProvider(targetVersionId));
+    final readiness = ref.watch(objectiveReadinessProvider(targetVersionId)).valueOrNull;
+    final resource = resources.valueOrNull?.where((r) => r.id == resourceId).firstOrNull;
+
+    if (resource == null) {
+      return Scaffold(
+        appBar: AppBar(),
+        body: Center(
+          child: resources.isLoading
+              ? const CircularProgressIndicator()
+              : const Text('This is no longer in your list.', key: Key('learner_resource_missing')),
+        ),
+      );
+    }
+
+    final outline = ResourceOutline.fromNodes(nodes.valueOrNull ?? const []);
+    final covered = resource.objectives.keys.toSet();
+    final coveredHere = outline.keys.where(covered.contains).length;
+    final statusByCode = <String, ObjectiveReadinessStatus>{
+      // Areas too: in a goal without objectives the areas are what is ticked.
+      for (final d in readiness?.domains ?? const <DomainReadiness>[]) ...{
+        if (d.code.isNotEmpty) d.code: d.status,
+        for (final o in d.objectives)
+          if (o.code.isNotEmpty) o.code: o.status,
+      },
+    };
+    final muted = theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant);
+    final store = ref.read(learnerResourceStoreProvider);
+
+    Future<void> run(Future<void> Function() change) async {
+      final messenger = ScaffoldMessenger.of(context);
+      try {
+        await change();
+      } catch (_) {
+        messenger.showSnackBar(
+          const SnackBar(content: Text("Couldn't save that. Check your connection and try again.")),
+        );
+      }
+      ref.invalidate(learnerResourcesProvider(targetId));
+    }
+
+    Future<void> open() async {
+      var ok = false;
+      try {
+        ok = await ref.read(externalLinkLauncherProvider)(Uri.parse(resource.url!));
+      } catch (_) {}
+      if (!ok && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Couldn't open the link. Use Copy link instead.")),
+        );
+      }
+    }
+
+    Future<void> remove() async {
+      final yes = await showDialog<bool>(
+        context: context,
+        builder: (c) => AlertDialog(
+          title: const Text('Remove this?'),
+          content: Text(
+            '"${resource.title}" and your ticks for it will be removed. Your LearningApp progress is not affected.',
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.of(c).pop(false), child: const Text('Keep')),
+            FilledButton(
+              key: const Key('learner_resource_confirm_remove'),
+              onPressed: () => Navigator.of(c).pop(true),
+              child: const Text('Remove'),
+            ),
+          ],
+        ),
+      );
+      if (yes != true) return;
+      await run(() => store.delete(resource.id));
+      if (context.mounted) Navigator.of(context).pop();
+    }
+
+    final sharePercent = (outline.coverageShare(covered) * 100).round();
+    final access = resource.access;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(resource.title),
+        actions: [
+          IconButton(
+            key: const Key('learner_resource_edit'),
+            tooltip: 'Edit',
+            icon: const Icon(Icons.edit_outlined),
+            onPressed: () => showLearnerResourceDialog(context, ref, targetId: targetId, existing: resource),
+          ),
+          IconButton(
+            key: const Key('learner_resource_remove'),
+            tooltip: 'Remove',
+            icon: const Icon(Icons.delete_outline),
+            onPressed: remove,
+          ),
+        ],
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(DesignTokens.space4),
+        children: [
+          Text(
+            access == null ? resource.kind.label : '${resource.kind.label} · ${access.label}',
+            style: theme.textTheme.bodyMedium,
+          ),
+          if (resource.url != null) ...[
+            const SizedBox(height: DesignTokens.space2),
+            Wrap(
+              spacing: DesignTokens.space2,
+              children: [
+                FilledButton.tonalIcon(
+                  key: const Key('learner_resource_open'),
+                  onPressed: open,
+                  icon: const Icon(Icons.open_in_new),
+                  label: const Text('Open (leaves LearningApp)'),
+                ),
+                TextButton.icon(
+                  key: const Key('learner_resource_copy'),
+                  onPressed: () async {
+                    final messenger = ScaffoldMessenger.of(context);
+                    await Clipboard.setData(ClipboardData(text: resource.url!));
+                    messenger.showSnackBar(const SnackBar(content: Text('Link copied.')));
+                  },
+                  icon: const Icon(Icons.copy),
+                  label: const Text('Copy link'),
+                ),
+              ],
+            ),
+            Text(resource.url!, style: muted),
+          ],
+          const SizedBox(height: DesignTokens.space3),
+          Text(
+            outline.itemCount == 0
+                ? 'This goal has no objectives to tick yet.'
+                : outline.usesWeights
+                ? 'Covers $coveredHere of ${outline.itemCount} objectives, about $sharePercent% of this goal by weight. '
+                      '${resource.studiedCount} marked studied.'
+                : 'Covers $coveredHere of ${outline.itemCount} objectives. ${resource.studiedCount} marked studied.',
+            key: const Key('learner_resource_summary'),
+            style: theme.textTheme.titleSmall,
+          ),
+          const SizedBox(height: DesignTokens.space2),
+          Text(
+            'Tick what this covers. When you have studied a part, mark it Studied. '
+            "Studied is your own note. Only LearningApp's checks count toward readiness.",
+            key: const Key('learner_resource_self_report_note'),
+            style: muted,
+          ),
+          const SizedBox(height: DesignTokens.space2),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: OutlinedButton.icon(
+              key: const Key('learner_resource_check'),
+              onPressed: () => context.push('/target/$targetId/outline'),
+              icon: const Icon(Icons.fact_check_outlined),
+              label: const Text('Check yourself in LearningApp'),
+            ),
+          ),
+          if (nodes.isLoading)
+            const Padding(
+              padding: EdgeInsets.all(DesignTokens.space4),
+              child: Center(child: CircularProgressIndicator()),
+            ),
+          for (final g in outline.groups) ...[
+            const SizedBox(height: DesignTokens.space4),
+            Text(g.title, style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
+            for (final item in g.items)
+              _ObjectiveRow(
+                item: item,
+                covered: covered.contains(item.key),
+                studied: resource.objectives[item.key] != null,
+                status: item.code == null ? null : statusByCode[item.code],
+                onCovers: (v) => run(
+                  () => store.setObjectives(resource.id, v ? {...covered, item.key} : ({...covered}..remove(item.key))),
+                ),
+                onStudied: (v) => run(() => store.setStudied(resource.id, item.key, v)),
+              ),
+          ],
+          if (outline.itemCount > coveredHere && coveredHere > 0) ...[
+            const SizedBox(height: DesignTokens.space4),
+            Text(
+              '${outline.itemCount - coveredHere} objectives are not covered by this. '
+              'Look for LearningApp lessons on them in the outline.',
+              key: const Key('learner_resource_uncovered_note'),
+              style: muted,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _ObjectiveRow extends StatelessWidget {
+  const _ObjectiveRow({
+    required this.item,
+    required this.covered,
+    required this.studied,
+    required this.status,
+    required this.onCovers,
+    required this.onStudied,
+  });
+
+  final ResourceOutlineItem item;
+  final bool covered;
+  final bool studied;
+  final ObjectiveReadinessStatus? status;
+  final ValueChanged<bool> onCovers;
+  final ValueChanged<bool> onStudied;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Checkbox(
+          key: Key('covers_${item.key}'),
+          value: covered,
+          onChanged: (v) => onCovers(v ?? false),
+          semanticLabel: 'Covers ${item.label}',
+        ),
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: DesignTokens.space1),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(item.label, style: theme.textTheme.bodyMedium),
+                if (status != null)
+                  Text(
+                    'LearningApp checks: ${status!.label}',
+                    key: Key('readiness_${item.key}'),
+                    style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                  ),
+              ],
+            ),
+          ),
+        ),
+        if (covered)
+          FilterChip(
+            key: Key('studied_${item.key}'),
+            label: const Text('Studied'),
+            selected: studied,
+            onSelected: onStudied,
+          ),
+      ],
+    );
+  }
+}

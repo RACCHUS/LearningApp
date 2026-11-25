@@ -50,6 +50,7 @@ abstract final class SiteFeatureKeys {
       'learning.objective_readiness_view';
   static const String learningReadinessProjection =
       'learning.readiness_projection';
+  static const String contentLearnerResources = 'content.learner_resources';
 
   static const Set<String> all = {
     telFast,
@@ -92,5 +93,6 @@ abstract final class SiteFeatureKeys {
     learningReadinessCoverageGate,
     learningObjectiveReadinessView,
     learningReadinessProjection,
+    contentLearnerResources,
   };
 }
