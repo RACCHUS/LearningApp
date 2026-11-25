@@ -29,7 +29,7 @@ DOMAIN_12 = {
                     "slug": "psyc-conformity-obedience",
                     "name": "Conformity, Compliance, and Milgram Obedience",
                     "short_definition": "Social pressure paradigms including Asch line conformity, normative/informational influence, and Milgram's destructive obedience.",
-                    "description": "Asch demonstrated visual judgment conformity; Milgram demonstrated that 65% of participants obey legitimate authority commands to deliver lethal shocks.",
+                    "description": "Asch demonstrated visual judgment conformity; Milgram found that 65% of participants in his baseline study obeyed an authority's commands to deliver what they believed were dangerous shocks (the shocks were fake).",
                     "citation": "OpenStax Psychology 1e, Section 12.3",
                     "prerequisites": ["psyc-attribution-dissonance"],
                 },
@@ -68,11 +68,11 @@ DOMAIN_12 = {
                             "content": {
                                 "text": (
                                     "### Classic Social Influence Experiments\n\n"
-                                    "| Landmark Study | Lead Investigator | Experimental Paradigm | Definitive Research Finding |\n"
+                                    "| Landmark Study | Lead Investigator | Experimental Paradigm | Reported Finding |\n"
                                     "| :--- | :--- | :--- | :--- |\n"
                                     "| **Conformity Studies (1955)** | **Solomon Asch** | Participants matched line lengths in a group of confederates giving unanimously wrong answers | ~37% of trials produced conformity; driven by **normative influence** (avoiding rejection) |\n"
-                                    "| **Obedience to Authority (1963)** | **Stanley Milgram** | Teachers commanded by an authority figure to administer escalating electrical shocks to a screaming learner | **65% of ordinary participants** obeyed orders to deliver the maximum 450-volt lethal shock |\n"
-                                    "| **Stanford Prison Experiment (1971)** | **Philip Zimbardo** | College students randomly assigned to mock guards or prisoners in a simulated basement prison | Deindividuation and institutional roles rapidly overrode personal morality within 6 days |"
+                                    "| **Obedience to Authority (1963)** | **Stanley Milgram** | Teachers commanded by an authority figure to administer escalating electrical shocks to a protesting learner (a confederate; no real shocks were given) | **65% of ordinary participants** obeyed orders to deliver what they believed was a dangerous 450-volt shock |\n"
+                                    "| **Stanford Prison Experiment (1971)** | **Philip Zimbardo** | College students randomly assigned to mock guards or prisoners in a simulated basement prison | Reported that guards quickly became abusive and the study was stopped after 6 days. A famous but heavily criticized demonstration: guards were encouraged by the researchers to be tough, participants may have acted out expected roles, and a 2002 BBC prison study did not reproduce the result. It is not reliable evidence that roles alone override morality. |"
                                 )
                             },
                         },
@@ -103,8 +103,8 @@ DOMAIN_12 = {
                             "block_type": "callout",
                             "content": {
                                 "type": "warning",
-                                "title": "Cognitive Pitfall: FAE Appears Primarily in Individualistic Cultures",
-                                "body": "The **Fundamental Attribution Error** is significantly more pronounced in Western **individualistic cultures** (which emphasize personal autonomy) and is markedly lower in East Asian **collectivist cultures** (which naturally emphasize situational and social context).",
+                                "title": "Cognitive Pitfall: The FAE Varies Across Cultures",
+                                "body": "The **Fundamental Attribution Error** occurs across cultures, but it tends to be somewhat stronger in Western **individualistic cultures** (which emphasize personal autonomy) and somewhat weaker in some East Asian **collectivist** samples (which emphasize situational and social context), especially when situational pressures are made obvious. The difference is modest and depends on the task.",
                             },
                         },
                     ],
@@ -174,7 +174,7 @@ DOMAIN_12 = {
                                 ]
                             },
                             "scoring_spec": {"correct_index": 3},
-                            "explanation": "In Milgram's baseline obedience study, 65% (26 out of 40) of participants administered the final 450-volt electrical shock, despite the learner screaming in agony and subsequently going silent.",
+                            "explanation": "In Milgram's baseline obedience study, 65% (26 out of 40) of participants administered the final 450-volt electrical shock, despite the learner pounding on the wall in protest and then falling silent.",
                             "difficulty": "beginner",
                             "cognitive_level": "recall",
                             "citation": "OpenStax Psychology 1e, Section 12.3",
@@ -250,8 +250,8 @@ DOMAIN_12 = {
                 {
                     "slug": "psyc-prejudice-altruism",
                     "name": "Prejudice, Ingroup Bias, and the Bystander Effect",
-                    "short_definition": "Social relations spanning stereotypes, ingroup/outgroup bias, scapegoating, and bystander apathy via diffusion of responsibility.",
-                    "description": "Darley and Latané proved that emergency intervention decreases as bystander group size increases due to pluralistic ignorance and diffused responsibility.",
+                    "short_definition": "Social relations spanning stereotypes, ingroup/outgroup bias, scapegoating, and the bystander effect via diffusion of responsibility.",
+                    "description": "Darley and Latané showed that the likelihood of any one person intervening in an emergency falls as the number of bystanders rises, owing to pluralistic ignorance and diffused responsibility.",
                     "citation": "OpenStax Psychology 1e, Section 12.5 & 12.6",
                     "prerequisites": ["psyc-group-dynamics"],
                 },
@@ -278,7 +278,7 @@ DOMAIN_12 = {
                                     "- **Social Loafing:** The tendency for people in a collective group to exert less effort when pooling efforts toward a common goal than when individually accountable *(e.g., pulling less hard during a tug-of-war)*.\n"
                                     "- **Deindividuation:** The loss of self-awareness and personal restraint occurring in group situations that foster anonymity and high emotional arousal *(e.g., cyber mob bullying, nighttime riot vandalism)*.\n"
                                     "- **Group Polarization:** The enhancement and strengthening of a group's prevailing inclinations and attitudes following discussion among like-minded individuals.\n"
-                                    "- **Groupthink (Irving Janis):** The mode of thinking that occurs when the desire for harmony and consensus in a cohesive decision-making group suppresses realistic dissenting viewpoints *(e.g., the Bay of Pigs invasion failure, NASA Challenger launch disaster)*."
+                                    "- **Groupthink (Irving Janis):** The mode of thinking that occurs when the desire for harmony and consensus in a cohesive decision-making group suppresses realistic dissenting viewpoints *(e.g., Janis's own example, the failed 1961 Bay of Pigs invasion)*."
                                 )
                             },
                         },
@@ -304,7 +304,7 @@ DOMAIN_12 = {
                             "content": {
                                 "type": "key_concept",
                                 "title": "Darley and Latané's Bystander Effect",
-                                "body": "Spurred by the murder of Kitty Genovese, John Darley and Bibb Latané demonstrated that an individual is significantly **less likely to help in an emergency as the number of passive bystanders increases**. This bystander apathy is driven by:\n1. **Diffusion of Responsibility:** Believing someone else will step forward or call emergency services.\n2. **Pluralistic Ignorance:** Looking to other passive observers and concluding that because no one is reacting, the situation must not be a genuine crisis.",
+                                "body": "Spurred by news coverage of the 1964 murder of Kitty Genovese (the original story of 38 unresponsive witnesses was later shown to be exaggerated), John Darley and Bibb Latané demonstrated that an individual is significantly **less likely to help in an emergency as the number of passive bystanders increases**. This **bystander effect** is driven by:\n1. **Diffusion of Responsibility:** Believing someone else will step forward or call emergency services.\n2. **Pluralistic Ignorance:** Looking to other passive observers and concluding that because no one is reacting, the situation must not be a genuine crisis.",
                             },
                         },
                         {

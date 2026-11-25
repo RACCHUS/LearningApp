@@ -98,9 +98,9 @@ DOMAIN_06 = {
                                 "title": "Historical Neurological Case Study: Patient H.M. (Henry Molaison)",
                                 "text": (
                                     "In 1953, surgeon William Scoville performed a bilateral medial temporal lobectomy on 27-year-old Patient H.M. to treat severe epilepsy, "
-                                    "removing both hippocampi. H.M. developed profound **anterograde amnesia**: he could never again form new explicit/declarative memories. "
-                                    "However, psychologist Brenda Milner proved his **implicit procedural memory remained completely intact**: "
-                                    "when trained on a mirror-tracing motor task, H.M. showed flawless day-to-day improvement despite having zero conscious recollection of ever performing the task before."
+                                    "removing most of both hippocampi along with nearby medial temporal lobe tissue. H.M. developed profound **anterograde amnesia**: he could never again form new explicit/declarative memories. "
+                                    "However, psychologist Brenda Milner showed that his **implicit procedural memory remained completely intact**: "
+                                    "when trained on a mirror-tracing motor task, H.M. showed steady day-to-day improvement despite having zero conscious recollection of ever performing the task before."
                                 ),
                             },
                         },
@@ -110,7 +110,7 @@ DOMAIN_06 = {
                             "content": {
                                 "type": "key_concept",
                                 "title": "Elizabeth Loftus and Memory Reconstruction",
-                                "body": "Memory is **constructive**, not a video recording. Elizabeth Loftus proved the **misinformation effect**: when eyewitnesses viewing a car crash were asked *'How fast were the cars going when they smashed into each other?'* versus *'hit each other?'*, those hearing 'smashed' falsely remembered seeing broken glass at the scene.",
+                                "body": "Memory is **constructive**, not a video recording. Elizabeth Loftus demonstrated the **misinformation effect**: when eyewitnesses viewing a car crash were asked *'How fast were the cars going when they smashed into each other?'* versus *'hit each other?'*, those hearing 'smashed' falsely remembered seeing broken glass at the scene.",
                             },
                         },
                     ],
@@ -128,7 +128,7 @@ DOMAIN_06 = {
                         {
                             "term": "Misinformation Effect",
                             "definition": "The incorporation of misleading post-event information into one's memory of an event, altering eyewitness recollections.",
-                            "example": "Eyewitnesses falsely recalling a stop sign after being asked a question containing the premise 'after the yield sign'.",
+                            "example": "Eyewitnesses who originally saw a stop sign later report having seen a yield sign after being asked a question that mentioned a yield sign.",
                         },
                     ],
                     "assessment_items": [
@@ -151,7 +151,7 @@ DOMAIN_06 = {
                             "concept_slugs": ["psyc-memory-systems-forgetting"],
                         },
                         {
-                            "prompt": "Following surgical bilateral resection of his hippocampi to treat intractable epilepsy, Patient H.M. was able to learn and master mirror-drawing motor skills despite having zero conscious memory of practicing the task. What memory system remained intact?",
+                            "prompt": "Following surgery that removed most of both hippocampi (with nearby medial temporal lobe tissue) to treat intractable epilepsy, Patient H.M. was able to learn and master mirror-drawing motor skills despite having zero conscious memory of practicing the task. What memory system remained intact?",
                             "interaction_type": "single_choice",
                             "response_spec": {
                                 "options": [
@@ -205,7 +205,7 @@ DOMAIN_06 = {
                             "concept_slugs": ["psyc-memory-models"],
                         },
                         {
-                            "prompt": "Which component of Alan Baddeley's working memory model is responsible for coordinating attentional focus, switching between cognitive tasks, and integrating inputs from sensory buffers?",
+                            "prompt": "Which component of Alan Baddeley's working memory model is responsible for coordinating attentional focus, allocating attention, and switching between cognitive tasks?",
                             "interaction_type": "single_choice",
                             "response_spec": {
                                 "options": [

@@ -22,7 +22,7 @@ DOMAIN_05 = {
                     "slug": "psyc-classical-conditioning",
                     "name": "Pavlovian Classical Conditioning",
                     "short_definition": "Form of associative learning where an organism pairs a neutral stimulus with an unconditioned stimulus to elicit a conditioned response.",
-                    "description": "Demonstrated by Ivan Pavlov (salivation in dogs) and Watson's Little Albert; governed by acquisition, extinction, spontaneous recovery, and generalization.",
+                    "description": "Demonstrated by Ivan Pavlov (salivation in dogs) and illustrated by Watson and Rayner's classic but methodologically criticized Little Albert study; governed by acquisition, extinction, spontaneous recovery, and generalization.",
                     "citation": "OpenStax Psychology 1e, Section 6.2",
                 },
                 {
@@ -72,7 +72,7 @@ DOMAIN_05 = {
                                     "| **Acquisition** | Initial learning phase where NS is repeatedly paired with UCS | CR progressively strengthens as CS-UCS association solidifies |\n"
                                     "| **Extinction** | Diminishing of CR when CS is repeatedly presented **without** UCS | Salivation to the bell drops to zero over repeated trials |\n"
                                     "| **Spontaneous Recovery** | Reappearance of an extinguished CR after an intervening rest interval | After 24 hours of rest, presenting the bell alone triggers salivation again |\n"
-                                    "| **Generalization** | Tendency for stimuli similar to the CS to evoke similar responses | Little Albert fearing white rabbits and fur coats after conditioning with a white rat |\n"
+                                    "| **Generalization** | Tendency for stimuli similar to the CS to evoke similar responses | Little Albert reportedly fearing a rabbit and a fur coat after conditioning with a white rat (Watson and Rayner's classic 1920 demonstration, a single-child study with weak controls that has never been replicated) |\n"
                                     "| **Discrimination** | Learned capacity to distinguish between a CS and irrelevant stimuli | A dog salivating only to a 1000 Hz tone, not an 800 Hz tone |"
                                 )
                             },
@@ -93,9 +93,9 @@ DOMAIN_05 = {
                                 "title": "Experimental Case Study: John Garcia's Conditioned Taste Aversion",
                                 "text": (
                                     "Behaviorists historically claimed any stimulus could be conditioned to any response with equal ease. "
-                                    "John Garcia disproved this by exposing rats to novel flavored water followed hours later by radiation-induced nausea. "
-                                    "The rats developed immediate, powerful **taste aversions** after a **single trial**, even with a delay of several hours. "
-                                    "Crucially, rats failed to develop aversions to sights or sounds paired with nausea, proving that organisms are **biologically prepared** to associate taste with gastrointestinal illness."
+                                    "John Garcia challenged this by exposing rats to novel flavored water followed hours later by radiation-induced nausea. "
+                                    "The rats developed strong **taste aversions** after a **single pairing**, despite the delay of several hours. "
+                                    "In a related study, Garcia and Koelling (1966) found that rats readily linked a taste with illness but not lights and sounds with illness (lights and sounds were instead easily linked with pain from a shock), suggesting that organisms are **biologically prepared** to associate taste with gastrointestinal illness."
                                 ),
                             },
                         },
@@ -105,7 +105,7 @@ DOMAIN_05 = {
                             "content": {
                                 "type": "warning",
                                 "title": "Cognitive Pitfall: Spontaneous Recovery Does Not Mean Re-learning",
-                                "body": "**Spontaneous recovery** proves that extinction suppresses rather than permanently erases a conditioned association. When an extinguished response reappears following a delay, it occurs without any new pairings with the unconditioned stimulus.",
+                                "body": "**Spontaneous recovery** shows that extinction suppresses rather than permanently erases a conditioned association. When an extinguished response reappears following a delay, it occurs without any new pairings with the unconditioned stimulus.",
                             },
                         },
                     ],
@@ -157,7 +157,7 @@ DOMAIN_05 = {
                                 ]
                             },
                             "scoring_spec": {"correct_index": 1},
-                            "explanation": "Stimulus generalization is the tendency for stimuli that resemble the original conditioned stimulus (e.g., other furry white objects resembling the white rat) to evoke similar conditioned responses, as demonstrated in Watson and Rayner's Little Albert experiment.",
+                            "explanation": "Stimulus generalization is the tendency for stimuli that resemble the original conditioned stimulus (e.g., other furry white objects resembling the white rat) to evoke similar conditioned responses, as illustrated in Watson and Rayner's classic (and methodologically criticized) 1920 Little Albert demonstration.",
                             "difficulty": "intermediate",
                             "cognitive_level": "application",
                             "citation": "OpenStax Psychology 1e, Section 6.2",
@@ -193,7 +193,7 @@ DOMAIN_05 = {
                                 ]
                             },
                             "scoring_spec": {"correct_index": 3},
-                            "explanation": "Traditional behaviorism asserted that conditioning required immediate temporal contiguity (seconds) and many repetitive pairings. Garcia proved that rats formed taste aversions after a single exposure even with hours separating ingestion and sickness, demonstrating evolutionary biological preparedness.",
+                            "explanation": "Traditional behaviorism asserted that conditioning required immediate temporal contiguity (seconds) and many repetitive pairings. Garcia showed that rats formed taste aversions after a single exposure even with hours separating ingestion and sickness, demonstrating evolutionary biological preparedness.",
                             "difficulty": "advanced",
                             "cognitive_level": "analysis",
                             "citation": "OpenStax Psychology 1e, Section 6.2",
@@ -262,8 +262,8 @@ DOMAIN_05 = {
                                     "| :--- | :--- | :--- | :--- |\n"
                                     "| **Positive Reinforcement** | **Add** a pleasant stimulus | **Increases** behavior | Giving a child a gold star for completing homework |\n"
                                     "| **Negative Reinforcement** | **Remove** an aversive stimulus | **Increases** behavior | Fastening your seatbelt to terminate an annoying warning chime |\n"
-                                    "| **Positive Punishment** | **Add** an unpleasant stimulus | **Decreases** behavior | Receiving a speeding fine from a traffic officer |\n"
-                                    "| **Negative Punishment** | **Remove** a pleasant stimulus | **Decreases** behavior | Revoking a teenager's cell phone privileges for breaking curfew |"
+                                    "| **Positive Punishment** | **Add** an unpleasant stimulus | **Decreases** behavior | Being assigned extra chores for breaking a household rule |\n"
+                                    "| **Negative Punishment** | **Remove** a pleasant stimulus | **Decreases** behavior | Revoking a teenager's cell phone privileges for breaking curfew; paying a speeding fine (losing money is called **response cost**) |"
                                 )
                             },
                         },
@@ -288,7 +288,10 @@ DOMAIN_05 = {
                                     "- **Variable-Interval (VI):** Reinforces the first response after unpredictable time periods (e.g., checking email or waiting for a fish to bite). Produces slow, steady response rates.\n\n"
                                     "### Bandura's Observational Learning Theory\n\n"
                                     "Albert Bandura demonstrated that organisms learn through **modeling** without direct reinforcement. "
-                                    "In his famous **Bobo Doll experiments**, children who watched an adult violently strike an inflated doll were significantly more likely to imitate the specific hostile acts and verbal insults when later frustrated, driven by **vicarious reinforcement**."
+                                    "In his famous 1961 **Bobo Doll experiment**, children who watched an adult hit and kick an inflated doll later imitated many of the same hostile acts and phrases when given the chance, even though neither they nor the model received any reward. "
+                                    "In a 1965 follow-up, children who saw the model **punished** imitated less than children who saw the model rewarded or receive no consequence (**vicarious punishment** and **vicarious reinforcement**). "
+                                    "Yet when all the children were then offered treats to show what the model had done, the differences largely disappeared: nearly all could reproduce the aggression. "
+                                    "This is the **learning-performance distinction**: seeing a model's consequences changes whether we *perform* a behavior, not whether we *learn* it."
                                 )
                             },
                         },
@@ -311,7 +314,7 @@ DOMAIN_05 = {
                             "content": {
                                 "type": "key_concept",
                                 "title": "Latent Learning and Cognitive Maps",
-                                "body": "Edward Tolman demonstrated that rats wandering through a maze formed internal mental representations (**cognitive maps**) without any reward. When food was finally introduced, they navigated the maze just as quickly as rewarded rats, proving **latent learning** occurs without immediate reinforcement.",
+                                "body": "Edward Tolman demonstrated that rats wandering through a maze formed internal mental representations (**cognitive maps**) without any reward. When food was finally introduced, their errors dropped abruptly and matched those of rats that had been rewarded all along within a day or two, showing that **latent learning** occurs without immediate reinforcement.",
                             },
                         },
                     ],
@@ -388,18 +391,18 @@ DOMAIN_05 = {
                             "concept_slugs": ["psyc-operant-conditioning"],
                         },
                         {
-                            "prompt": "In Albert Bandura's classic Bobo Doll experiments, what factor determined whether children spontaneously imitated aggressive behaviors displayed by adult models?",
+                            "prompt": "In Bandura's 1965 Bobo doll study, children who saw an adult model punished for attacking the doll imitated less aggression than children who saw the model rewarded. When all the children were later offered treats for reproducing the model's actions, the differences largely disappeared. What does this show?",
                             "interaction_type": "single_choice",
                             "response_spec": {
                                 "options": [
-                                    "The gender of the child observing the scenario",
-                                    "Direct primary reinforcers delivered immediately to the child",
-                                    "The genetic temperament score of the experimental subject",
-                                    "Observing vicarious consequences delivered to the model",
+                                    "Seeing the model punished had prevented the children from learning the aggressive acts",
+                                    "The treats taught the children new aggressive acts through shaping",
+                                    "The children's imitation depended only on their inborn temperament",
+                                    "Seeing the model's consequences affected performing the behavior, not learning it",
                                 ]
                             },
                             "scoring_spec": {"correct_index": 3},
-                            "explanation": "Bandura's experiments demonstrated that observational learning is heavily mediated by vicarious reinforcement and vicarious punishment: children who observed the aggressive adult model being rewarded or experiencing no consequences readily imitated the hostility, whereas observing punishment suppressed imitation.",
+                            "explanation": "This is the learning-performance distinction. All the children had learned the aggressive acts by watching; vicarious punishment only made some of them less willing to perform the acts. Once an incentive was offered, the learned behavior appeared. The treats were offered only after the film, so they did not shape new behavior, and temperament was not manipulated.",
                             "difficulty": "intermediate",
                             "cognitive_level": "comprehension",
                             "citation": "OpenStax Psychology 1e, Section 6.4",

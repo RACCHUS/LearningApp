@@ -21,7 +21,7 @@ DOMAIN_01 = {
                 {
                     "slug": "psyc-structuralism",
                     "name": "Structuralism",
-                    "short_definition": "Early school of thought promoted by Wundt and Titchener using systematic introspection to isolate the basic elements of conscious experience.",
+                    "short_definition": "Early school of thought, named and systematized by Titchener from Wundt's laboratory methods, using systematic introspection to isolate the basic elements of conscious experience.",
                     "description": "Structuralism sought to map the adult human mind by breaking conscious experience down into basic sensation and perception elements through rigorous introspection.",
                     "citation": "OpenStax Psychology 1e, Section 1.2",
                 },
@@ -63,7 +63,7 @@ DOMAIN_01 = {
                                     "### The Birth of Scientific Psychology\n\n"
                                     "Psychology formally transitioned from philosophical epistemology into an independent empirical science in **1879**, "
                                     "when **Wilhelm Wundt** established the first formal psychological research laboratory at the University of Leipzig in Germany. "
-                                    "Wundt and his student **Edward Bradford Titchener** championed **structuralism**, an approach that sought to identify the "
+                                    "Wundt's student **Edward Bradford Titchener** developed Wundt's laboratory methods into **structuralism** (Wundt's own broader approach is sometimes called voluntarism), an approach that sought to identify the "
                                     "constituent building blocks of conscious awareness through **introspection**—rigorous, trained self-reports of immediate sensory and emotional reactions.\n\n"
                                     "In reaction against structuralism's subjective fragility, American psychologist and philosopher **William James** established **functionalism**, "
                                     "heavily influenced by Charles Darwin's evolutionary theory. Functionalists argued that consciousness cannot be frozen into static sensory slices; "
@@ -93,7 +93,7 @@ DOMAIN_01 = {
                                     "| **Behavioral** | Strictly observable behavioral responses shaped by environmental conditioning and reinforcement | John B. Watson, B. F. Skinner |\n"
                                     "| **Cognitive** | Mental operations: encoding, retrieval, problem solving, decision heuristics, and language | Jean Piaget, Noam Chomsky |\n"
                                     "| **Humanistic** | Innate drive for personal growth, self-actualization, free will, and conscious self-concept | Carl Rogers, Abraham Maslow |\n"
-                                    "| **Psychodynamic** | Unconscious conflicts, repressed impulses, early childhood attachment, and defense mechanisms | Sigmund Freud, Carl Jung, Alfred Adler |\n"
+                                    "| **Psychodynamic** | Unconscious conflicts, repressed impulses, early childhood experiences, and defense mechanisms | Sigmund Freud, Carl Jung, Alfred Adler |\n"
                                     "| **Evolutionary** | Natural selection of cognitive and behavioral traits promoting reproductive fitness | David Buss, Charles Darwin |\n"
                                     "| **Sociocultural** | Cultural norms, social pressures, ethnic diversity, and group dynamics | Lev Vygotsky, Solomon Asch |"
                                 )
@@ -179,7 +179,7 @@ DOMAIN_01 = {
                             "concept_slugs": ["psyc-structuralism"],
                         },
                         {
-                            "prompt": "A clinical psychologist asserts that a client's chronic anxiety stems from an innate conflict between their ideal self and their actual self-concept. Which psychological perspective does this clinician represent?",
+                            "prompt": "A clinical psychologist asserts that a client's chronic anxiety stems from a conflict between their ideal self and their actual self-concept. Which psychological perspective does this clinician represent?",
                             "interaction_type": "single_choice",
                             "response_spec": {
                                 "options": [
@@ -290,11 +290,11 @@ DOMAIN_01 = {
                             "content": {
                                 "text": (
                                     "### Establishing Causality: The Experimental Method\n\n"
-                                    "The **experiment** is the only psychological research method capable of establishing definitive **cause-and-effect relationships**. "
+                                    "The **experiment** is the primary psychological research method for testing **cause-and-effect relationships**. "
                                     "To achieve internal validity, an experiment must incorporate:\n"
                                     "- **Independent Variable (IV):** The factor systematically manipulated by the experimenter.\n"
                                     "- **Dependent Variable (DV):** The behavioral or cognitive outcome measured to assess the effect of the IV.\n"
-                                    "- **Random Assignment:** Allocating participants to experimental or control conditions purely by chance, ensuring that preexisting individual differences (e.g., intelligence, motivation) are distributed evenly across groups.\n"
+                                    "- **Random Assignment:** Allocating participants to experimental or control conditions purely by chance, so that preexisting individual differences (e.g., intelligence, motivation) tend to be distributed evenly across groups (more reliably so in larger samples).\n"
                                     "- **Placebo Control & Double-Blind Protocol:** A procedure in which neither the participants nor the administering researchers know who is receiving the active treatment versus an inert placebo, preventing participant expectations and experimenter bias."
                                 )
                             },
@@ -400,7 +400,7 @@ DOMAIN_01 = {
                                 ]
                             },
                             "scoring_spec": {"correct_index": 2},
-                            "explanation": "Random assignment minimizes preexisting differences between participants assigned to the experimental and control groups. By ensuring confounding participant variables are distributed evenly, researchers can attribute outcome differences directly to the independent variable.",
+                            "explanation": "Random assignment minimizes preexisting differences between participants assigned to the experimental and control groups. Because chance tends to spread confounding participant variables evenly across groups, researchers can attribute outcome differences directly to the independent variable.",
                             "difficulty": "intermediate",
                             "cognitive_level": "comprehension",
                             "citation": "OpenStax Psychology 1e, Chapter 2",

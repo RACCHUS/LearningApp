@@ -93,7 +93,7 @@ DOMAIN_13 = {
                                     "In a standard normal curve, the mean, median, and mode are identical, and score dispersion follows the empirical **68-95-99.7 rule**:\n\n"
                                     "- **68.26%** of all observations fall within $\\pm 1$ standard deviation of the mean.\n"
                                     "- **95.44%** fall within $\\pm 2$ standard deviations of the mean.\n"
-                                    "- **99.74%** fall within $\\pm 3$ standard deviations of the mean.\n\n"
+                                    "- **99.7%** fall within $\\pm 3$ standard deviations of the mean.\n\n"
                                     "Scientific test construction demands rigorous validation across both reliability (consistency) and validity (truthfulness/accuracy):\n\n"
                                     "| Psychometric Property | Specific Evaluation Type | Operational Definition | Clinical / Experimental Example |\n"
                                     "| :--- | :--- | :--- | :--- |\n"
@@ -112,7 +112,7 @@ DOMAIN_13 = {
                             "content": {
                                 "type": "key_concept",
                                 "title": "Theories of Intelligence and Deviation IQ",
-                                "body": "Early intelligence testing pioneered by Alfred Binet used **mental age** ($MA$). William Stern formulated the ratio IQ: $IQ = (MA / CA) \\times 100$. Modern tests like David Wechsler's **WAIS** and **WISC** abandoned ratio IQ in favor of **deviation IQ**, standardizing performance against representative age cohorts with a fixed mean of 100 and standard deviation of 15. In theory, **Charles Spearman** posited a general cognitive factor ($g$); **Howard Gardner** proposed eight independent multiple intelligences; and **Robert Sternberg** formulated the triarchic theory (analytical, creative, and practical intelligence).",
+                                "body": "Early intelligence testing pioneered by Alfred Binet used **mental age** ($MA$). William Stern formulated the ratio IQ: $IQ = (MA / CA) \\times 100$. Modern tests like David Wechsler's **WAIS** and **WISC** abandoned ratio IQ in favor of **deviation IQ**, standardizing performance against representative age cohorts with a fixed mean of 100 and standard deviation of 15. In theory, **Charles Spearman** posited a general cognitive factor ($g$); **Howard Gardner** proposed eight relatively separate multiple intelligences (an influential theory, but weakly supported by test data, since different abilities tend to correlate, which supports $g$); and **Robert Sternberg** formulated the triarchic theory (analytical, creative, and practical intelligence).",
                             },
                         },
                         {
@@ -125,7 +125,7 @@ DOMAIN_13 = {
                                     "The exam is normally distributed with a mean ($\\mu$) of 100 and a standard deviation ($\\sigma$) of 15.\n\n"
                                     "- **Student A** scores 115 (+1 SD above the mean). By applying the 68-95-99.7 rule, 50% score below the mean and 34.1% fall between the mean and +1 SD, meaning Student A scored higher than approximately 84% of test takers.\n"
                                     "- **Student B** scores 130 (+2 SD above the mean). Scoring higher than approximately 97.5% of test takers, placing Student B in the top 2.5% of the population.\n"
-                                    "- When the 1,000 students retake an alternate form 30 days later, the Pearson correlation coefficient between test administrations is $r = +0.94$, demonstrating exceptional test-retest reliability."
+                                    "- When the 1,000 students retake the same test 30 days later, the Pearson correlation coefficient between test administrations is $r = +0.94$, demonstrating exceptional test-retest reliability."
                                 ),
                             },
                         },
@@ -138,7 +138,7 @@ DOMAIN_13 = {
                         },
                         {
                             "term": "Statistical Significance",
-                            "definition": "A statistical criterion indicating that the observed experimental effect or difference is unlikely to have arisen by random chance alone, conventionally set at p < 0.05.",
+                            "definition": "A statistical criterion indicating that a result at least as extreme as the one observed would be unlikely if the null hypothesis (no real effect) were true, conventionally set at p < 0.05.",
                             "example": "A novel psychotherapy demonstrating symptom reduction with p = 0.01, indicating only a 1% probability of observing such results under the null hypothesis.",
                         },
                         {
@@ -204,7 +204,7 @@ DOMAIN_13 = {
                                 ]
                             },
                             "scoring_spec": {"correct_index": 3},
-                            "explanation": "A p-value of 0.02 is below the conventional alpha threshold of 0.05, indicating statistical significance. This means there is only a 2% probability that the observed difference between the experimental and control groups occurred by chance alone assuming the null hypothesis (no true drug effect) is true. It does not measure effect size, percent of cured patients, or clinical magnitude.",
+                            "explanation": "A p-value of 0.02 is below the conventional alpha threshold of 0.05, indicating statistical significance. This means that if the null hypothesis (no true drug effect) were true, a difference at least this large between the experimental and control groups would occur only about 2% of the time. It is not the probability that the result is due to chance or that the null hypothesis is true. It does not measure effect size, percent of cured patients, or clinical magnitude.",
                             "difficulty": "advanced",
                             "cognitive_level": "application",
                             "citation": "OpenStax Psychology 1e, Section 2.3",

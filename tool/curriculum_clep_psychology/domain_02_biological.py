@@ -265,9 +265,9 @@ DOMAIN_02 = {
                                     "### Subcortical Structures and the Limbic System\n\n"
                                     "The brain is organized into evolutionary hierarchical layers:\n"
                                     "- **Hindbrain:** Contains the **medulla** (controls automatic breathing, heartbeat, and blood pressure), the **pons** (coordinates movements and sleep regulation), and the **cerebellum** ('little brain,' governs balance, fine motor coordination, and procedural memory).\n"
-                                    "- **Midbrain:** Contains the **reticular formation**, a nerve network regulating arousal, alertness, and sleep-wake transitions.\n"
-                                    "- **Forebrain / Limbic System:** Coordinates emotional and motivational drives:\n"
-                                    "  * **Thalamus:** Sensory switchboard routing all sensory inputs (except olfaction) to higher cortical centers.\n"
+                                    "- **Midbrain:** Relays visual and auditory reflexes. The **reticular formation**, a nerve network regulating arousal, alertness, and sleep-wake transitions, runs from the medulla up through the midbrain.\n"
+                                    "- **Forebrain structures** (the last three are part of the limbic system, which coordinates emotional and motivational drives):\n"
+                                    "  * **Thalamus:** Sensory switchboard routing all sensory inputs (except olfaction) to higher cortical centers. It is a forebrain structure but is not usually counted as part of the limbic system.\n"
                                     "  * **Hypothalamus:** Regulates autonomic nervous system, hunger, thirst, body temperature, sexual drives, and directs the pituitary master gland.\n"
                                     "  * **Amygdala:** Processes emotional salience, particularly fear conditioning and aggressive responses.\n"
                                     "  * **Hippocampus:** Crucial for consolidating new explicit/declarative memories into long-term storage."
@@ -282,7 +282,7 @@ DOMAIN_02 = {
                                     "### The Four Cortical Lobes and Autonomic Nervous Control\n\n"
                                     "| Cortical Lobe | Key Functional Centers | Clinical Deficit Upon Damage |\n"
                                     "| :--- | :--- | :--- |\n"
-                                    "| **Frontal** | Prefrontal cortex (executive judgment, impulse control); Primary motor cortex; **Broca's area** (left hemisphere speech production) | Broca's aphasia (non-fluent, halting speech); emotional disinhibition (Phineas Gage) |\n"
+                                    "| **Frontal** | Prefrontal cortex (executive judgment, impulse control); Primary motor cortex; **Broca's area** (left hemisphere speech production) | Broca's aphasia (non-fluent, halting speech); emotional disinhibition (Phineas Gage, whose change is partly anecdotal and probably exaggerated in popular accounts) |\n"
                                     "| **Parietal** | Primary somatosensory cortex (processes touch, pain, temperature); spatial orientation | Hemispatial neglect, loss of tactile discrimination |\n"
                                     "| **Occipital** | Primary visual cortex (feature detection, retinotopic processing) | Cortical blindness, visual agnosia |\n"
                                     "| **Temporal** | Primary auditory cortex; **Wernicke's area** (left hemisphere language comprehension); facial recognition | Wernicke's aphasia (fluent but meaningless speech); prosopagnosia (face blindness) |\n\n"
@@ -320,7 +320,7 @@ DOMAIN_02 = {
                             "content": {
                                 "type": "warning",
                                 "title": "Cognitive Pitfall: Left Visual Field vs. Left Eye",
-                                "body": "Do not confuse the *left visual field* with the *left eye*. Visual fields project contralateral information from both eyes: the left half of each retina projects to the right hemisphere, and the right half of each retina projects to the left hemisphere.",
+                                "body": "Do not confuse the *left visual field* with the *left eye*. Visual fields project contralateral information from both eyes: the right half of each retina (which receives light from the left visual field) projects to the right hemisphere, and the left half of each retina (which receives the right visual field) projects to the left hemisphere. Fibers from the nasal (inner) half of each retina cross at the optic chiasm; fibers from the temporal (outer) half stay on the same side. So an image in the left visual field reaches the right hemisphere whichever eye sees it.",
                             },
                         },
                     ],
@@ -328,7 +328,7 @@ DOMAIN_02 = {
                         {
                             "term": "Hippocampus",
                             "definition": "A limbic system structure vital for processing and consolidating new explicit memories for long-term storage.",
-                            "example": "Patient H.M. lost the ability to form new episodic memories after bilateral surgical removal of his hippocampi.",
+                            "example": "Patient H.M. lost the ability to form new episodic memories after surgery that removed medial temporal lobe tissue on both sides, including most of both hippocampi.",
                         },
                         {
                             "term": "Corpus Callosum",
@@ -338,7 +338,7 @@ DOMAIN_02 = {
                         {
                             "term": "Prefrontal Cortex",
                             "definition": "The forward part of the frontal lobes responsible for executive functions including working memory, decision making, social planning, and impulse restraint.",
-                            "example": "Phineas Gage suffered dramatic personality shifts and emotional volatility after an iron rod pierced his prefrontal cortex.",
+                            "example": "Phineas Gage was reported to have become impulsive and irritable after an iron rod pierced his frontal lobe; these reports are partly anecdotal and probably exaggerated, and he later worked for years as a stagecoach driver.",
                         },
                     ],
                     "assessment_items": [
@@ -354,7 +354,7 @@ DOMAIN_02 = {
                                 ]
                             },
                             "scoring_spec": {"correct_index": 0},
-                            "explanation": "Damage to the prefrontal cortex (as famously documented in the historical case of Phineas Gage) impairs executive functions, emotional inhibition, foresight, and moral judgment without eliminating primary motor or vital autonomic functions.",
+                            "explanation": "Damage to the prefrontal cortex (as illustrated, with some exaggeration in popular retellings, by the historical case of Phineas Gage) impairs executive functions, emotional inhibition, foresight, and moral judgment without eliminating primary motor or vital autonomic functions.",
                             "difficulty": "intermediate",
                             "cognitive_level": "application",
                             "citation": "OpenStax Psychology 1e, Section 3.4",
@@ -372,7 +372,7 @@ DOMAIN_02 = {
                                 ]
                             },
                             "scoring_spec": {"correct_index": 1},
-                            "explanation": "The thalamus serves as the sensory routing hub of the brain, receiving sensory signals from the visual, auditory, gustatory, and somatosensory systems and relaying them to specialized cortical areas. Olfactory signals bypass the thalamus directly to the olfactory bulb.",
+                            "explanation": "The thalamus serves as the sensory routing hub of the brain, receiving sensory signals from the visual, auditory, gustatory, and somatosensory systems and relaying them to specialized cortical areas. Smell is the exception: olfactory receptors send signals to the olfactory bulb, which projects to the cortex without a thalamic relay.",
                             "difficulty": "beginner",
                             "cognitive_level": "recall",
                             "citation": "OpenStax Psychology 1e, Section 3.4",

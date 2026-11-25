@@ -22,7 +22,7 @@ DOMAIN_10 = {
                     "slug": "psyc-disorder-classification",
                     "name": "Diagnostic Classification and Biopsychosocial Etiology",
                     "short_definition": "Defining psychological disorders via deviance, distress, and dysfunction, classified by the DSM-5-TR under the diathesis-stress framework.",
-                    "description": "The medical model views disorders as illnesses; the diathesis-stress model integrates genetic predisposition with environmental stressors; Rosenhan demonstrated diagnostic labeling bias.",
+                    "description": "The medical model views disorders as illnesses; the diathesis-stress model integrates genetic predisposition with environmental stressors; Rosenhan's contested study is the classic illustration of diagnostic labeling bias.",
                     "citation": "OpenStax Psychology 1e, Section 15.1 & 15.2",
                 },
                 {
@@ -71,8 +71,8 @@ DOMAIN_10 = {
                                     "| Disorder | Core Symptom Profile | Diagnostic Hallmark |\n"
                                     "| :--- | :--- | :--- |\n"
                                     "| **Generalized Anxiety Disorder (GAD)** | Chronic, diffuse, unfocused apprehension lasting $\\ge 6$ months | 'Free-floating' anxiety accompanied by muscle tension and fatigue |\n"
-                                    "| **Panic Disorder** | Recurrent sudden surges of terrifying autonomic panic | Anticipatory terror; frequently accompanied by **agoraphobia** |\n"
-                                    "| **Specific Phobia** | Persistent, irrational fear and avoidance of a specific object | Disproportionate dread; recognized by adult as irrational |\n"
+                                    "| **Panic Disorder** | Recurrent sudden surges of terrifying autonomic panic | Persistent worry about future attacks; often co-occurs with **agoraphobia** (fear of places where escape would be hard), which DSM-5 diagnoses separately |\n"
+                                    "| **Specific Phobia** | Persistent, irrational fear and avoidance of a specific object | Fear out of proportion to the actual danger, lasting 6 months or more |\n"
                                     "| **Obsessive-Compulsive Disorder (OCD)** | Intrusive thoughts paired with repetitive ritualistic acts | **Obsessions** (anxiety-provoking thoughts) drive **Compulsions** (anxiety-reducing behaviors) |\n"
                                     "| **Post-Traumatic Stress Disorder (PTSD)** | Follows severe life-threatening trauma | Intrusive flashbacks, nightmares, hyperarousal, avoidance of trauma cues |"
                                 )
@@ -93,10 +93,11 @@ DOMAIN_10 = {
                             "content": {
                                 "title": "Historical Psychiatric Experiment: David Rosenhan's Hospital Study",
                                 "text": (
-                                    "In 1973, David Rosenhan sent eight sane pseudopatients to various psychiatric hospitals claiming they heard a single auditory voice saying 'empty, hollow, thud.' "
-                                    "All were admitted and diagnosed with schizophrenia. Once admitted, they acted completely normal. "
-                                    "Hospital staff failed to detect them; normal behaviors (like writing notes in a diary) were documented as pathological 'patient engages in excessive note-taking behavior.' "
-                                    "The study demonstrated the profound, persistent biasing power of **diagnostic labels**."
+                                    "In 1973, David Rosenhan reported sending eight healthy pseudopatients to psychiatric hospitals claiming they heard a voice saying words such as 'empty,' 'hollow,' and 'thud.' "
+                                    "According to his report, all were admitted: seven were diagnosed with schizophrenia and one with manic-depressive psychosis. Once admitted, they acted normally. "
+                                    "Staff did not detect them (though some fellow patients reportedly did), and ordinary behavior was read through the diagnosis; a nurse's note about one pseudopatient's note-taking read 'patient engages in writing behavior.' "
+                                    "Rosenhan concluded that **diagnostic labels** strongly bias how behavior is interpreted. "
+                                    "The study is famous but contested: critics at the time (such as Robert Spitzer) questioned its logic, and later investigations, including journalist Susannah Cahalan's 2019 book, have raised serious doubts about its methods and how its data were reported."
                                 ),
                             },
                         },
@@ -147,7 +148,7 @@ DOMAIN_10 = {
                             "concept_slugs": ["psyc-anxiety-ocd-ptsd"],
                         },
                         {
-                            "prompt": "In David Rosenhan's famous 1973 study 'On Being Sane in Insane Places,' what did the behavior of the hospital staff toward the pseudopatients reveal?",
+                            "prompt": "In David Rosenhan's famous 1973 study 'On Being Sane in Insane Places,' what did Rosenhan conclude from how hospital staff treated the pseudopatients?",
                             "interaction_type": "single_choice",
                             "response_spec": {
                                 "options": [
@@ -158,7 +159,7 @@ DOMAIN_10 = {
                                 ]
                             },
                             "scoring_spec": {"correct_index": 1},
-                            "explanation": "Rosenhan's study demonstrated that once individuals were labeled with schizophrenia, hospital staff interpreted completely normal, ordinary behaviors (such as pacing out of boredom or taking notes) as pathological manifestations of mental illness.",
+                            "explanation": "Rosenhan reported that once the pseudopatients were labeled with a diagnosis (usually schizophrenia), staff interpreted ordinary behaviors (such as pacing out of boredom or taking notes) as signs of mental illness. The study's methods and data have since been seriously questioned, so it is best treated as Rosenhan's claim rather than an established finding.",
                             "difficulty": "intermediate",
                             "cognitive_level": "analysis",
                             "citation": "OpenStax Psychology 1e, Section 15.1",
@@ -171,7 +172,7 @@ DOMAIN_10 = {
                                 "options": [
                                     "Obsessive-compulsive disorder",
                                     "Bipolar II hypomania",
-                                    "Panic disorder with agoraphobia",
+                                    "Panic disorder with comorbid agoraphobia",
                                     "Schizotypal personality disorder",
                                 ]
                             },
@@ -228,7 +229,7 @@ DOMAIN_10 = {
                     "slug": "psyc-mood-bipolar-disorders",
                     "name": "Depressive and Bipolar Disorders",
                     "short_definition": "Mood disturbances spanning Major Depressive Disorder (anhedonia, lethargy) and Bipolar Disorder (alternating depression and mania).",
-                    "description": "Depression involves monoamine deficits and pessimistic cognitive triads; Bipolar I requires at least one full manic episode.",
+                    "description": "Depression is associated with disturbances in monoamine and other neural systems and with pessimistic cognitive triads; Bipolar I requires at least one full manic episode.",
                     "citation": "OpenStax Psychology 1e, Section 15.6 & 15.7",
                 },
                 {

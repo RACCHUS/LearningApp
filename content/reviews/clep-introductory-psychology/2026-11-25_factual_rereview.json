@@ -1,0 +1,424 @@
+{
+ "reviewer_model": "Claude Sonnet 5.5 (claude-sonnet-5-5)",
+ "review_kind": "independent_ai_rereview",
+ "reviewed_against": "2026-11-25_factual_review.json",
+ "verdict": "approved",
+ "lessons_reviewed": 25,
+ "items_reviewed": 321,
+ "summary": "All 46 original findings (1 critical, 11 major, 34 minor) are fixed in the regenerated manifest. The retinal-projection reversal is corrected; the Gestalt and Bobo items now have exactly one defensible key and the lessons teach what they test; the Jung item matches the newly added neo-Freudian section; Rosenhan, Stanford Prison, facial feedback, Schachter-Singer, repression, stimulant pharmacology and the Weber item are corrected. I read all 25 lessons, 95 assessment items, 50 formative questions, 76 terms, 48 flashcards and 52 concepts, checked every keyed index, and found no new critical or major error in the added text (auditory anatomy, hypnosis, psychosexual stages, neo-Freudians, Maslow, hunger caveat, caregiver example, Rosenhan, Stanford, Bandura, Weber). Eight new minor residual issues are listed; none blocks approval.",
+ "original_findings": [
+  {
+   "index": 0,
+   "severity": "critical",
+   "location": "Brain Architecture and Hemispheric Specialization / callout 'Left Visual Field vs. Left Eye'",
+   "status": "fixed",
+   "note": "Callout now reads: right half of each retina (left visual field) projects to the right hemisphere, left half to the left; nasal fibers cross at the optic chiasm. Correct and consistent with the split-brain example."
+  },
+  {
+   "index": 1,
+   "severity": "major",
+   "location": "Assessment item A0 (Weber's Law, audio engineer)",
+   "status": "fixed",
+   "note": "Decibel item replaced by a 100 g/10 g -> 200 g/20 g item with a 10% proportion explanation; correct and unique (20 g)."
+  },
+  {
+   "index": 2,
+   "severity": "major",
+   "location": "Assessment item A3 (broken dashes)",
+   "status": "fixed",
+   "note": "Replaced with two lines crossing in an X seen as two smooth lines. Options: figure-ground, proximity, closure, continuity; only continuity is defensible (no gap for closure, no clusters for proximity), and the lesson defines continuity as smooth continuing paths."
+  },
+  {
+   "index": 3,
+   "severity": "minor",
+   "location": "Visual Cliff example",
+   "status": "fixed",
+   "note": "Now says depth perception is present by the time infants crawl, that the study cannot show innate vs learned, and that wariness of heights develops with crawling experience."
+  },
+  {
+   "index": 4,
+   "severity": "minor",
+   "location": "Opponent-process text and term definition",
+   "status": "fixed",
+   "note": "Now 'retinal ganglion cells, cells of the thalamus's lateral geniculate nucleus, and the visual cortex' in text, callout and term."
+  },
+  {
+   "index": 5,
+   "severity": "minor",
+   "location": "Lesson description and concept",
+   "status": "fixed",
+   "note": "New auditory section covers pinna, eardrum, ossicles, oval window, cochlea, basilar membrane, hair cell transduction, place/frequency/volley theories, conductive vs sensorineural loss; all accurate."
+  },
+  {
+   "index": 6,
+   "severity": "major",
+   "location": "Psychoactive Drug Classifications: Stimulants",
+   "status": "fixed",
+   "note": "Stimulant bullet now gives separate mechanisms: cocaine reuptake blockade, amphetamine release, caffeine adenosine blockade, nicotine nicotinic ACh stimulation."
+  },
+  {
+   "index": 7,
+   "severity": "minor",
+   "location": "Lesson scope versus title and description",
+   "status": "fixed",
+   "note": "New Hypnosis section (suggestibility, Hilgard dissociation/hidden observer vs social-cognitive role theory, limited pain use, no reliable memory enhancement); accurate."
+  },
+  {
+   "index": 8,
+   "severity": "minor",
+   "location": "Hallucinogens bullet",
+   "status": "fixed",
+   "note": "MDMA separated as a stimulant-hallucinogen hybrid (serotonin release and reuptake blockade); marijuana/THC added with cannabinoid receptors."
+  },
+  {
+   "index": 9,
+   "severity": "minor",
+   "location": "Experimental Case Study: John Garcia's Conditioned Taste Aversion",
+   "status": "fixed",
+   "note": "Now 'strong taste aversions after a single pairing, despite the delay of several hours', Garcia and Koelling (1966) attributed for the cue comparison, and 'suggesting'."
+  },
+  {
+   "index": 10,
+   "severity": "minor",
+   "location": "Generalization row, Obj 5.1 concept, item A1 (Little Albert)",
+   "status": "fixed",
+   "note": "Little Albert now labelled a classic, methodologically criticized single-child study, in the table, concept and item A1 explanation."
+  },
+  {
+   "index": 11,
+   "severity": "minor",
+   "location": "Operant matrix, positive punishment example",
+   "status": "fixed",
+   "note": "Positive punishment example is now extra chores; the speeding fine is moved to negative punishment and labelled response cost."
+  },
+  {
+   "index": 12,
+   "severity": "major",
+   "location": "Bandura paragraph",
+   "status": "fixed",
+   "note": "Bandura paragraph now says the 1961 children imitated with no reward to child or model; 1965 vicarious punishment/reinforcement affected performance, not learning."
+  },
+  {
+   "index": 13,
+   "severity": "major",
+   "location": "Assessment item A3 (Bobo doll factor)",
+   "status": "fixed",
+   "note": "A3 now asks about the 1965 variant: after incentives the group differences vanished, so consequences affected performance not learning. Only the last option is defensible; the other three are false (punishment did not prevent learning, treats came after the film, temperament not manipulated). The lesson teaches exactly this learning-performance distinction."
+  },
+  {
+   "index": 14,
+   "severity": "minor",
+   "location": "Latent Learning callout",
+   "status": "fixed",
+   "note": "Now 'errors dropped abruptly and matched those of rats rewarded all along within a day or two'."
+  },
+  {
+   "index": 15,
+   "severity": "minor",
+   "location": "Misinformation Effect term example",
+   "status": "fixed",
+   "note": "Example now has a stop sign originally seen and a yield sign reported after a yield-sign question, consistent with the definition."
+  },
+  {
+   "index": 16,
+   "severity": "minor",
+   "location": "Patient H.M. example",
+   "status": "fixed",
+   "note": "Now 'bilateral medial temporal lobectomy ... most of both hippocampi along with nearby tissue' and 'steady day-to-day improvement'."
+  },
+  {
+   "index": 17,
+   "severity": "minor",
+   "location": "Q0 and A4 (Baddeley central executive)",
+   "status": "fixed",
+   "note": "A4 stem and explanation no longer say it integrates across slave systems; the lesson gives the integration role to the episodic buffer. Formative Q0 stem likewise lacks the integration phrase."
+  },
+  {
+   "index": 18,
+   "severity": "minor",
+   "location": "Hunger table",
+   "status": "fixed",
+   "note": "Table introduces the 'classic dual-center model', adds a paragraph on arcuate/paraventricular networks, ghrelin, leptin, insulin and VMH-lesion fiber damage; weight now 'doubles or triples'."
+  },
+  {
+   "index": 19,
+   "severity": "major",
+   "location": "Term: Facial Feedback Hypothesis",
+   "status": "fixed",
+   "note": "Term is now a hypothesis that is small and inconsistent, and the example notes the 1988 pen study failed in the 17-lab 2016 replication."
+  },
+  {
+   "index": 20,
+   "severity": "major",
+   "location": "Schachter-Singer Suproxin callout",
+   "status": "fixed",
+   "note": "Callout now says 'interpreted as supporting', effects weak and inconsistent, mixed replication, only partial support."
+  },
+  {
+   "index": 21,
+   "severity": "minor",
+   "location": "Example: medical school finals / Exhaustion stage",
+   "status": "fixed",
+   "note": "Exhaustion example is now long-term caregiving over a year, with 'weakens the body's defenses' and a note that post-exam illness is a 'let-down' effect."
+  },
+  {
+   "index": 22,
+   "severity": "minor",
+   "location": "Piaget table",
+   "status": "fixed",
+   "note": "Stranger anxiety removed from the Piaget row; object permanence qualified as 'by Piaget's estimate'; paragraph adds Baillargeon looking-time evidence and gradual development."
+  },
+  {
+   "index": 23,
+   "severity": "minor",
+   "location": "Parenting styles table",
+   "status": "fixed",
+   "note": "Column renamed 'Child Outcomes Associated With the Style' and a paragraph states correlational, mostly Western middle-class evidence and cultural variation."
+  },
+  {
+   "index": 24,
+   "severity": "major",
+   "location": "Defense mechanisms: Repression",
+   "status": "fixed",
+   "note": "Repression example is now forgetting a dentist appointment, plus an explicit caution about limited empirical support and false recovered memories (Loftus)."
+  },
+  {
+   "index": 25,
+   "severity": "minor",
+   "location": "Lesson scope",
+   "status": "fixed",
+   "note": "Lesson now teaches psychosexual stages, neo-Freudians including Jung's collective unconscious with archetypes (shadow, hero, persona), and Maslow's self-actualization. Item A2 on Jung tests content taught there; key (collective unconscious) is unique."
+  },
+  {
+   "index": 26,
+   "severity": "minor",
+   "location": "Big Five text and concept",
+   "status": "fixed",
+   "note": "Now 'most widely accepted trait taxonomy' with HEXACO and non-Western replication caveat, in text and concept."
+  },
+  {
+   "index": 27,
+   "severity": "major",
+   "location": "Rosenhan example",
+   "status": "fixed",
+   "note": "Now seven schizophrenia and one manic-depressive psychosis, quote 'patient engages in writing behavior', and notes Spitzer's critique and Cahalan's 2019 book questioning methods and data."
+  },
+  {
+   "index": 28,
+   "severity": "minor",
+   "location": "Item A2 (panic disorder with agoraphobia) and Specific Phobia row",
+   "status": "fixed",
+   "note": "Option reworded 'Panic disorder with comorbid agoraphobia', table says DSM-5 diagnoses agoraphobia separately, and the 'recognized as irrational' clause is gone."
+  },
+  {
+   "index": 29,
+   "severity": "minor",
+   "location": "Concept: Depressive and Bipolar Disorders",
+   "status": "fixed",
+   "note": "Concept now says depression 'is associated with disturbances in monoamine and other neural systems'."
+  },
+  {
+   "index": 30,
+   "severity": "major",
+   "location": "Meta-analysis paragraph",
+   "status": "fixed",
+   "note": "Now 'among the best-supported predictors' (explains only part of variance), 'hundreds of controlled outcome studies', and 75% (1977) vs 80% (1980) distinguished."
+  },
+  {
+   "index": 31,
+   "severity": "major",
+   "location": "Classic Social Influence Experiments table: Stanford Prison Experiment",
+   "status": "fixed",
+   "note": "Row now labelled a famous but heavily criticized demonstration (guards encouraged to be tough, role acting, BBC study did not reproduce), not reliable evidence that roles alone override morality; deindividuation link removed."
+  },
+  {
+   "index": 32,
+   "severity": "minor",
+   "location": "Milgram table row and concept text",
+   "status": "fixed",
+   "note": "Table and concept now say participants believed they were delivering a dangerous shock and that the shocks were fake."
+  },
+  {
+   "index": 33,
+   "severity": "minor",
+   "location": "Item Q1 (Milgram, situational factor)",
+   "status": "fixed",
+   "note": "Q1 now asks which variation reduced obedience 'most dramatically, to about 10%'; peer rebellion is unique."
+  },
+  {
+   "index": 34,
+   "severity": "minor",
+   "location": "Pitfall callout: FAE and culture",
+   "status": "fixed",
+   "note": "Callout now 'somewhat stronger ... somewhat weaker in some East Asian samples ... modest and depends on the task'."
+  },
+  {
+   "index": 35,
+   "severity": "minor",
+   "location": "Darley-Latane callout and Q0",
+   "status": "fixed",
+   "note": "Callout notes the 38-witness story was exaggerated; Q0 and concept use 'bystander effect' rather than apathy."
+  },
+  {
+   "index": 36,
+   "severity": "minor",
+   "location": "Groupthink example",
+   "status": "fixed",
+   "note": "Groupthink example is now only Bay of Pigs, labelled Janis's own example."
+  },
+  {
+   "index": 37,
+   "severity": "minor",
+   "location": "Normal curve bullet",
+   "status": "fixed",
+   "note": "Now 99.7% (with 68.26% and 95.44% for the other bands)."
+  },
+  {
+   "index": 38,
+   "severity": "minor",
+   "location": "Example: alternate-form retake",
+   "status": "fixed",
+   "note": "Example now says 'retake the same test', correctly labelled test-retest."
+  },
+  {
+   "index": 39,
+   "severity": "minor",
+   "location": "Term: Statistical Significance and item A2 explanation",
+   "status": "fixed",
+   "note": "Term and A2 explanation now phrase p as probability of results at least this extreme if the null were true, and explicitly deny it is the probability of chance."
+  },
+  {
+   "index": 40,
+   "severity": "minor",
+   "location": "Intelligence callout",
+   "status": "fixed",
+   "note": "Now 'eight relatively separate multiple intelligences', influential but weakly supported, abilities correlate supporting g."
+  },
+  {
+   "index": 41,
+   "severity": "minor",
+   "location": "Contemporary perspectives table and item A2",
+   "status": "fixed",
+   "note": "Table now says 'early childhood experiences'; 1.1 item A2 no longer says 'innate'."
+  },
+  {
+   "index": 42,
+   "severity": "minor",
+   "location": "Historical overview paragraph",
+   "status": "fixed",
+   "note": "Now Titchener developed Wundt's methods into structuralism, Wundt's own approach sometimes called voluntarism; concept text matches."
+  },
+  {
+   "index": 43,
+   "severity": "minor",
+   "location": "Experimental method paragraph",
+   "status": "fixed",
+   "note": "Lesson now says 'primary method for testing cause and effect' and 'tend to be distributed evenly (more reliably in larger samples)'. Residual overclaim remains in a formative explanation (see new minor finding)."
+  },
+  {
+   "index": 44,
+   "severity": "minor",
+   "location": "Phineas Gage (lesson table, term example, item A0)",
+   "status": "fixed",
+   "note": "Gage caveats added in the table, term example and item A0 explanation (partly anecdotal, probably exaggerated, later worked as a stagecoach driver)."
+  },
+  {
+   "index": 45,
+   "severity": "minor",
+   "location": "Subcortical structures list and item A1 explanation",
+   "status": "fixed",
+   "note": "Now 'Forebrain structures (the last three are part of the limbic system)', thalamus noted as not usually limbic, reticular formation runs medulla through midbrain, and olfaction goes bulb to cortex without thalamic relay."
+  }
+ ],
+ "new_findings": [
+  {
+   "objective": "1.2",
+   "location": "Formative question 0 (random assignment) explanation",
+   "severity": "minor",
+   "claim": "Random assignment ensures that participant characteristics are equally distributed across conditions",
+   "problem": "Reintroduces the 'ensures/equally' overclaim the lesson text now avoids; chance only tends to balance groups, more reliably in large samples.",
+   "evidence": "Standard methods texts (e.g., OpenStax Psychology 1e, Ch. 2): random assignment makes groups equivalent on average, not guaranteed.",
+   "suggested_fix": "Say 'tends to distribute participant characteristics evenly across conditions'.",
+   "status": "fixed",
+   "resolution_note": "Explanation now says assignment makes characteristics 'tend to be' evenly distributed, especially in larger samples; key (option 2, minimizes pre-existing differences) remains the only defensible answer."
+  },
+  {
+   "objective": "10.1",
+   "location": "Assessment item A1 (Rosenhan) explanation",
+   "severity": "minor",
+   "claim": "Rosenhan's study demonstrated that once labelled, staff interpreted normal behaviors as pathological",
+   "problem": "States the conclusion as demonstrated, while the lesson now says the study is contested; the item tests what Rosenhan reported.",
+   "evidence": "Spitzer 1975; Cahalan 2019, The Great Pretender.",
+   "suggested_fix": "Reword to 'According to Rosenhan's report ...'.",
+   "status": "fixed",
+   "resolution_note": "Stem now says the item asks what Rosenhan concluded and the explanation says the study is best treated as Rosenhan's claim; the objective and concept descriptions also call it contested. Key (labels influenced interpretation) is unique."
+  },
+  {
+   "objective": "5.1",
+   "location": "Spontaneous Recovery pitfall callout",
+   "severity": "minor",
+   "claim": "Spontaneous recovery proves that extinction suppresses rather than permanently erases a conditioned association",
+   "problem": "'Proves' is stronger than needed; recovery is strong evidence that extinction involves new inhibitory learning.",
+   "evidence": "Pavlov; Bouton 2004.",
+   "suggested_fix": "Use 'shows' or 'is evidence that'.",
+   "status": "fixed",
+   "resolution_note": "Callout now says recovery 'shows' extinction suppresses rather than erases; no new claim."
+  },
+  {
+   "objective": "6.1",
+   "location": "Formative question 1 (H.M./anterograde amnesia) stem",
+   "severity": "minor",
+   "claim": "can recall childhood events perfectly",
+   "problem": "H.M. also had temporally graded retrograde amnesia for the years before surgery; 'perfectly' overstates, though the key (anterograde) is still correct.",
+   "evidence": "Scoville and Milner 1957; Corkin 2002.",
+   "suggested_fix": "Say 'can recall remote childhood events'.",
+   "status": "fixed",
+   "resolution_note": "Stem now says 'still recalls most of their childhood' and 'surgery removing most of both hippocampi'; anterograde amnesia remains the only defensible key."
+  },
+  {
+   "objective": "4.2",
+   "location": "Formative question 1 (depressants) stem",
+   "severity": "minor",
+   "claim": "classified ... because they agonize GABA receptors",
+   "problem": "Benzodiazepines, barbiturates and alcohol enhance GABA-A receptor function (positive allosteric modulation) rather than being direct agonists; the lesson itself says 'enhancing'.",
+   "evidence": "Standard pharmacology; the lesson's own wording.",
+   "suggested_fix": "Say 'enhance the action of GABA'.",
+   "status": "fixed",
+   "resolution_note": "Stem now says 'enhance the inhibitory effect of GABA'; depressants remains the only defensible key."
+  },
+  {
+   "objective": "9.1",
+   "location": "Pitfall callout 'Sublimation is Uniquely Adaptive'",
+   "severity": "minor",
+   "claim": "sublimation is considered an adaptive defense mechanism ... unlike other defense mechanisms",
+   "problem": "'Uniquely' is overstated; other defenses (humor, altruism, suppression) are classed as mature in Vaillant's hierarchy.",
+   "evidence": "Vaillant 1977/1992.",
+   "suggested_fix": "Drop 'Uniquely' or say 'one of the more adaptive defenses'.",
+   "status": "fixed",
+   "resolution_note": "Callout retitled 'Sublimation is Considered Adaptive', 'one of the more mature, adaptive defenses (along with humor, for example)'; accurate per Vaillant."
+  },
+  {
+   "objective": "7.1",
+   "location": "Term: Yerkes-Dodson Law example",
+   "severity": "minor",
+   "claim": "A surgeon remaining calm and composed during an 8-hour neurosurgical procedure",
+   "problem": "Does not illustrate the inverted-U relation in the definition.",
+   "evidence": "Yerkes and Dodson 1908.",
+   "suggested_fix": "Use an example in which performance falls at very high arousal (exam panic).",
+   "status": "fixed",
+   "resolution_note": "Example now shows too-relaxed errors, panicking freeze, and moderate arousal best, which illustrates the inverted-U."
+  },
+  {
+   "objective": "3.2",
+   "location": "Formative question 1 (Gestalt dots in a curve)",
+   "severity": "minor",
+   "claim": "individual dots aligned in a smooth, continuous curve ... which Gestalt principle",
+   "problem": "Dots in a row can also be read as proximity grouping; key (continuity) is still best because the stem stresses a smooth curve.",
+   "evidence": "Wertheimer 1923.",
+   "suggested_fix": "Specify unequal spacing along a smooth curve crossing another.",
+   "status": "fixed",
+   "resolution_note": "Item rewritten: a curved dot row crossing a straight row is seen as one curve and one line rather than grouped by nearness; continuity is the only defensible key (proximity explicitly contrasted, no gap for closure, no figure-ground cue). Explanation is generic but correct."
+  }
+ ],
+ "follow_up_check": "Second pass against the current manifest: all 8 new minor findings are fixed. Each changed item or text was re-read; every changed assessment/formative item still has exactly one defensible key and the edits introduce no new error. Verdict unchanged: approved."
+}

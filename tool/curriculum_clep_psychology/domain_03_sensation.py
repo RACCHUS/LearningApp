@@ -131,18 +131,18 @@ DOMAIN_03 = {
                     ],
                     "assessment_items": [
                         {
-                            "prompt": "An audio engineer can just barely detect a volume difference when a 100-decibel tone is raised by 5 decibels. According to Weber's Law, how many decibels must a 200-decibel tone be raised for the engineer to notice a change?",
+                            "prompt": "Holding a 100-gram package, a shipping clerk can just barely notice the difference when 10 grams are added. According to Weber's Law, how many grams must be added to a 200-gram package for the clerk to notice a change?",
                             "interaction_type": "single_choice",
                             "response_spec": {
                                 "options": [
-                                    "10 decibels",
-                                    "5 decibels",
-                                    "20 decibels",
-                                    "2.5 decibels",
+                                    "20 grams",
+                                    "10 grams",
+                                    "40 grams",
+                                    "5 grams",
                                 ]
                             },
                             "scoring_spec": {"correct_index": 0},
-                            "explanation": "Weber's law states that the difference threshold is a constant proportion of the original stimulus. Since a 5 dB increase on a 100 dB sound represents a 5% difference ratio, a 200 dB sound requires a 5% increase (which equals 10 dB) to produce a just noticeable difference.",
+                            "explanation": "Weber's law states that the difference threshold is a constant proportion of the starting stimulus. Adding 10 grams to 100 grams is a 10% change, so a 200-gram package needs a 10% increase (20 grams) before the difference becomes just noticeable.",
                             "difficulty": "intermediate",
                             "cognitive_level": "application",
                             "citation": "OpenStax Psychology 1e, Section 5.1",
@@ -251,11 +251,17 @@ DOMAIN_03 = {
                                     "| **Color & Acuity** | Monochromatic (shades of gray); low acuity | Color vision; high spatial acuity and detail |\n\n"
                                     "### Theories of Color Vision\n\n"
                                     "1. **Young-Helmholtz Trichromatic Theory:** The retina possesses three distinct cone types maximally sensitive to different wavelengths: **Red (long)**, **Green (medium)**, and **Blue (short)**. Color perception results from additive ratios of stimulation.\n"
-                                    "2. **Hering's Opponent-Process Theory:** Neural circuits beyond the retina (in ganglion cells, thalamus, and visual cortex) process color through three opposing channels:\n"
+                                    "2. **Hering's Opponent-Process Theory:** Later stages of processing (retinal ganglion cells, cells of the thalamus's lateral geniculate nucleus, and the visual cortex) code color through three opposing channels:\n"
                                     "   - **Red vs. Green**\n"
                                     "   - **Blue vs. Yellow**\n"
                                     "   - **Black vs. White**\n"
-                                    "   *Explains negative afterimages: fatiguing green receptors causes a white surface to appear red.*"
+                                    "   *Explains negative afterimages: after the green side of the red-green channel is fatigued, a white surface looks reddish.*\n\n"
+                                    "### The Auditory System: From Air Pressure to Neural Signals\n\n"
+                                    "- **Outer ear:** The **pinna** funnels sound waves down the auditory canal to the **eardrum (tympanic membrane)**, which vibrates.\n"
+                                    "- **Middle ear:** Three tiny bones, the **ossicles** (hammer, anvil, and stirrup), amplify those vibrations and press on the **oval window** of the cochlea.\n"
+                                    "- **Inner ear:** Inside the fluid-filled, snail-shaped **cochlea**, fluid waves ripple the **basilar membrane**. **Hair cells** on that membrane bend, and this bending is the transduction step that fires the **auditory nerve**.\n"
+                                    "- **Pitch:** **Place theory** says different frequencies make different spots on the basilar membrane vibrate most (high pitches near the base, low pitches near the tip); it best explains high pitches. **Frequency (temporal) theory** says the auditory nerve fires at the same rate as the sound wave; it explains low pitches, and the **volley principle** (groups of neurons firing in turns) extends it to moderate pitches.\n"
+                                    "- **Hearing loss:** **Conductive** loss comes from damage to the eardrum or ossicles; **sensorineural** (nerve) loss comes from damage to hair cells or the auditory nerve and is the type cochlear implants address."
                                 )
                             },
                         },
@@ -283,7 +289,7 @@ DOMAIN_03 = {
                             "content": {
                                 "type": "key_concept",
                                 "title": "Reconciling the Two Color Theories",
-                                "body": "Both color theories are scientifically correct, but describe different stages: **Trichromatic theory** explains photoreceptor function at the *retina/cone* level. **Opponent-process theory** explains subsequent neural coding in *ganglion cells, thalamus, and visual cortex*.",
+                                "body": "Both color theories are scientifically correct, but describe different stages: **Trichromatic theory** explains photoreceptor function at the *retina/cone* level. **Opponent-process theory** explains later neural coding in *retinal ganglion cells, the thalamus (lateral geniculate nucleus), and visual cortex*.",
                             },
                         },
                         {
@@ -294,8 +300,9 @@ DOMAIN_03 = {
                                 "text": (
                                     "Eleanor Gibson and Richard Walk placed 6- to 14-month-old human infants on a visual cliff apparatus: "
                                     "a heavy glass tabletop suspended over an apparent vertical drop. Even when coaxed by their mothers from the 'deep' side, "
-                                    "most infants refused to crawl onto the glass, demonstrating that depth perception and innate avoidance of heights "
-                                    "are present by the onset of mobile locomotion."
+                                    "most infants refused to crawl onto the glass, indicating that depth perception is present by the time infants can crawl. "
+                                    "Because the infants were already months old, the study cannot show whether this is innate or learned; later research suggests "
+                                    "that wariness of heights develops along with crawling experience."
                                 ),
                             },
                         },
@@ -312,7 +319,7 @@ DOMAIN_03 = {
                     "terms": [
                         {
                             "term": "Opponent-Process Theory",
-                            "definition": "The theory that color perception relies on retinal and thalamic ganglion cells that are stimulated by one color and inhibited by its opponent color.",
+                            "definition": "The theory that color perception relies on neurons (in retinal ganglion cells, the thalamus, and visual cortex) that are stimulated by one color and inhibited by its opponent color.",
                             "example": "Staring at a green square for 60 seconds and then looking at a blank white wall produces a red afterimage.",
                         },
                         {
@@ -339,7 +346,7 @@ DOMAIN_03 = {
                                 ]
                             },
                             "scoring_spec": {"correct_index": 0},
-                            "explanation": "According to Hering's opponent-process theory, color vision is governed by opposing neural channels (red-green, blue-yellow, black-white). Staring at green fatigues the green-sensitive receptors, allowing the rebound firing of the opposing red receptors when viewing neutral white light.",
+                            "explanation": "According to Hering's opponent-process theory, color vision is governed by opposing neural channels (red-green, blue-yellow, black-white). Staring at green fatigues the green side of the red-green channel, so when neutral white light arrives the opposing red side dominates and a red afterimage appears.",
                             "difficulty": "intermediate",
                             "cognitive_level": "comprehension",
                             "citation": "OpenStax Psychology 1e, Section 5.2",
@@ -382,7 +389,7 @@ DOMAIN_03 = {
                             "concept_slugs": ["psyc-perceptual-organization"],
                         },
                         {
-                            "prompt": "A reader effortlessly perceives a series of broken dashes '— — — —' as a single continuous line rather than disconnected individual fragments. Which Gestalt principle explains this tendency?",
+                            "prompt": "Two straight lines cross to form an X. Observers report seeing two smooth lines passing through each other, not four short segments meeting at a central point. Which Gestalt principle explains this tendency?",
                             "interaction_type": "single_choice",
                             "response_spec": {
                                 "options": [
@@ -393,7 +400,7 @@ DOMAIN_03 = {
                                 ]
                             },
                             "scoring_spec": {"correct_index": 3},
-                            "explanation": "The Gestalt law of continuity states that observers tend to perceive elements as continuing along an established direction rather than as broken, abrupt fragments. Closure specifically refers to filling in enclosed gaps.",
+                            "explanation": "The Gestalt law of continuity states that observers tend to see elements as following the smoothest continuing path, so each line is seen as carrying straight on through the crossing point. There are no gaps to fill (closure), no separate clusters (proximity), and the question is not about separating a figure from its background.",
                             "difficulty": "intermediate",
                             "cognitive_level": "comprehension",
                             "citation": "OpenStax Psychology 1e, Section 5.3",

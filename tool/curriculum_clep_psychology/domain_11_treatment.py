@@ -212,7 +212,7 @@ DOMAIN_11 = {
                     "slug": "psyc-treatment-efficacy-meta-analysis",
                     "name": "Evaluating Treatment Outcomes and Therapeutic Alliance",
                     "short_definition": "Empirical evaluation of psychotherapy efficacy through meta-analysis and the foundational role of the therapeutic alliance.",
-                    "description": "Meta-analyses demonstrate that psychotherapy is substantially more effective than no treatment, mediated by empathy, hope, and the therapeutic alliance.",
+                    "description": "Meta-analyses demonstrate that psychotherapy is substantially more effective than no treatment; common factors such as empathy, hope, and the therapeutic alliance are among the best-supported predictors of outcome.",
                     "citation": "OpenStax Psychology 1e, Section 16.4",
                     "prerequisites": ["psyc-biomedical-pharmacology"],
                 },
@@ -255,9 +255,9 @@ DOMAIN_11 = {
                                     "- **Repetitive Transcranial Magnetic Stimulation (rTMS):** Delivers repeated magnetic pulses to the left prefrontal cortex to stimulate inactive neural circuits without producing seizures or memory loss.\n\n"
                                     "### Evaluating Therapy Outcomes: Meta-Analysis\n\n"
                                     "In 1952, Hans Eysenck claimed two-thirds of untreated neurotic patients improve on their own through **spontaneous remission**. "
-                                    "Subsequent large-scale **meta-analyses** (statistical syntheses of hundreds of randomized controlled trials) conducted by Mary Lee Smith and Gene Glass decisively disproved Eysenck, "
-                                    "revealing that **the average treated therapy client is better off than 80% of untreated control individuals**. "
-                                    "The single strongest predictor of positive outcome across all therapy types is the **therapeutic alliance**—the empathic, collaborative bond between therapist and client."
+                                    "Later **meta-analyses** (statistical syntheses of hundreds of controlled outcome studies) by Mary Lee Smith, Gene Glass, and colleagues contradicted Eysenck's pessimistic conclusion, "
+                                    "finding that **the average treated therapy client is better off than about 80% of untreated control individuals** (their 1977 analysis put the figure at about 75%; the 1980 update at about 80%). "
+                                    "Among the best-supported predictors of positive outcome across therapy types is the **therapeutic alliance**—the empathic, collaborative bond between therapist and client—although it explains only part of the variation in outcomes."
                                 )
                             },
                         },
@@ -358,7 +358,7 @@ DOMAIN_11 = {
                                 ]
                             },
                             "scoring_spec": {"correct_index": 0},
-                            "explanation": "Meta-analytic reviews synthesizing hundreds of controlled outcome studies demonstrate that psychotherapy is effective: the average treated client is better off than approximately 80% of untreated individuals on waitlists, refuting Eysenck's spontaneous remission claims.",
+                            "explanation": "Meta-analytic reviews synthesizing hundreds of controlled outcome studies demonstrate that psychotherapy is effective: the average treated client is better off than approximately 80% of untreated individuals on waitlists, contradicting Eysenck's claim that therapy adds little beyond spontaneous remission.",
                             "difficulty": "intermediate",
                             "cognitive_level": "comprehension",
                             "citation": "OpenStax Psychology 1e, Section 16.4",

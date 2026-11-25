@@ -16,7 +16,7 @@ RAW_FORMATIVE_QUESTIONS_BY_LESSON: dict[str, list[dict]] = {
                 "Behaviorism",
                 "Psychoanalysis",
             ],
-            "explanation": "Structuralism, founded by Wilhelm Wundt and expanded by Edward Titchener, attempted to map conscious experience by breaking it down into basic sensations through systematic introspection.",
+            "explanation": "Structuralism, which Edward Titchener developed from Wilhelm Wundt's laboratory methods, attempted to map conscious experience by breaking it down into basic sensations through systematic introspection.",
             "concept_slugs": ["psyc-structuralism"],
         },
         {
@@ -40,7 +40,7 @@ RAW_FORMATIVE_QUESTIONS_BY_LESSON: dict[str, list[dict]] = {
                 "It completely eliminates the possibility of experimental demand characteristics",
                 "It allows researchers to calculate Pearson correlation coefficients without bias",
             ],
-            "explanation": "Random assignment ensures that participant characteristics (such as baseline intelligence or motivation) are equally distributed across conditions, controlling for confounding variables and enabling causal inferences.",
+            "explanation": "Random assignment makes participant characteristics (such as baseline intelligence or motivation) tend to be equally distributed across conditions, especially in larger samples, controlling for confounding variables and enabling causal inferences.",
             "concept_slugs": ["psyc-experimental-methodology"],
         },
         {
@@ -140,7 +140,7 @@ RAW_FORMATIVE_QUESTIONS_BY_LESSON: dict[str, list[dict]] = {
             "concept_slugs": ["psyc-visual-auditory-systems"],
         },
         {
-            "question_text": "Which Gestalt principle explains why we perceive individual dots aligned in a smooth, continuous curve as belonging together rather than as separate points?",
+            "question_text": "A row of evenly spaced dots curves smoothly through a second, straight row of dots that crosses it. Viewers see one curve and one straight line passing through each other, rather than dots grouped by which ones sit nearest the crossing point. Which Gestalt principle explains this?",
             "correct_text": "Principle of continuity",
             "distractors": [
                 "Principle of proximity",
@@ -188,7 +188,7 @@ RAW_FORMATIVE_QUESTIONS_BY_LESSON: dict[str, list[dict]] = {
             "concept_slugs": ["psyc-sleep-disorders-dreams"],
         },
         {
-            "question_text": "Alcohol, barbiturates, and benzodiazepines are classified under which major category of psychoactive substances because they agonize GABA receptors?",
+            "question_text": "Alcohol, barbiturates, and benzodiazepines are classified under which major category of psychoactive substances because they enhance the inhibitory effect of GABA?",
             "correct_text": "Depressants",
             "distractors": [
                 "Stimulants",
@@ -243,13 +243,13 @@ RAW_FORMATIVE_QUESTIONS_BY_LESSON: dict[str, list[dict]] = {
                 "Ignored the doll entirely and preferred neutral drawing activities",
                 "Exhibited aggression only when an immediate tangible candy reward was offered",
             ],
-            "explanation": "Bandura demonstrated observational learning: children exposed to aggressive models imitated specific physical and verbal aggressive behaviors, disproving the claim that observing aggression produces catharsis.",
+            "explanation": "Bandura demonstrated observational learning: children exposed to aggressive models imitated specific physical and verbal aggressive behaviors without any reward, contradicting the idea that watching aggression drains it away (catharsis).",
             "concept_slugs": ["psyc-observational-learning"],
         },
     ],
     "Memory Systems: Encoding, Storage, and Retrieval": [
         {
-            "question_text": "Which component of Alan Baddeley's working memory model coordinates cognitive activities, allocates attentional resources, and integrates information across slave systems?",
+            "question_text": "Which component of Alan Baddeley's working memory model coordinates cognitive activities, allocates attentional resources, and switches focus between tasks?",
             "correct_text": "Central executive",
             "distractors": [
                 "Phonological loop",
@@ -260,7 +260,7 @@ RAW_FORMATIVE_QUESTIONS_BY_LESSON: dict[str, list[dict]] = {
             "concept_slugs": ["psyc-memory-models"],
         },
         {
-            "question_text": "An individual who can recall childhood events perfectly but is incapable of forming new conscious declarative memories after bilateral hippocampus surgery exhibits what condition?",
+            "question_text": "An individual who still recalls most of their childhood but cannot form new conscious declarative memories after surgery removing most of both hippocampi exhibits what condition?",
             "correct_text": "Anterograde amnesia",
             "distractors": [
                 "Retrograde amnesia",
@@ -548,7 +548,7 @@ RAW_FORMATIVE_QUESTIONS_BY_LESSON: dict[str, list[dict]] = {
             "concept_slugs": ["psyc-attribution-dissonance"],
         },
         {
-            "question_text": "In Stanley Milgram's classic obedience experiments, which situational factor significantly reduced participants' willingness to administer the highest voltage shocks?",
+            "question_text": "In Stanley Milgram's obedience experiments, which variation reduced obedience most dramatically, to about 10% of participants?",
             "correct_text": "Observing peer confederate teachers rebel and refuse to obey the experimenter",
             "distractors": [
                 "Conducting the experiment at prestigious Yale University rather than a downtown office",
@@ -561,7 +561,7 @@ RAW_FORMATIVE_QUESTIONS_BY_LESSON: dict[str, list[dict]] = {
     ],
     "Group Influence, Prejudice, and the Bystander Effect": [
         {
-            "question_text": "The tragic murder of Kitty Genovese in 1964 stimulated social psychologists John Darley and Bibb Latané to study which phenomenon?",
+            "question_text": "News coverage of the 1964 murder of Kitty Genovese (later shown to have exaggerated how many witnesses did nothing) prompted social psychologists John Darley and Bibb Latané to study which phenomenon?",
             "correct_text": "The bystander effect and diffusion of responsibility",
             "distractors": [
                 "Social loafing in collaborative group tasks",
