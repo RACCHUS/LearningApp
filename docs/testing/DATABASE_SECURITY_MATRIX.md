@@ -12,7 +12,7 @@ Columns are **static text signals**, not proof. Read a test before relying on it
 - **RLS checks**: assertions that row-level security is enabled (`relrowsecurity`).
 - A file has a **security signal** if it has any denial, privilege or RLS check, or at least two identity switches (cross-user tests often assert that another learner's rows count as zero).
 
-**Totals:** 105 test files, 2217 planned assertions, plus 4 files using `no_plan()` (counted only when run; pg_prove reports the full total in the database job).
+**Totals:** 106 test files, 2235 planned assertions, plus 4 files using `no_plan()` (counted only when run; pg_prove reports the full total in the database job).
 
 ## By area
 
@@ -27,7 +27,7 @@ Columns are **static text signals**, not proof. Read a test before relying on it
 | Catalog, taxonomy & versioning | 15 | 270 | 5 | 4 | 77 | 41 | 12 |
 | Feature controls & cost | 2 | 54 | 2 | 1 | 18 | 0 | 0 |
 | Schema integrity | 1 | 8 | 0 | 0 | 0 | 0 | 0 |
-| Other | 27 | 421 | 8 | 17 | 133 | 26 | 1 |
+| Other | 28 | 439 | 9 | 17 | 135 | 28 | 1 |
 
 ## Files with no security signal
 
@@ -129,6 +129,7 @@ No denial, privilege or RLS check and fewer than two identity switches. These ma
 | `schema_drift_backfill_test.sql` | Schema integrity | 8 | — | 0 | 0 | 0 | 0 |
 | `ai_managed_free_tier_test.sql` | Other | 29 | anon, authenticated | 3 | 6 | 0 | 0 |
 | `champion_challenger_test.sql` | Other | 18 | authenticated | 4 | 11 | 1 | 0 |
+| `consented_response_feed_test.sql` | Other | 18 | anon, authenticated | 0 | 2 | 2 | 0 |
 | `contribution_duplicate_candidates_test.sql` | Other | 8 | authenticated | 2 | 3 | 0 | 0 |
 | `coverage_fill_list_test.sql` | Other | 10 | authenticated | 2 | 1 | 0 | 0 |
 | `coverage_matrix_test.sql` | Other | 9 | — | 0 | 0 | 0 | 0 |
