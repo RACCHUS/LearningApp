@@ -107,7 +107,7 @@ firebase deploy --only hosting
 Once the deployment completes:
 
 1. **Cache Control Verification:**
-   - `index.html`, `flutter_bootstrap.js`, and `version.json` are configured with `Cache-Control: no-cache, no-store, must-revalidate` so learners receive new app versions promptly. The old custom Flutter service worker was removed because it did not implement app-shell caching; **do not assume offline launch is supported**.
+   - `index.html`, `flutter_bootstrap.js`, and `version.json` are configured with `Cache-Control: no-cache, no-store, must-revalidate` so learners receive new app versions promptly. `main.dart.js` and its deferred parts (`main.dart.js_*.part.js`) are `no-cache` (revalidated on every load). The parts keep the same names in every build, so caching them would let a new `main.dart.js` load an old part after a release and fail with "Error Loading Component". A tab left open across a release still holds the old app in memory and needs a reload to open screens it hasn't loaded yet. The old custom Flutter service worker was removed because it did not implement app-shell caching; **do not assume offline launch is supported**.
 2. **Connectivity & Synchronization:**
    - The app currently operates online-first with progressive outbox sync; persistent offline queueing is scheduled for Phase 1.
 3. **PWA Installability:**
