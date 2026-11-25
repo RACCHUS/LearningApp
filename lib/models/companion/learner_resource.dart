@@ -210,8 +210,12 @@ class ResourceOutline {
         ),
       );
     }
+    // Sort order is per parent, so order the areas by their own position,
+    // not by where their first objective happened to fall.
+    final ordered = groups.entries.toList()
+      ..sort((a, b) => (byId[a.key]?.sortOrder ?? 0).compareTo(byId[b.key]?.sortOrder ?? 0));
     return ResourceOutline([
-      for (final e in groups.entries)
+      for (final e in ordered)
         ResourceOutlineGroup(
           title: byId[e.key]?.title ?? 'Topics',
           weight: byId[e.key]?.weight,
