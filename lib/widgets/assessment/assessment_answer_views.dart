@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:learning_pwa/models/assessment_item.dart';
+import 'package:learning_pwa/widgets/lesson/blocks/markdown_math.dart';
 
 // Answer views for AssessmentItemRenderer, one per interaction type.
 // Moved from assessment_item_renderer.dart (code-efficiency plan §14,
@@ -130,7 +131,7 @@ class SingleChoiceAnswerView extends StatelessWidget {
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: Text(
+                    child: _MathText(
                       text,
                       style: GoogleFonts.inter(
                         fontSize: 14.5,
@@ -300,7 +301,7 @@ class MultiSelectAnswerView extends StatelessWidget {
                     ),
                     const SizedBox(width: 12),
                     Expanded(
-                      child: Text(
+                      child: _MathText(
                         text,
                         style: GoogleFonts.inter(
                           fontSize: 14.5,
@@ -407,7 +408,7 @@ class OrderedResponseAnswerView extends StatelessWidget {
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: Text(
+                    child: _MathText(
                       itemText,
                       style: GoogleFonts.inter(fontSize: 14),
                     ),
@@ -516,7 +517,7 @@ class MatchingAnswerView extends StatelessWidget {
                                             : const Color(0xFFE2E8F0))),
                           ),
                         ),
-                        child: Text(
+                        child: _MathText(
                           key,
                           style: GoogleFonts.inter(
                             fontSize: 13.5,
@@ -564,7 +565,7 @@ class MatchingAnswerView extends StatelessWidget {
                                       : const Color(0xFFE2E8F0)),
                           ),
                         ),
-                        child: Text(
+                        child: _MathText(
                           val,
                           style: GoogleFonts.inter(fontSize: 13.5),
                         ),
@@ -579,4 +580,16 @@ class MatchingAnswerView extends StatelessWidget {
       ],
     );
   }
+}
+
+/// Option text that may be $...$ math (notation profile, plan v1.2 §8.9):
+/// same call shape as [Text], rendered with [mathAwareText].
+class _MathText extends StatelessWidget {
+  const _MathText(this.data, {this.style});
+
+  final String data;
+  final TextStyle? style;
+
+  @override
+  Widget build(BuildContext context) => mathAwareText(data, style);
 }
