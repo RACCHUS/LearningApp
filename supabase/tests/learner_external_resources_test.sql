@@ -50,10 +50,11 @@ select is_empty(
                               'set_learner_resource_objective_studied', 'delete_learner_external_resource') $$,
   'no other function reads self-reported outside study');
 
+-- Gate OFF (it was seeded OFF and later activated by 20261125040000).
+update private.site_feature_controls set enabled = false where feature_key = 'content.learner_resources';
 set local role authenticated;
 select set_config('request.jwt.claim.sub', 'ce000000-0000-4000-8000-000000000001', true);
 
--- Gate OFF (the seeded default).
 select throws_ok(
   $$ select public.save_learner_external_resource('ce000000-0000-4000-8000-000000000010', 'My course') $$,
   '42501', 'feature_disabled', 'writes are refused while the switch is off');
