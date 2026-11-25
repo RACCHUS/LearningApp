@@ -1,0 +1,82 @@
+# Opportunity brief (ingestion plan v1.2 §4.2). Aggregate public data only.
+# Unknown is null, not zero. Validate: python tool/verify_research.py
+id: clep-college-algebra
+title: CLEP College Algebra (credit by exam)
+target_slug: clep-college-algebra
+lane: strategic
+intended_learner: Adults earning college credit by exam for a first college algebra course
+locale: en-US
+outcome: Readiness for the CLEP College Algebra exam (ACE recommends a scaled score of 50 for 3 semester hours;
+  each college sets its own policy), measured by independent checks once they exist
+demand_status: research_in_progress
+observations:
+- evidence_class: outcome_value
+  metric: ACE-recommended credit for a passing CLEP College Algebra score (50)
+  state: observed
+  value: 3
+  unit: semester hours
+  period: '2024'
+  geography: United States
+  publisher: College Board, What Your CLEP Score Means (ACE recommendations)
+  source_locator: https://clep.collegeboard.org/clep/pdf/what-your-score-means.pdf
+  directness: direct
+  checked_on: '2026-11-25'
+  note: Equivalent to a grade of C; each college can set its own credit-granting policy.
+- evidence_class: official_participation
+  metric: CLEP College Algebra test takers per year
+  state: missing
+  value: null
+  unit: test takers
+  period: latest available
+  geography: United States
+  publisher: College Board
+  source_locator: https://clep.collegeboard.org/clep/pdf/what-your-score-means.pdf
+  directness: direct
+  checked_on: '2026-11-25'
+  note: Not published per exam in the College Board documents checked; unknown, not zero.
+factors:
+  demand:
+    score: null
+    evidence: []
+    rated_by: null
+  underserved_need:
+    score: null
+    evidence: []
+    rated_by: null
+  outcome_value:
+    score: 3
+    evidence:
+    - ACE recommends 3 semester hours for a scaled score of 50 (College Board, 2024); acceptance depends on each
+      college, so moderate
+    rated_by: 'ai-drafted-by-claude (method: plan v1.2 §4.3 anchors from the cited observation)'
+  cross_goal_reuse:
+    score: 3
+    evidence:
+    - 'Approved mapping to the imported College Algebra textbook: 3 objectives map exactly to imported sections,
+      2 partly'
+    rated_by: 'ai-drafted-by-claude (method: plan v1.2 §4.3 anchors from the cited observation)'
+  source_feasibility:
+    score: 4
+    evidence:
+    - Original lessons; College Board outline and OpenStax 1e used as reference only; every simulation item has
+      an independent SymPy oracle (tool/tests/clep_algebra_oracles.py)
+    rated_by: 'ai-drafted-by-claude (method: plan v1.2 §4.3 anchors from the cited observation)'
+  improvement_potential:
+    score: null
+    evidence: []
+    rated_by: null
+gates:
+  permitted_operation: true
+  source_trust: true
+  outcome_defined: true
+  safety_ok: true
+  capacity_ok: null
+  validation_feasible: true
+effort:
+  size: M
+  reason: 20 lessons and 60 protected simulation items exist; needs 6 independent checks per objective (120) and
+    worked-example blocks
+  operator_minutes: null
+recommendation: improve
+notes: 'Rights: OpenStax cited as reference only (data/rights_audits/2026-11-25_clep_openstax.json). Reconciled
+  with the textbook target (data/concept_mappings/).'

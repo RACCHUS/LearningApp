@@ -6,25 +6,41 @@ target_slug: software-excel-fundamentals
 lane: strategic
 intended_learner: Adults starting to use spreadsheets at work
 locale: en-US
-outcome: Entering data and writing a SUM total over a range in the real Excel application, shown by a self-checked hands-on task and held-out checks
-demand_status: unmeasured
-observations: []
+outcome: Entering data and writing a SUM total over a range in the real Excel application, shown by a self-checked
+  hands-on task and held-out checks
+demand_status: measured_limited
+observations:
+- evidence_class: labor
+  metric: US job postings that list Microsoft Excel
+  state: observed
+  value: 3211598
+  unit: job postings
+  period: 2025-01 to 2025-12
+  geography: United States
+  publisher: O*NET OnLine Hot Technologies (Lightcast job postings data)
+  source_locator: https://www.onetonline.org/search/hot_tech/
+  directness: direct
+  checked_on: '2026-11-25'
+  note: Second-most listed technology, after Microsoft Office software (3,421,542), out of 46,885,153 postings.
+  cohort: onet-hot-tech-2025
 factors:
   demand:
-    score: null
-    evidence: &id001 []
-    rated_by: null
+    score: 5
+    evidence:
+    - Microsoft Excel was listed in 3,211,598 of 46,885,153 US job postings in 2025 (6.8%), the second most-listed
+      technology (O*NET OnLine, Lightcast data)
+    rated_by: 'ai-drafted-by-claude (method: plan v1.2 §4.3 anchors from the cited observation)'
   underserved_need:
     score: null
-    evidence: *id001
+    evidence: []
     rated_by: null
   outcome_value:
     score: null
-    evidence: *id001
+    evidence: []
     rated_by: null
   cross_goal_reuse:
     score: null
-    evidence: *id001
+    evidence: []
     rated_by: null
   source_feasibility:
     score: 2
@@ -33,7 +49,7 @@ factors:
     rated_by: 'ai-drafted-by-claude (method: registry status and allowed uses)'
   improvement_potential:
     score: null
-    evidence: *id001
+    evidence: []
     rated_by: null
 gates:
   permitted_operation: true

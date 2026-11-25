@@ -6,26 +6,44 @@ target_slug: open-openstax-college-algebra-1e
 lane: strategic
 intended_learner: Adults preparing for a first college algebra course or a credit-by-exam algebra test
 locale: en-US
-outcome: Fluency with the chapter 1 prerequisites (real numbers, exponents, radicals, polynomials, factoring, rational expressions), measured by held-out checks
-demand_status: unmeasured
-observations: []
+outcome: Fluency with the chapter 1 prerequisites (real numbers, exponents, radicals, polynomials, factoring, rational
+  expressions), measured by held-out checks
+demand_status: research_in_progress
+observations:
+- evidence_class: education
+  metric: First-year undergraduates who took remedial mathematics in 2019-20
+  state: observed
+  value: 10.1
+  unit: percent
+  period: 2019-20
+  geography: United States, all institutions
+  publisher: NCES Digest of Education Statistics, Table 311.40 (NPSAS:20)
+  source_locator: https://nces.ed.gov/programs/digest/d22/tables/dt22_311.40.asp
+  directness: indirect
+  checked_on: '2026-11-25'
+  note: Standard error 0.27; student self-reports. A need for foundational algebra, not demand for this course.
+  cohort: nces-311.40-2019-20
 factors:
   demand:
     score: null
-    evidence: &id001 []
+    evidence: []
     rated_by: null
   underserved_need:
-    score: null
-    evidence: *id001
-    rated_by: null
+    score: 3
+    evidence:
+    - 10.1% of first-year undergraduates took remedial mathematics in 2019-20 (NCES Table 311.40); chapter 1 is
+      the algebra review such courses cover
+    rated_by: 'ai-drafted-by-claude (method: plan v1.2 §4.3 anchors from the cited observation)'
   outcome_value:
     score: null
-    evidence: *id001
+    evidence: []
     rated_by: null
   cross_goal_reuse:
-    score: null
-    evidence: *id001
-    rated_by: null
+    score: 3
+    evidence:
+    - 'data/concept_mappings/clep-college-algebra__openstax-college-algebra-1e.yaml (approved): CLEP objectives
+      1.1-1.3 map exactly to imported sections 1.2-1.6, and 1.4 and 4.1 partly to 1.1'
+    rated_by: 'ai-drafted-by-claude (method: plan v1.2 §4.3 anchors from the cited observation)'
   source_feasibility:
     score: 5
     evidence:
@@ -33,7 +51,7 @@ factors:
     rated_by: 'ai-drafted-by-claude (method: registry status and allowed uses)'
   improvement_potential:
     score: null
-    evidence: *id001
+    evidence: []
     rated_by: null
 gates:
   permitted_operation: true
@@ -47,4 +65,4 @@ effort:
   reason: 'Live (R6): improvements only, such as more practice families and Bridges'
   operator_minutes: null
 recommendation: improve
-notes: Demand, need, outcome value, reuse and improvement potential are not yet researched (null, not zero).
+notes: Need is documented; demand for this course is not measured, so no demand score.
