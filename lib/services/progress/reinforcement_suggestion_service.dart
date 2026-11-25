@@ -67,20 +67,16 @@ class ReinforcementSuggestionService {
 
     final names = await _names(ids);
     final direct = <String, Set<String>>{};
-    for (final (table, column) in const [
-      ('flashcard_concepts', 'flashcard_id'),
-      ('question_concepts', 'question_id'),
-      ('term_concepts', 'term_id'),
-    ]) {
+    for (final (table, column) in _itemMappings) {
       await _collect(table, column, ids, direct);
     }
-    // Same rule as concept evidence: lessons only for concepts with no
-    // direct item mapping, so a lesson-wide review is the fallback.
+    // Same rule as concept evidence (ConceptEvidenceService): an item counts
+    // for a concept through its own concept mapping, or, when it has no
+    // mapping at all, through its lesson's concepts. The rule is per item:
+    // a concept that also has mapped flashcards must still offer the
+    // learner's due lesson terms and questions, which carry no mapping.
     final lessons = <String, Set<String>>{};
-    final unmapped = ids.where((id) => direct[id]?.isNotEmpty != true).toList();
-    if (unmapped.isNotEmpty) {
-      await _collect('lesson_concepts', 'lesson_id', unmapped, lessons);
-    }
+    await _collect('lesson_concepts', 'lesson_id', ids, lessons);
 
     List<ReviewableItem> due;
     try {
@@ -89,6 +85,7 @@ class ReinforcementSuggestionService {
       debugPrint('Reinforcement list: could not load due items: $e');
       due = const [];
     }
+    final mappedItems = await _itemsWithOwnMapping(due);
 
     return [
       for (final s in weak)
@@ -101,7 +98,8 @@ class ReinforcementSuggestionService {
             dueContentIds: due
                 .where((item) =>
                     (direct[s.conceptId]?.contains(item.contentId) ?? false) ||
-                    (item.lessonId != null &&
+                    (!mappedItems.contains(item.contentId) &&
+                        item.lessonId != null &&
                         (lessons[s.conceptId]?.contains(item.lessonId) ?? false)))
                 .map((item) => item.contentId)
                 .toSet()
@@ -138,6 +136,32 @@ class ReinforcementSuggestionService {
       return const {};
     }
   }
+
+  /// Due items that have a concept mapping of their own (to any concept);
+  /// those never fall back to their lesson's concepts.
+  Future<Set<String>> _itemsWithOwnMapping(List<ReviewableItem> due) async {
+    final ids = due.map((i) => i.contentId).toSet().toList();
+    final out = <String>{};
+    if (ids.isEmpty) return out;
+    for (final (table, column) in _itemMappings) {
+      try {
+        final rows = await _client.from(table).select(column).inFilter(column, ids);
+        for (final row in rows as List) {
+          final id = row[column] as String?;
+          if (id != null) out.add(id);
+        }
+      } catch (e) {
+        debugPrint('Reinforcement list: could not read $table: $e');
+      }
+    }
+    return out;
+  }
+
+  static const _itemMappings = [
+    ('flashcard_concepts', 'flashcard_id'),
+    ('question_concepts', 'question_id'),
+    ('term_concepts', 'term_id'),
+  ];
 
   Future<void> _collect(
     String table,

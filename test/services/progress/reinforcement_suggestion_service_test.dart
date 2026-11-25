@@ -88,14 +88,62 @@ void main() {
         reason: 'never show a concept id in place of a name');
   });
 
-  test('direct item mappings win; lessons only for unmapped concepts', () async {
+  test('mapped items by their mapping; unmapped items by their lesson', () async {
     final byId = {for (final s in await service().load('u1')) s.conceptId: s};
-    expect(byId['c-old']!.dueContentIds, unorderedEquals(['fc-1', 'fc-2']),
-        reason: 'fc-3 shares the lesson but is not mapped to the concept');
+    // Same per-item rule as concept evidence: fc-3 has no mapping of its own
+    // and sits in c-old's lesson, so reviewing it is evidence for c-old.
+    expect(byId['c-old']!.dueContentIds, unorderedEquals(['fc-1', 'fc-2', 'fc-3']));
     expect(byId['c-never']!.dueContentIds, ['x-7'], reason: 'lesson fallback');
     expect(byId['c-new']!.dueContentIds, isEmpty);
     expect(byId['c-new']!.hasDueItems, isFalse);
     expect(byId['c-new']!.confidence, ConceptConfidence.medium);
+  });
+
+  test('a concept with mapped flashcards still offers its lesson terms '
+      '(Excel, 2026-11-25)', () async {
+    // The concept has flashcards, but the learner's queue holds the lesson's
+    // terms and questions (added on lesson completion, with no mapping).
+    client
+      ..setTableData('knowledge_concepts', [
+        {'id': 'c-cell', 'name': 'Cell references'},
+      ])
+      ..setTableData('flashcard_concepts', [
+        {'concept_id': 'c-cell', 'flashcard_id': 'fc-cell'},
+      ])
+      ..setTableData('question_concepts', <Map<String, dynamic>>[])
+      ..setTableData('lesson_concepts', [
+        {'concept_id': 'c-cell', 'lesson_id': 'excel-lesson'},
+      ]);
+    states = {'c-cell': _state('c-cell', RetrievalBand.needsReinforcement)};
+    due = [
+      _due('term-cell', lessonId: 'excel-lesson'),
+      _due('question-sum', lessonId: 'excel-lesson'),
+    ];
+    final list = await service().load('u1');
+    expect(list.single.dueContentIds, unorderedEquals(['term-cell', 'question-sum']));
+    expect(list.single.hasDueItems, isTrue);
+  });
+
+  test('an item mapped to another concept does not fall back to its lesson', () async {
+    client
+      ..setTableData('knowledge_concepts', [
+        {'id': 'c-a', 'name': 'Concept A'},
+      ])
+      ..setTableData('flashcard_concepts', <Map<String, dynamic>>[])
+      ..setTableData('question_concepts', [
+        {'concept_id': 'c-b', 'question_id': 'q-b'},
+      ])
+      ..setTableData('lesson_concepts', [
+        {'concept_id': 'c-a', 'lesson_id': 'shared-lesson'},
+      ]);
+    states = {'c-a': _state('c-a', RetrievalBand.needsReinforcement)};
+    due = [
+      _due('q-b', lessonId: 'shared-lesson'),
+      _due('term-a', lessonId: 'shared-lesson'),
+    ];
+    final list = await service().load('u1');
+    expect(list.single.dueContentIds, ['term-a'],
+        reason: 'q-b practises concept B, even though it sits in the lesson of A');
   });
 
   test('caps the number of suggestions', () async {
