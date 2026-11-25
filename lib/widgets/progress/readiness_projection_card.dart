@@ -61,6 +61,19 @@ class ReadinessProjectionCard extends ConsumerWidget {
           ),
         );
       }
+      if (projection.paceEarliest != null &&
+          projection.paceLatest != null &&
+          projection.recentMinutesPerWeek != null) {
+        final a = date.format(projection.paceEarliest!);
+        final b = date.format(projection.paceLatest!);
+        lines.add(
+          Text(
+            'At your recent pace (about ${projection.recentMinutesPerWeek} minutes a week over the '
+            'last 4 weeks), ${a == b ? 'around $a' : 'between $a and $b'}.',
+            key: const Key('projection_recent_pace'),
+          ),
+        );
+      }
       if (projection.examDate != null &&
           projection.minutesPerDayForExam != null) {
         final exam = date.format(projection.examDate!);
