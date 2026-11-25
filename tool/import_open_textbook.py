@@ -65,7 +65,7 @@ PRACTICE = REPO / "content" / "practice"
 # Bump when importer output changes for the same book version, so the
 # corrected lessons publish as a new target version (published versions are
 # immutable). Publish it with retire_previous to replace the old one.
-IMPORT_REVISION = 6
+IMPORT_REVISION = 7
 
 # Topic tags per section, so "Learning help" offers the Bridges for that
 # topic (content/bridges/*.bridge.json `applies_to_tags`). A section that
@@ -786,6 +786,29 @@ def section_loss(number: str, title: str, url: str, lesson: dict, warnings: list
     }
 
 
+def term_flashcards(lesson: dict, concept: str, source_id: str,
+                    seen: set[str] | None = None) -> list[dict]:
+    """Glossary terms as review flashcards (plan v1.2 §8.5 item 2: terms must
+    reach the review queue, not only the lesson glossary). The definition is
+    the book's own wording, cited to the section. One card per term across
+    the import: ``seen`` carries terms already carded by an earlier section."""
+    cards = []
+    seen = set() if seen is None else seen
+    for t in lesson.get("terms", []):
+        term, definition = str(t.get("term", "")).strip(), str(t.get("definition", "")).strip()
+        if not term or not definition or term.lower() in seen:
+            continue
+        seen.add(term.lower())
+        cards.append({
+            "front": f"What does “{term}” mean?",
+            "back": definition[0].upper() + definition[1:],
+            "concept_slugs": [concept],
+            "citation": lesson["citation"],
+            "source_release_id": source_id,
+        })
+    return cards
+
+
 def import_key(source_id: str, archive_book: str, chapters: set[int], sections: set[str] | None,
                practice_dir: Path) -> str:
     """Stable identity of a run (plan v1.2 §7.2): same inputs, same key."""
@@ -827,6 +850,7 @@ def import_book(source_id: str, chapters: set[int], delay: float, *,
     if sections is not None:
         practice = {k: v for k, v in practice.items() if k in sections}
     section_reports: list[dict] = []
+    carded_terms: set[str] = set()
     answer_key = next((c for c in tree if c.get("slug") == "answer-key"), None)
     all_warnings: list[str] = []
     left_out: list[str] = []
@@ -896,6 +920,10 @@ def import_book(source_id: str, chapters: set[int], delay: float, *,
                 }],
                 "lessons": [lesson],
             })
+            cards = term_flashcards(lesson, concept, source_id, carded_terms)
+            if cards:
+                objectives[-1]["flashcards"] = cards
+            section_report["flashcards"] = len(cards)
         if not objectives:
             continue
         domains.append({
