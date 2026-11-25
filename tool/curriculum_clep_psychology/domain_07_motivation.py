@@ -29,7 +29,7 @@ DOMAIN_07 = {
                     "slug": "psyc-hunger-physiology",
                     "name": "Hypothalamic Hunger Regulation and Incentives",
                     "short_definition": "Biological appetite mechanisms mediated by lateral (hunger) and ventromedial (satiety) hypothalamic centers and intrinsic incentives.",
-                    "description": "The lateral hypothalamus stimulates hunger while the ventromedial nucleus signals satiety, interacting with ghrelin, leptin, and the overjustification effect.",
+                    "description": "In the classic dual-center model, the lateral hypothalamus stimulates hunger while the ventromedial hypothalamus signals satiety; modern research adds hypothalamic networks and appetite hormones such as ghrelin and leptin. Intrinsic motivation can be undermined by the overjustification effect.",
                     "citation": "OpenStax Psychology 1e, Section 10.2",
                     "prerequisites": ["psyc-motivation-theories"],
                 },
@@ -56,10 +56,12 @@ DOMAIN_07 = {
                                     "- **Optimal Arousal Theory & Yerkes-Dodson Law:** Organisms seek an optimal level of arousal rather than zero arousal. The **Yerkes-Dodson Law** dictates that performance on difficult or complex tasks is best under **moderate-to-low arousal**, whereas simple or well-practiced tasks benefit from **higher arousal**.\n"
                                     "- **Maslow's Hierarchy of Needs:** Needs are organized hierarchically: Physiological $\\rightarrow$ Safety $\\rightarrow$ Belongingness & Love $\\rightarrow$ Esteem $\\rightarrow$ **Self-Actualization** (realizing one's fullest unique human potential).\n\n"
                                     "### Biological Mechanisms of Hunger\n\n"
+                                    "The classic **dual-center model**, based on lesion studies in rats, assigned hunger and fullness to two hypothalamic areas:\n\n"
                                     "| Hypothalamic Center | Physiological Function | Effect of Experimental Lesion / Destruction |\n"
                                     "| :--- | :--- | :--- |\n"
                                     "| **Lateral Hypothalamus (LH)** | The **'hunger center'**; triggers feeding behavior when stimulated | Produces **aphagia** (complete refusal to eat, leading to starvation) |\n"
-                                    "| **Ventromedial Hypothalamus (VMH)** | The **'satiety center'**; signals fullness and ceases eating | Produces **hyperphagia** (insatiable eating, leading to extreme obesity) |"
+                                    "| **Ventromedial Hypothalamus (VMH)** | The **'satiety center'**; signals fullness and ceases eating | Produces **hyperphagia** (overeating, leading to marked obesity) |\n\n"
+                                    "The dual-center model is a simplification. Appetite is now understood to depend on networks of hypothalamic nuclei (such as the arcuate and paraventricular nuclei) that respond to hormones: **ghrelin**, released by an empty stomach, increases hunger; **leptin**, released by fat cells, signals long-term energy stores and reduces appetite; and **insulin** from the pancreas helps regulate blood glucose. Part of the obesity seen after VMH lesions comes from raised insulin levels and damage to nearby nerve fibers."
                                 )
                             },
                         },
@@ -99,7 +101,7 @@ DOMAIN_07 = {
                         {
                             "term": "Yerkes-Dodson Law",
                             "definition": "The empirical principle that performance increases with physiological or mental arousal, but only up to an optimal point, after which performance declines.",
-                            "example": "A surgeon remaining calm and composed during an intricate 8-hour neurosurgical procedure.",
+                            "example": "A student who is too relaxed makes careless errors on an exam, a panicking student freezes, and a moderately alert student performs best.",
                         },
                         {
                             "term": "Overjustification Effect",
@@ -108,8 +110,8 @@ DOMAIN_07 = {
                         },
                         {
                             "term": "Ventromedial Hypothalamus",
-                            "definition": "The nucleus within the hypothalamus that acts as the primary satiety center, signaling an organism to terminate feeding.",
-                            "example": "A rat with a surgically destroyed ventromedial hypothalamus continuously eating until it quadruples its normal body weight.",
+                            "definition": "A hypothalamic region described in the classic dual-center model as a satiety center that signals an organism to stop feeding.",
+                            "example": "A rat with a surgically destroyed ventromedial hypothalamus overeating until it roughly doubles or triples its normal body weight.",
                         },
                     ],
                     "assessment_items": [
@@ -223,10 +225,10 @@ DOMAIN_07 = {
                             "content": {
                                 "text": (
                                     "### Hans Selye's General Adaptation Syndrome (GAS)\n\n"
-                                    "Hans Selye discovered that the human body reacts to severe, prolonged stress through a universal three-stage physiological response:\n"
+                                    "Hans Selye proposed that the body reacts to severe, prolonged stress through a general three-stage physiological response:\n"
                                     "1. **Alarm Reaction:** Sudden sympathetic nervous activation. Heart rate accelerates, pupils dilate, and adrenaline/norepinephrine surge to mobilize energy for fight-or-flight.\n"
                                     "2. **Resistance:** Sympathetic arousal remains elevated as the **adrenal cortex** releases **cortisol** (glucocorticoids). The body remains on high alert, successfully adapting to the ongoing stressor while consuming internal reserves.\n"
-                                    "3. **Exhaustion:** Prolonged exposure depletes the body's physical and hormonal resources. The immune system collapses, leading to clinical vulnerability, organ damage, depression, and cardiovascular illness."
+                                    "3. **Exhaustion:** Prolonged exposure depletes the body's physical and hormonal resources. Immune defenses weaken, raising vulnerability to illness, depression, and cardiovascular disease."
                                 )
                             },
                         },
@@ -236,18 +238,19 @@ DOMAIN_07 = {
                             "content": {
                                 "type": "key_concept",
                                 "title": "The Schachter-Singer Suproxin Experiment",
-                                "body": "Stanley Schachter and Jerome Singer injected participants with adrenaline (under the guise of a vitamin called 'Suproxin'). Those who were **not told** about the drug's physiological side effects adopted the emotion of a confederate in the room—becoming euphoric with a playful confederate or furious with an angry confederate. This proved that **cognitive context labels generalized arousal**.",
+                                "body": "Stanley Schachter and Jerome Singer injected participants with adrenaline (under the guise of a vitamin called 'Suproxin'). Those who were **not told** about the drug's physiological side effects adopted the emotion of a confederate in the room—becoming euphoric with a playful confederate or furious with an angry confederate. This was interpreted as supporting the idea that **cognitive context labels generalized arousal**. The effects were weak and inconsistent, however, and later attempts to replicate the study had mixed results, so it is considered only partial support for two-factor theory.",
                             },
                         },
                         {
                             "sort_order": 4,
                             "block_type": "example",
                             "content": {
-                                "title": "Clinical Stress Case: Undergraduate Medical School Finals",
+                                "title": "Clinical Stress Case: Long-Term Family Caregiving",
                                 "text": (
-                                    "During exam week, medical students maintain sustained high vigilance powered by elevated cortisol (**Stage 2: Resistance**). "
-                                    "The morning after exams conclude, dozens fall severely ill with respiratory infections, migraines, and severe fatigue. "
-                                    "Their bodies have entered **Stage 3: Exhaustion**, characterized by acute immunosuppression."
+                                    "An adult begins caring full time for a parent with advanced dementia. In the first weeks, sudden demands trigger a surge of sympathetic arousal (**Stage 1: Alarm**). "
+                                    "Over the following months, the caregiver copes with elevated cortisol and constant vigilance (**Stage 2: Resistance**). "
+                                    "After a year or more without relief, the caregiver is chronically fatigued, catches infections more often, and recovers slowly: the pattern Selye called **Stage 3: Exhaustion**, in which prolonged stress weakens the body's defenses. "
+                                    "(Falling ill right after a short stressor such as exam week is different; it is often called a 'let-down' effect.)"
                                 ),
                             },
                         },
@@ -274,8 +277,8 @@ DOMAIN_07 = {
                         },
                         {
                             "term": "Facial Feedback Hypothesis",
-                            "definition": "The tendency of facial muscle states to trigger corresponding feelings such as fear, anger, or happiness.",
-                            "example": "Holding a pen between one's teeth to force a smiling expression, which subsequently increases ratings of cartoon humor.",
+                            "definition": "The hypothesis that facial expressions can feed back to and slightly strengthen the corresponding feelings; research finds the effect, if present, to be small and inconsistent.",
+                            "example": "A famous 1988 study reported that holding a pen in the teeth (forcing a smile) made cartoons seem funnier, but a 17-laboratory replication in 2016 did not find the effect.",
                         },
                     ],
                     "assessment_items": [
@@ -304,7 +307,7 @@ DOMAIN_07 = {
                                 "options": [
                                     "Sustained elevated arousal and continuous cortisol secretion",
                                     "Immediate sudden sympathetic shock and lowered blood pressure",
-                                    "Total bodily collapse and severe immune system breakdown",
+                                    "Depleted resources and weakened immune defenses",
                                     "Temporary rebound parasympathetic sleep and muscular atonia",
                                 ]
                             },

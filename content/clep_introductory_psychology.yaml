@@ -105,7 +105,7 @@ domains:
     concepts:
     - slug: psyc-structuralism
       name: Structuralism
-      short_definition: Early school of thought promoted by Wundt and Titchener using systematic introspection to isolate the basic elements of conscious experience.
+      short_definition: Early school of thought, named and systematized by Titchener from Wundt's laboratory methods, using systematic introspection to isolate the basic elements of conscious experience.
       description: Structuralism sought to map the adult human mind by breaking conscious experience down into basic sensation and perception elements through rigorous introspection.
       citation: OpenStax Psychology 1e, Section 1.2
     - slug: psyc-functionalism
@@ -139,8 +139,8 @@ domains:
       - sort_order: 1
         block_type: markdown
         content:
-          text: "### The Birth of Scientific Psychology\n\nPsychology formally transitioned from philosophical epistemology into an independent empirical science in **1879**, when **Wilhelm Wundt** established the first formal psychological research laboratory at the University of Leipzig in Germany. Wundt and his student **Edward Bradford Titchener** championed **structuralism**, an approach that sought to identify the constituent building blocks of conscious awareness through **introspection**\u2014rigorous, trained self-reports of immediate sensory and emotional reactions.\n\nIn reaction against structuralism's subjective fragility, American psychologist and philosopher **William James** established **functionalism**, heavily influenced by Charles Darwin's evolutionary theory. Functionalists argued that consciousness cannot be frozen into static sensory slices; instead, psychologists must investigate how mental processes operate as a dynamic, continuous stream enabling organisms to adapt,\
-            \ survive, and thrive."
+          text: "### The Birth of Scientific Psychology\n\nPsychology formally transitioned from philosophical epistemology into an independent empirical science in **1879**, when **Wilhelm Wundt** established the first formal psychological research laboratory at the University of Leipzig in Germany. Wundt's student **Edward Bradford Titchener** developed Wundt's laboratory methods into **structuralism** (Wundt's own broader approach is sometimes called voluntarism), an approach that sought to identify the constituent building blocks of conscious awareness through **introspection**\u2014rigorous, trained self-reports of immediate sensory and emotional reactions.\n\nIn reaction against structuralism's subjective fragility, American psychologist and philosopher **William James** established **functionalism**, heavily influenced by Charles Darwin's evolutionary theory. Functionalists argued that consciousness cannot be frozen into static sensory slices; instead, psychologists must investigate\
+            \ how mental processes operate as a dynamic, continuous stream enabling organisms to adapt, survive, and thrive."
       - sort_order: 2
         block_type: callout
         content:
@@ -161,7 +161,7 @@ domains:
             | **Behavioral** | Strictly observable behavioral responses shaped by environmental conditioning and reinforcement | John B. Watson, B. F. Skinner |
             | **Cognitive** | Mental operations: encoding, retrieval, problem solving, decision heuristics, and language | Jean Piaget, Noam Chomsky |
             | **Humanistic** | Innate drive for personal growth, self-actualization, free will, and conscious self-concept | Carl Rogers, Abraham Maslow |
-            | **Psychodynamic** | Unconscious conflicts, repressed impulses, early childhood attachment, and defense mechanisms | Sigmund Freud, Carl Jung, Alfred Adler |
+            | **Psychodynamic** | Unconscious conflicts, repressed impulses, early childhood experiences, and defense mechanisms | Sigmund Freud, Carl Jung, Alfred Adler |
             | **Evolutionary** | Natural selection of cognitive and behavioral traits promoting reproductive fitness | David Buss, Charles Darwin |
             | **Sociocultural** | Cultural norms, social pressures, ethnic diversity, and group dynamics | Lev Vygotsky, Solomon Asch |
       - sort_order: 4
@@ -228,7 +228,7 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
-      - prompt: A clinical psychologist asserts that a client's chronic anxiety stems from an innate conflict between their ideal self and their actual self-concept. Which psychological perspective does this clinician represent?
+      - prompt: A clinical psychologist asserts that a client's chronic anxiety stems from a conflict between their ideal self and their actual self-concept. Which psychological perspective does this clinician represent?
         interaction_type: single_choice
         response_spec:
           options:
@@ -299,7 +299,7 @@ domains:
         - Behaviorism
         - Psychoanalysis
         correct_answer: 0
-        explanation: Structuralism, founded by Wilhelm Wundt and expanded by Edward Titchener, attempted to map conscious experience by breaking it down into basic sensations through systematic introspection.
+        explanation: Structuralism, which Edward Titchener developed from Wilhelm Wundt's laboratory methods, attempted to map conscious experience by breaking it down into basic sensations through systematic introspection.
         concept_slugs:
         - psyc-structuralism
         citation: OpenStax Psychology 1e, CC BY 4.0
@@ -362,10 +362,10 @@ domains:
           text: |-
             ### Establishing Causality: The Experimental Method
 
-            The **experiment** is the only psychological research method capable of establishing definitive **cause-and-effect relationships**. To achieve internal validity, an experiment must incorporate:
+            The **experiment** is the primary psychological research method for testing **cause-and-effect relationships**. To achieve internal validity, an experiment must incorporate:
             - **Independent Variable (IV):** The factor systematically manipulated by the experimenter.
             - **Dependent Variable (DV):** The behavioral or cognitive outcome measured to assess the effect of the IV.
-            - **Random Assignment:** Allocating participants to experimental or control conditions purely by chance, ensuring that preexisting individual differences (e.g., intelligence, motivation) are distributed evenly across groups.
+            - **Random Assignment:** Allocating participants to experimental or control conditions purely by chance, so that preexisting individual differences (e.g., intelligence, motivation) tend to be distributed evenly across groups (more reliably so in larger samples).
             - **Placebo Control & Double-Blind Protocol:** A procedure in which neither the participants nor the administering researchers know who is receiving the active treatment versus an inert placebo, preventing participant expectations and experimenter bias.
       - sort_order: 2
         block_type: callout
@@ -446,7 +446,7 @@ domains:
           - It guarantees that statistical significance will be achieved
         scoring_spec:
           correct_index: 2
-        explanation: Random assignment minimizes preexisting differences between participants assigned to the experimental and control groups. By ensuring confounding participant variables are distributed evenly, researchers can attribute outcome differences directly to the independent variable.
+        explanation: Random assignment minimizes preexisting differences between participants assigned to the experimental and control groups. Because chance tends to spread confounding participant variables evenly across groups, researchers can attribute outcome differences directly to the independent variable.
         difficulty: intermediate
         cognitive_level: comprehension
         citation: OpenStax Psychology 1e, Chapter 2
@@ -549,7 +549,7 @@ domains:
         - It minimizes pre-existing differences between the experimental and control groups
         - It allows researchers to calculate Pearson correlation coefficients without bias
         correct_answer: 2
-        explanation: Random assignment ensures that participant characteristics (such as baseline intelligence or motivation) are equally distributed across conditions, controlling for confounding variables and enabling causal inferences.
+        explanation: Random assignment makes participant characteristics (such as baseline intelligence or motivation) tend to be equally distributed across conditions, especially in larger samples, controlling for confounding variables and enabling causal inferences.
         concept_slugs:
         - psyc-experimental-methodology
         citation: OpenStax Psychology 1e, CC BY 4.0
@@ -834,9 +834,9 @@ domains:
 
             The brain is organized into evolutionary hierarchical layers:
             - **Hindbrain:** Contains the **medulla** (controls automatic breathing, heartbeat, and blood pressure), the **pons** (coordinates movements and sleep regulation), and the **cerebellum** ('little brain,' governs balance, fine motor coordination, and procedural memory).
-            - **Midbrain:** Contains the **reticular formation**, a nerve network regulating arousal, alertness, and sleep-wake transitions.
-            - **Forebrain / Limbic System:** Coordinates emotional and motivational drives:
-              * **Thalamus:** Sensory switchboard routing all sensory inputs (except olfaction) to higher cortical centers.
+            - **Midbrain:** Relays visual and auditory reflexes. The **reticular formation**, a nerve network regulating arousal, alertness, and sleep-wake transitions, runs from the medulla up through the midbrain.
+            - **Forebrain structures** (the last three are part of the limbic system, which coordinates emotional and motivational drives):
+              * **Thalamus:** Sensory switchboard routing all sensory inputs (except olfaction) to higher cortical centers. It is a forebrain structure but is not usually counted as part of the limbic system.
               * **Hypothalamus:** Regulates autonomic nervous system, hunger, thirst, body temperature, sexual drives, and directs the pituitary master gland.
               * **Amygdala:** Processes emotional salience, particularly fear conditioning and aggressive responses.
               * **Hippocampus:** Crucial for consolidating new explicit/declarative memories into long-term storage.
@@ -848,7 +848,7 @@ domains:
 
             | Cortical Lobe | Key Functional Centers | Clinical Deficit Upon Damage |
             | :--- | :--- | :--- |
-            | **Frontal** | Prefrontal cortex (executive judgment, impulse control); Primary motor cortex; **Broca's area** (left hemisphere speech production) | Broca's aphasia (non-fluent, halting speech); emotional disinhibition (Phineas Gage) |
+            | **Frontal** | Prefrontal cortex (executive judgment, impulse control); Primary motor cortex; **Broca's area** (left hemisphere speech production) | Broca's aphasia (non-fluent, halting speech); emotional disinhibition (Phineas Gage, whose change is partly anecdotal and probably exaggerated in popular accounts) |
             | **Parietal** | Primary somatosensory cortex (processes touch, pain, temperature); spatial orientation | Hemispatial neglect, loss of tactile discrimination |
             | **Occipital** | Primary visual cortex (feature detection, retinotopic processing) | Cortical blindness, visual agnosia |
             | **Temporal** | Primary auditory cortex; **Wernicke's area** (left hemisphere language comprehension); facial recognition | Wernicke's aphasia (fluent but meaningless speech); prosopagnosia (face blindness) |
@@ -873,17 +873,17 @@ domains:
         content:
           type: warning
           title: 'Cognitive Pitfall: Left Visual Field vs. Left Eye'
-          body: 'Do not confuse the *left visual field* with the *left eye*. Visual fields project contralateral information from both eyes: the left half of each retina projects to the right hemisphere, and the right half of each retina projects to the left hemisphere.'
+          body: 'Do not confuse the *left visual field* with the *left eye*. Visual fields project contralateral information from both eyes: the right half of each retina (which receives light from the left visual field) projects to the right hemisphere, and the left half of each retina (which receives the right visual field) projects to the left hemisphere. Fibers from the nasal (inner) half of each retina cross at the optic chiasm; fibers from the temporal (outer) half stay on the same side. So an image in the left visual field reaches the right hemisphere whichever eye sees it.'
       terms:
       - term: Hippocampus
         definition: A limbic system structure vital for processing and consolidating new explicit memories for long-term storage.
-        example: Patient H.M. lost the ability to form new episodic memories after bilateral surgical removal of his hippocampi.
+        example: Patient H.M. lost the ability to form new episodic memories after surgery that removed medial temporal lobe tissue on both sides, including most of both hippocampi.
       - term: Corpus Callosum
         definition: The large band of neural fibers connecting the two cerebral hemispheres, enabling interhemispheric communication.
         example: Severing the corpus callosum prevents information presented to the right hemisphere from reaching the left hemisphere's language centers.
       - term: Prefrontal Cortex
         definition: The forward part of the frontal lobes responsible for executive functions including working memory, decision making, social planning, and impulse restraint.
-        example: Phineas Gage suffered dramatic personality shifts and emotional volatility after an iron rod pierced his prefrontal cortex.
+        example: Phineas Gage was reported to have become impulsive and irritable after an iron rod pierced his frontal lobe; these reports are partly anecdotal and probably exaggerated, and he later worked for years as a stagecoach driver.
       assessment_items:
       - prompt: A construction foreman survives an accident in which a tamping iron penetrates his skull, destroying extensive portions of his prefrontal cortex. What psychological change is most expected?
         interaction_type: single_choice
@@ -895,7 +895,7 @@ domains:
           - Loss of basic autonomic respiration and heart rate control
         scoring_spec:
           correct_index: 0
-        explanation: Damage to the prefrontal cortex (as famously documented in the historical case of Phineas Gage) impairs executive functions, emotional inhibition, foresight, and moral judgment without eliminating primary motor or vital autonomic functions.
+        explanation: Damage to the prefrontal cortex (as illustrated, with some exaggeration in popular retellings, by the historical case of Phineas Gage) impairs executive functions, emotional inhibition, foresight, and moral judgment without eliminating primary motor or vital autonomic functions.
         difficulty: intermediate
         cognitive_level: application
         citation: OpenStax Psychology 1e, Section 3.4
@@ -916,7 +916,7 @@ domains:
           - Cerebellum
         scoring_spec:
           correct_index: 1
-        explanation: The thalamus serves as the sensory routing hub of the brain, receiving sensory signals from the visual, auditory, gustatory, and somatosensory systems and relaying them to specialized cortical areas. Olfactory signals bypass the thalamus directly to the olfactory bulb.
+        explanation: 'The thalamus serves as the sensory routing hub of the brain, receiving sensory signals from the visual, auditory, gustatory, and somatosensory systems and relaying them to specialized cortical areas. Smell is the exception: olfactory receptors send signals to the olfactory bulb, which projects to the cortex without a thalamic relay.'
         difficulty: beginner
         cognitive_level: recall
         citation: OpenStax Psychology 1e, Section 3.4
@@ -1124,17 +1124,17 @@ domains:
         definition: The psychophysical principle that the just noticeable difference between two stimuli is a constant minimum proportion of the initial stimulus intensity.
         example: Noticing a 10% increase in brightness whether looking at a dim lamp or a bright chandelier.
       assessment_items:
-      - prompt: An audio engineer can just barely detect a volume difference when a 100-decibel tone is raised by 5 decibels. According to Weber's Law, how many decibels must a 200-decibel tone be raised for the engineer to notice a change?
+      - prompt: Holding a 100-gram package, a shipping clerk can just barely notice the difference when 10 grams are added. According to Weber's Law, how many grams must be added to a 200-gram package for the clerk to notice a change?
         interaction_type: single_choice
         response_spec:
           options:
-          - 10 decibels
-          - 5 decibels
-          - 20 decibels
-          - 2.5 decibels
+          - 20 grams
+          - 10 grams
+          - 40 grams
+          - 5 grams
         scoring_spec:
           correct_index: 0
-        explanation: Weber's law states that the difference threshold is a constant proportion of the original stimulus. Since a 5 dB increase on a 100 dB sound represents a 5% difference ratio, a 200 dB sound requires a 5% increase (which equals 10 dB) to produce a just noticeable difference.
+        explanation: Weber's law states that the difference threshold is a constant proportion of the starting stimulus. Adding 10 grams to 100 grams is a 10% change, so a 200-gram package needs a 10% increase (20 grams) before the difference becomes just noticeable.
         difficulty: intermediate
         cognitive_level: application
         citation: OpenStax Psychology 1e, Section 5.1
@@ -1271,11 +1271,19 @@ domains:
             ### Theories of Color Vision
 
             1. **Young-Helmholtz Trichromatic Theory:** The retina possesses three distinct cone types maximally sensitive to different wavelengths: **Red (long)**, **Green (medium)**, and **Blue (short)**. Color perception results from additive ratios of stimulation.
-            2. **Hering's Opponent-Process Theory:** Neural circuits beyond the retina (in ganglion cells, thalamus, and visual cortex) process color through three opposing channels:
+            2. **Hering's Opponent-Process Theory:** Later stages of processing (retinal ganglion cells, cells of the thalamus's lateral geniculate nucleus, and the visual cortex) code color through three opposing channels:
                - **Red vs. Green**
                - **Blue vs. Yellow**
                - **Black vs. White**
-               *Explains negative afterimages: fatiguing green receptors causes a white surface to appear red.*
+               *Explains negative afterimages: after the green side of the red-green channel is fatigued, a white surface looks reddish.*
+
+            ### The Auditory System: From Air Pressure to Neural Signals
+
+            - **Outer ear:** The **pinna** funnels sound waves down the auditory canal to the **eardrum (tympanic membrane)**, which vibrates.
+            - **Middle ear:** Three tiny bones, the **ossicles** (hammer, anvil, and stirrup), amplify those vibrations and press on the **oval window** of the cochlea.
+            - **Inner ear:** Inside the fluid-filled, snail-shaped **cochlea**, fluid waves ripple the **basilar membrane**. **Hair cells** on that membrane bend, and this bending is the transduction step that fires the **auditory nerve**.
+            - **Pitch:** **Place theory** says different frequencies make different spots on the basilar membrane vibrate most (high pitches near the base, low pitches near the tip); it best explains high pitches. **Frequency (temporal) theory** says the auditory nerve fires at the same rate as the sound wave; it explains low pitches, and the **volley principle** (groups of neurons firing in turns) extends it to moderate pitches.
+            - **Hearing loss:** **Conductive** loss comes from damage to the eardrum or ossicles; **sensorineural** (nerve) loss comes from damage to hair cells or the auditory nerve and is the type cochlear implants address.
       - sort_order: 2
         block_type: markdown
         content:
@@ -1298,12 +1306,12 @@ domains:
         content:
           type: key_concept
           title: Reconciling the Two Color Theories
-          body: 'Both color theories are scientifically correct, but describe different stages: **Trichromatic theory** explains photoreceptor function at the *retina/cone* level. **Opponent-process theory** explains subsequent neural coding in *ganglion cells, thalamus, and visual cortex*.'
+          body: 'Both color theories are scientifically correct, but describe different stages: **Trichromatic theory** explains photoreceptor function at the *retina/cone* level. **Opponent-process theory** explains later neural coding in *retinal ganglion cells, the thalamus (lateral geniculate nucleus), and visual cortex*.'
       - sort_order: 4
         block_type: example
         content:
           title: 'Experimental Case Study: The Visual Cliff Paradigm'
-          text: 'Eleanor Gibson and Richard Walk placed 6- to 14-month-old human infants on a visual cliff apparatus: a heavy glass tabletop suspended over an apparent vertical drop. Even when coaxed by their mothers from the ''deep'' side, most infants refused to crawl onto the glass, demonstrating that depth perception and innate avoidance of heights are present by the onset of mobile locomotion.'
+          text: 'Eleanor Gibson and Richard Walk placed 6- to 14-month-old human infants on a visual cliff apparatus: a heavy glass tabletop suspended over an apparent vertical drop. Even when coaxed by their mothers from the ''deep'' side, most infants refused to crawl onto the glass, indicating that depth perception is present by the time infants can crawl. Because the infants were already months old, the study cannot show whether this is innate or learned; later research suggests that wariness of heights develops along with crawling experience.'
       - sort_order: 5
         block_type: callout
         content:
@@ -1312,7 +1320,7 @@ domains:
           body: The **blind spot** exists because there are zero photoreceptors (neither rods nor cones) at the specific point where the optic nerve axons exit the eyeball to travel toward the brain.
       terms:
       - term: Opponent-Process Theory
-        definition: The theory that color perception relies on retinal and thalamic ganglion cells that are stimulated by one color and inhibited by its opponent color.
+        definition: The theory that color perception relies on neurons (in retinal ganglion cells, the thalamus, and visual cortex) that are stimulated by one color and inhibited by its opponent color.
         example: Staring at a green square for 60 seconds and then looking at a blank white wall produces a red afterimage.
       - term: Fovea
         definition: The central focal point of the retina containing a dense concentration of cones and zero rods, providing maximum visual acuity.
@@ -1331,7 +1339,7 @@ domains:
           - Black
         scoring_spec:
           correct_index: 0
-        explanation: According to Hering's opponent-process theory, color vision is governed by opposing neural channels (red-green, blue-yellow, black-white). Staring at green fatigues the green-sensitive receptors, allowing the rebound firing of the opposing red receptors when viewing neutral white light.
+        explanation: According to Hering's opponent-process theory, color vision is governed by opposing neural channels (red-green, blue-yellow, black-white). Staring at green fatigues the green side of the red-green channel, so when neutral white light arrives the opposing red side dominates and a red afterimage appears.
         difficulty: intermediate
         cognitive_level: comprehension
         citation: OpenStax Psychology 1e, Section 5.2
@@ -1384,7 +1392,7 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
-      - prompt: "A reader effortlessly perceives a series of broken dashes '\u2014 \u2014 \u2014 \u2014' as a single continuous line rather than disconnected individual fragments. Which Gestalt principle explains this tendency?"
+      - prompt: Two straight lines cross to form an X. Observers report seeing two smooth lines passing through each other, not four short segments meeting at a central point. Which Gestalt principle explains this tendency?
         interaction_type: single_choice
         response_spec:
           options:
@@ -1394,7 +1402,7 @@ domains:
           - Law of continuity
         scoring_spec:
           correct_index: 3
-        explanation: The Gestalt law of continuity states that observers tend to perceive elements as continuing along an established direction rather than as broken, abrupt fragments. Closure specifically refers to filling in enclosed gaps.
+        explanation: The Gestalt law of continuity states that observers tend to see elements as following the smoothest continuing path, so each line is seen as carrying straight on through the crossing point. There are no gaps to fill (closure), no separate clusters (proximity), and the question is not about separating a figure from its background.
         difficulty: intermediate
         cognitive_level: comprehension
         citation: OpenStax Psychology 1e, Section 5.3
@@ -1417,7 +1425,7 @@ domains:
         concept_slugs:
         - psyc-visual-auditory-systems
         citation: OpenStax Psychology 1e, CC BY 4.0
-      - question_text: Which Gestalt principle explains why we perceive individual dots aligned in a smooth, continuous curve as belonging together rather than as separate points?
+      - question_text: A row of evenly spaced dots curves smoothly through a second, straight row of dots that crosses it. Viewers see one curve and one straight line passing through each other, rather than dots grouped by which ones sit nearest the crossing point. Which Gestalt principle explains this?
         options:
         - Principle of proximity
         - Principle of closure
@@ -1632,14 +1640,22 @@ domains:
             ### Psychoactive Drug Classifications
 
             - **Depressants (Alcohol, Barbiturates, Benzodiazepines):** Reduce neural activity and slow body functions by enhancing the inhibitory neurotransmitter **GABA**.
-            - **Stimulants (Caffeine, Nicotine, Cocaine, Amphetamines):** Excite neural activity, elevate heart rate, and suppress appetite by blocking the reuptake of **dopamine** and **norepinephrine**.
-            - **Opioids / Narcotics (Morphine, Heroin, Codeine, Fentanyl):** Depress neural functioning, relieve pain, and produce euphoria by binding to endogenous **endorphin** receptor sites.
-            - **Hallucinogens (LSD, Psilocybin, MDMA):** Distort visual and auditory perceptions and evoke sensory images without sensory input, primarily acting as **serotonin** receptor agonists.
+            - **Stimulants (Caffeine, Nicotine, Cocaine, Amphetamines):** Excite neural activity, elevate heart rate, and suppress appetite, but through different mechanisms: **cocaine** blocks the reuptake of **dopamine** and **norepinephrine**; **amphetamines** mainly increase their release; **caffeine** blocks **adenosine** receptors (adenosine normally builds sleep pressure); and **nicotine** stimulates nicotinic **acetylcholine** receptors.
+            - **Opioids / Narcotics (Morphine, Heroin, Codeine, Fentanyl):** Depress neural functioning, relieve pain, and produce euphoria by binding to the opioid receptors that the body's own **endorphins** use.
+            - **Hallucinogens (LSD, Psilocybin):** Distort visual and auditory perceptions and evoke sensory images without sensory input; LSD and psilocybin act mainly as agonists at a type of **serotonin** receptor. **MDMA (Ecstasy)** is usually treated as a stimulant-hallucinogen hybrid because it works differently, releasing serotonin and blocking its reuptake. **Marijuana (THC)** acts on cannabinoid receptors and has mild hallucinogenic effects.
 
             ### Dependence and Tolerance
 
             - **Tolerance:** Requiring larger and larger drug dosages to achieve the initial physiological effect.
             - **Physical Dependence & Withdrawal:** Physiological adaptation characterized by physical illness, cramping, or tremors upon cessation.
+
+            ### Hypnosis
+
+            **Hypnosis** is a cooperative interaction in which a hypnotist offers suggestions about perceptions, thoughts, or actions, and a responsive person experiences them as happening on their own. People differ widely in **hypnotic suggestibility**, which is a fairly stable trait. Two accounts compete:
+            - **Dissociation theory (Ernest Hilgard):** Hypnosis splits consciousness. In pain studies, a 'hidden observer' part of the person could report pain that the hypnotized part said it did not feel.
+            - **Social-cognitive (role) theory:** Hypnotized people are not in a special state; they are highly motivated to act out the role of a good hypnotic subject, guided by their expectations.
+
+            Hypnosis has real but limited uses: it can reduce pain and is sometimes added to therapy. It does **not** reliably improve memory. 'Hypnotically refreshed' recall mixes accurate and false details and raises confidence in both, so many courts restrict such testimony.
       - sort_order: 3
         block_type: callout
         content:
@@ -1656,7 +1672,7 @@ domains:
         content:
           type: warning
           title: 'Cognitive Pitfall: Alcohol Classification'
-          body: Even though small amounts of alcohol can cause behavioral disinhibition and an initial sense of euphoria, alcohol is biologically classified as a **depressant** because it systematically suppresses central nervous system functioning by acting as a GABA agonist.
+          body: Even though small amounts of alcohol can cause behavioral disinhibition and an initial sense of euphoria, alcohol is biologically classified as a **depressant** because it systematically suppresses central nervous system functioning, partly by enhancing the inhibitory effect of GABA.
       terms:
       - term: Sleep Apnea
         definition: A serious sleep disorder in which breathing repeatedly stops and starts throughout the night due to upper airway collapse.
@@ -1720,7 +1736,7 @@ domains:
           - Depressants
         scoring_spec:
           correct_index: 3
-        explanation: Alcohol, barbiturates, and benzodiazepines are depressants. They reduce neural activity and slow autonomic functions, primarily by acting as GABA receptor agonists, which enhances inhibitory neurotransmission across the central nervous system.
+        explanation: Alcohol, barbiturates, and benzodiazepines are depressants. They reduce neural activity and slow autonomic functions, largely by increasing the effect of GABA at its receptors, which enhances inhibitory neurotransmission across the central nervous system.
         difficulty: beginner
         cognitive_level: recall
         citation: OpenStax Psychology 1e, Section 4.5
@@ -1743,7 +1759,7 @@ domains:
         concept_slugs:
         - psyc-sleep-disorders-dreams
         citation: OpenStax Psychology 1e, CC BY 4.0
-      - question_text: Alcohol, barbiturates, and benzodiazepines are classified under which major category of psychoactive substances because they agonize GABA receptors?
+      - question_text: Alcohol, barbiturates, and benzodiazepines are classified under which major category of psychoactive substances because they enhance the inhibitory effect of GABA?
         options:
         - Stimulants
         - Hallucinogens
@@ -1781,7 +1797,7 @@ domains:
     - slug: psyc-classical-conditioning
       name: Pavlovian Classical Conditioning
       short_definition: Form of associative learning where an organism pairs a neutral stimulus with an unconditioned stimulus to elicit a conditioned response.
-      description: Demonstrated by Ivan Pavlov (salivation in dogs) and Watson's Little Albert; governed by acquisition, extinction, spontaneous recovery, and generalization.
+      description: Demonstrated by Ivan Pavlov (salivation in dogs) and illustrated by Watson and Rayner's classic but methodologically criticized Little Albert study; governed by acquisition, extinction, spontaneous recovery, and generalization.
       citation: OpenStax Psychology 1e, Section 6.2
     - slug: psyc-biological-constraints
       name: Biological Preparedness and Taste Aversion
@@ -1828,7 +1844,7 @@ domains:
             | **Acquisition** | Initial learning phase where NS is repeatedly paired with UCS | CR progressively strengthens as CS-UCS association solidifies |
             | **Extinction** | Diminishing of CR when CS is repeatedly presented **without** UCS | Salivation to the bell drops to zero over repeated trials |
             | **Spontaneous Recovery** | Reappearance of an extinguished CR after an intervening rest interval | After 24 hours of rest, presenting the bell alone triggers salivation again |
-            | **Generalization** | Tendency for stimuli similar to the CS to evoke similar responses | Little Albert fearing white rabbits and fur coats after conditioning with a white rat |
+            | **Generalization** | Tendency for stimuli similar to the CS to evoke similar responses | Little Albert reportedly fearing a rabbit and a fur coat after conditioning with a white rat (Watson and Rayner's classic 1920 demonstration, a single-child study with weak controls that has never been replicated) |
             | **Discrimination** | Learned capacity to distinguish between a CS and irrelevant stimuli | A dog salivating only to a 1000 Hz tone, not an 800 Hz tone |
       - sort_order: 3
         block_type: callout
@@ -1840,13 +1856,13 @@ domains:
         block_type: example
         content:
           title: 'Experimental Case Study: John Garcia''s Conditioned Taste Aversion'
-          text: Behaviorists historically claimed any stimulus could be conditioned to any response with equal ease. John Garcia disproved this by exposing rats to novel flavored water followed hours later by radiation-induced nausea. The rats developed immediate, powerful **taste aversions** after a **single trial**, even with a delay of several hours. Crucially, rats failed to develop aversions to sights or sounds paired with nausea, proving that organisms are **biologically prepared** to associate taste with gastrointestinal illness.
+          text: Behaviorists historically claimed any stimulus could be conditioned to any response with equal ease. John Garcia challenged this by exposing rats to novel flavored water followed hours later by radiation-induced nausea. The rats developed strong **taste aversions** after a **single pairing**, despite the delay of several hours. In a related study, Garcia and Koelling (1966) found that rats readily linked a taste with illness but not lights and sounds with illness (lights and sounds were instead easily linked with pain from a shock), suggesting that organisms are **biologically prepared** to associate taste with gastrointestinal illness.
       - sort_order: 5
         block_type: callout
         content:
           type: warning
           title: 'Cognitive Pitfall: Spontaneous Recovery Does Not Mean Re-learning'
-          body: '**Spontaneous recovery** proves that extinction suppresses rather than permanently erases a conditioned association. When an extinguished response reappears following a delay, it occurs without any new pairings with the unconditioned stimulus.'
+          body: '**Spontaneous recovery** shows that extinction suppresses rather than permanently erases a conditioned association. When an extinguished response reappears following a delay, it occurs without any new pairings with the unconditioned stimulus.'
       terms:
       - term: Conditioned Stimulus (CS)
         definition: An originally neutral stimulus that, after association with an unconditioned stimulus, comes to trigger a conditioned response.
@@ -1889,7 +1905,7 @@ domains:
           - Higher-order conditioning
         scoring_spec:
           correct_index: 1
-        explanation: Stimulus generalization is the tendency for stimuli that resemble the original conditioned stimulus (e.g., other furry white objects resembling the white rat) to evoke similar conditioned responses, as demonstrated in Watson and Rayner's Little Albert experiment.
+        explanation: Stimulus generalization is the tendency for stimuli that resemble the original conditioned stimulus (e.g., other furry white objects resembling the white rat) to evoke similar conditioned responses, as illustrated in Watson and Rayner's classic (and methodologically criticized) 1920 Little Albert demonstration.
         difficulty: intermediate
         cognitive_level: application
         citation: OpenStax Psychology 1e, Section 6.2
@@ -1931,7 +1947,7 @@ domains:
           - Conditioning occurred after a single trial despite hours of delay
         scoring_spec:
           correct_index: 3
-        explanation: Traditional behaviorism asserted that conditioning required immediate temporal contiguity (seconds) and many repetitive pairings. Garcia proved that rats formed taste aversions after a single exposure even with hours separating ingestion and sickness, demonstrating evolutionary biological preparedness.
+        explanation: Traditional behaviorism asserted that conditioning required immediate temporal contiguity (seconds) and many repetitive pairings. Garcia showed that rats formed taste aversions after a single exposure even with hours separating ingestion and sickness, demonstrating evolutionary biological preparedness.
         difficulty: advanced
         cognitive_level: analysis
         citation: OpenStax Psychology 1e, Section 6.2
@@ -2020,8 +2036,8 @@ domains:
             | :--- | :--- | :--- | :--- |
             | **Positive Reinforcement** | **Add** a pleasant stimulus | **Increases** behavior | Giving a child a gold star for completing homework |
             | **Negative Reinforcement** | **Remove** an aversive stimulus | **Increases** behavior | Fastening your seatbelt to terminate an annoying warning chime |
-            | **Positive Punishment** | **Add** an unpleasant stimulus | **Decreases** behavior | Receiving a speeding fine from a traffic officer |
-            | **Negative Punishment** | **Remove** a pleasant stimulus | **Decreases** behavior | Revoking a teenager's cell phone privileges for breaking curfew |
+            | **Positive Punishment** | **Add** an unpleasant stimulus | **Decreases** behavior | Being assigned extra chores for breaking a household rule |
+            | **Negative Punishment** | **Remove** a pleasant stimulus | **Decreases** behavior | Revoking a teenager's cell phone privileges for breaking curfew; paying a speeding fine (losing money is called **response cost**) |
       - sort_order: 2
         block_type: callout
         content:
@@ -2041,7 +2057,7 @@ domains:
 
             ### Bandura's Observational Learning Theory
 
-            Albert Bandura demonstrated that organisms learn through **modeling** without direct reinforcement. In his famous **Bobo Doll experiments**, children who watched an adult violently strike an inflated doll were significantly more likely to imitate the specific hostile acts and verbal insults when later frustrated, driven by **vicarious reinforcement**.
+            Albert Bandura demonstrated that organisms learn through **modeling** without direct reinforcement. In his famous 1961 **Bobo Doll experiment**, children who watched an adult hit and kick an inflated doll later imitated many of the same hostile acts and phrases when given the chance, even though neither they nor the model received any reward. In a 1965 follow-up, children who saw the model **punished** imitated less than children who saw the model rewarded or receive no consequence (**vicarious punishment** and **vicarious reinforcement**). Yet when all the children were then offered treats to show what the model had done, the differences largely disappeared: nearly all could reproduce the aggression. This is the **learning-performance distinction**: seeing a model's consequences changes whether we *perform* a behavior, not whether we *learn* it.
       - sort_order: 4
         block_type: example
         content:
@@ -2052,7 +2068,7 @@ domains:
         content:
           type: key_concept
           title: Latent Learning and Cognitive Maps
-          body: Edward Tolman demonstrated that rats wandering through a maze formed internal mental representations (**cognitive maps**) without any reward. When food was finally introduced, they navigated the maze just as quickly as rewarded rats, proving **latent learning** occurs without immediate reinforcement.
+          body: Edward Tolman demonstrated that rats wandering through a maze formed internal mental representations (**cognitive maps**) without any reward. When food was finally introduced, their errors dropped abruptly and matched those of rats that had been rewarded all along within a day or two, showing that **latent learning** occurs without immediate reinforcement.
       terms:
       - term: Negative Reinforcement
         definition: The strengthening of a response by the removal, escape from, or avoidance of an unpleasant or aversive stimulus.
@@ -2127,17 +2143,17 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
-      - prompt: In Albert Bandura's classic Bobo Doll experiments, what factor determined whether children spontaneously imitated aggressive behaviors displayed by adult models?
+      - prompt: In Bandura's 1965 Bobo doll study, children who saw an adult model punished for attacking the doll imitated less aggression than children who saw the model rewarded. When all the children were later offered treats for reproducing the model's actions, the differences largely disappeared. What does this show?
         interaction_type: single_choice
         response_spec:
           options:
-          - The gender of the child observing the scenario
-          - Direct primary reinforcers delivered immediately to the child
-          - The genetic temperament score of the experimental subject
-          - Observing vicarious consequences delivered to the model
+          - Seeing the model punished had prevented the children from learning the aggressive acts
+          - The treats taught the children new aggressive acts through shaping
+          - The children's imitation depended only on their inborn temperament
+          - Seeing the model's consequences affected performing the behavior, not learning it
         scoring_spec:
           correct_index: 3
-        explanation: 'Bandura''s experiments demonstrated that observational learning is heavily mediated by vicarious reinforcement and vicarious punishment: children who observed the aggressive adult model being rewarded or experiencing no consequences readily imitated the hostility, whereas observing punishment suppressed imitation.'
+        explanation: This is the learning-performance distinction. All the children had learned the aggressive acts by watching; vicarious punishment only made some of them less willing to perform the acts. Once an incentive was offered, the learned behavior appeared. The treats were offered only after the film, so they did not shape new behavior, and temperament was not manipulated.
         difficulty: intermediate
         cognitive_level: comprehension
         citation: OpenStax Psychology 1e, Section 6.4
@@ -2167,7 +2183,7 @@ domains:
         - Exhibited aggression only when an immediate tangible candy reward was offered
         - Imitated the novel aggressive actions and verbalizations of the model
         correct_answer: 3
-        explanation: 'Bandura demonstrated observational learning: children exposed to aggressive models imitated specific physical and verbal aggressive behaviors, disproving the claim that observing aggression produces catharsis.'
+        explanation: 'Bandura demonstrated observational learning: children exposed to aggressive models imitated specific physical and verbal aggressive behaviors without any reward, contradicting the idea that watching aggression drains it away (catharsis).'
         concept_slugs:
         - psyc-observational-learning
         citation: OpenStax Psychology 1e, CC BY 4.0
@@ -2257,13 +2273,13 @@ domains:
         block_type: example
         content:
           title: 'Historical Neurological Case Study: Patient H.M. (Henry Molaison)'
-          text: 'In 1953, surgeon William Scoville performed a bilateral medial temporal lobectomy on 27-year-old Patient H.M. to treat severe epilepsy, removing both hippocampi. H.M. developed profound **anterograde amnesia**: he could never again form new explicit/declarative memories. However, psychologist Brenda Milner proved his **implicit procedural memory remained completely intact**: when trained on a mirror-tracing motor task, H.M. showed flawless day-to-day improvement despite having zero conscious recollection of ever performing the task before.'
+          text: 'In 1953, surgeon William Scoville performed a bilateral medial temporal lobectomy on 27-year-old Patient H.M. to treat severe epilepsy, removing most of both hippocampi along with nearby medial temporal lobe tissue. H.M. developed profound **anterograde amnesia**: he could never again form new explicit/declarative memories. However, psychologist Brenda Milner showed that his **implicit procedural memory remained completely intact**: when trained on a mirror-tracing motor task, H.M. showed steady day-to-day improvement despite having zero conscious recollection of ever performing the task before.'
       - sort_order: 5
         block_type: callout
         content:
           type: key_concept
           title: Elizabeth Loftus and Memory Reconstruction
-          body: 'Memory is **constructive**, not a video recording. Elizabeth Loftus proved the **misinformation effect**: when eyewitnesses viewing a car crash were asked *''How fast were the cars going when they smashed into each other?''* versus *''hit each other?''*, those hearing ''smashed'' falsely remembered seeing broken glass at the scene.'
+          body: 'Memory is **constructive**, not a video recording. Elizabeth Loftus demonstrated the **misinformation effect**: when eyewitnesses viewing a car crash were asked *''How fast were the cars going when they smashed into each other?''* versus *''hit each other?''*, those hearing ''smashed'' falsely remembered seeing broken glass at the scene.'
       terms:
       - term: Anterograde Amnesia
         definition: The inability to encode, consolidate, or store new explicit memories following neurological trauma or surgery.
@@ -2273,7 +2289,7 @@ domains:
         example: Accidentally writing your previous year's calendar date throughout January of the new year.
       - term: Misinformation Effect
         definition: The incorporation of misleading post-event information into one's memory of an event, altering eyewitness recollections.
-        example: Eyewitnesses falsely recalling a stop sign after being asked a question containing the premise 'after the yield sign'.
+        example: Eyewitnesses who originally saw a stop sign later report having seen a yield sign after being asked a question that mentioned a yield sign.
       assessment_items:
       - prompt: A student moves into a new apartment and memorizes their new postal zip code. When attempting to mail a package to their previous residence, they can only remember the new zip code. What cognitive phenomenon explains this forgetting?
         interaction_type: single_choice
@@ -2296,7 +2312,7 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
-      - prompt: Following surgical bilateral resection of his hippocampi to treat intractable epilepsy, Patient H.M. was able to learn and master mirror-drawing motor skills despite having zero conscious memory of practicing the task. What memory system remained intact?
+      - prompt: Following surgery that removed most of both hippocampi (with nearby medial temporal lobe tissue) to treat intractable epilepsy, Patient H.M. was able to learn and master mirror-drawing motor skills despite having zero conscious memory of practicing the task. What memory system remained intact?
         interaction_type: single_choice
         response_spec:
           options:
@@ -2359,7 +2375,7 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
-      - prompt: Which component of Alan Baddeley's working memory model is responsible for coordinating attentional focus, switching between cognitive tasks, and integrating inputs from sensory buffers?
+      - prompt: Which component of Alan Baddeley's working memory model is responsible for coordinating attentional focus, allocating attention, and switching between cognitive tasks?
         interaction_type: single_choice
         response_spec:
           options:
@@ -2381,7 +2397,7 @@ domains:
           is_protected: true
           exposure: timed_exam_only
       questions:
-      - question_text: Which component of Alan Baddeley's working memory model coordinates cognitive activities, allocates attentional resources, and integrates information across slave systems?
+      - question_text: Which component of Alan Baddeley's working memory model coordinates cognitive activities, allocates attentional resources, and switches focus between tasks?
         options:
         - Central executive
         - Phonological loop
@@ -2392,7 +2408,7 @@ domains:
         concept_slugs:
         - psyc-memory-models
         citation: OpenStax Psychology 1e, CC BY 4.0
-      - question_text: An individual who can recall childhood events perfectly but is incapable of forming new conscious declarative memories after bilateral hippocampus surgery exhibits what condition?
+      - question_text: An individual who still recalls most of their childhood but cannot form new conscious declarative memories after surgery removing most of both hippocampi exhibits what condition?
         options:
         - Retrograde amnesia
         - Anterograde amnesia
@@ -2650,7 +2666,7 @@ domains:
     - slug: psyc-hunger-physiology
       name: Hypothalamic Hunger Regulation and Incentives
       short_definition: Biological appetite mechanisms mediated by lateral (hunger) and ventromedial (satiety) hypothalamic centers and intrinsic incentives.
-      description: The lateral hypothalamus stimulates hunger while the ventromedial nucleus signals satiety, interacting with ghrelin, leptin, and the overjustification effect.
+      description: In the classic dual-center model, the lateral hypothalamus stimulates hunger while the ventromedial hypothalamus signals satiety; modern research adds hypothalamic networks and appetite hormones such as ghrelin and leptin. Intrinsic motivation can be undermined by the overjustification effect.
       citation: OpenStax Psychology 1e, Section 10.2
       prerequisites:
       - psyc-motivation-theories
@@ -2681,10 +2697,14 @@ domains:
 
             ### Biological Mechanisms of Hunger
 
+            The classic **dual-center model**, based on lesion studies in rats, assigned hunger and fullness to two hypothalamic areas:
+
             | Hypothalamic Center | Physiological Function | Effect of Experimental Lesion / Destruction |
             | :--- | :--- | :--- |
             | **Lateral Hypothalamus (LH)** | The **'hunger center'**; triggers feeding behavior when stimulated | Produces **aphagia** (complete refusal to eat, leading to starvation) |
-            | **Ventromedial Hypothalamus (VMH)** | The **'satiety center'**; signals fullness and ceases eating | Produces **hyperphagia** (insatiable eating, leading to extreme obesity) |
+            | **Ventromedial Hypothalamus (VMH)** | The **'satiety center'**; signals fullness and ceases eating | Produces **hyperphagia** (overeating, leading to marked obesity) |
+
+            The dual-center model is a simplification. Appetite is now understood to depend on networks of hypothalamic nuclei (such as the arcuate and paraventricular nuclei) that respond to hormones: **ghrelin**, released by an empty stomach, increases hunger; **leptin**, released by fat cells, signals long-term energy stores and reduces appetite; and **insulin** from the pancreas helps regulate blood glucose. Part of the obesity seen after VMH lesions comes from raised insulin levels and damage to nearby nerve fibers.
       - sort_order: 2
         block_type: callout
         content:
@@ -2707,13 +2727,13 @@ domains:
       terms:
       - term: Yerkes-Dodson Law
         definition: The empirical principle that performance increases with physiological or mental arousal, but only up to an optimal point, after which performance declines.
-        example: A surgeon remaining calm and composed during an intricate 8-hour neurosurgical procedure.
+        example: A student who is too relaxed makes careless errors on an exam, a panicking student freezes, and a moderately alert student performs best.
       - term: Overjustification Effect
         definition: The phenomenon in which being rewarded for doing something intrinsically enjoyable diminishes a person's intrinsic motivation to perform that activity.
         example: A passionate amateur baker losing interest in baking after being hired as an industrial pastry chef.
       - term: Ventromedial Hypothalamus
-        definition: The nucleus within the hypothalamus that acts as the primary satiety center, signaling an organism to terminate feeding.
-        example: A rat with a surgically destroyed ventromedial hypothalamus continuously eating until it quadruples its normal body weight.
+        definition: A hypothalamic region described in the classic dual-center model as a satiety center that signals an organism to stop feeding.
+        example: A rat with a surgically destroyed ventromedial hypothalamus overeating until it roughly doubles or triples its normal body weight.
       assessment_items:
       - prompt: An experimental neurobiologist surgically destroys the ventromedial hypothalamus of a laboratory rat. What behavioral outcome will immediately manifest?
         interaction_type: single_choice
@@ -2843,21 +2863,21 @@ domains:
           text: |-
             ### Hans Selye's General Adaptation Syndrome (GAS)
 
-            Hans Selye discovered that the human body reacts to severe, prolonged stress through a universal three-stage physiological response:
+            Hans Selye proposed that the body reacts to severe, prolonged stress through a general three-stage physiological response:
             1. **Alarm Reaction:** Sudden sympathetic nervous activation. Heart rate accelerates, pupils dilate, and adrenaline/norepinephrine surge to mobilize energy for fight-or-flight.
             2. **Resistance:** Sympathetic arousal remains elevated as the **adrenal cortex** releases **cortisol** (glucocorticoids). The body remains on high alert, successfully adapting to the ongoing stressor while consuming internal reserves.
-            3. **Exhaustion:** Prolonged exposure depletes the body's physical and hormonal resources. The immune system collapses, leading to clinical vulnerability, organ damage, depression, and cardiovascular illness.
+            3. **Exhaustion:** Prolonged exposure depletes the body's physical and hormonal resources. Immune defenses weaken, raising vulnerability to illness, depression, and cardiovascular disease.
       - sort_order: 3
         block_type: callout
         content:
           type: key_concept
           title: The Schachter-Singer Suproxin Experiment
-          body: "Stanley Schachter and Jerome Singer injected participants with adrenaline (under the guise of a vitamin called 'Suproxin'). Those who were **not told** about the drug's physiological side effects adopted the emotion of a confederate in the room\u2014becoming euphoric with a playful confederate or furious with an angry confederate. This proved that **cognitive context labels generalized arousal**."
+          body: "Stanley Schachter and Jerome Singer injected participants with adrenaline (under the guise of a vitamin called 'Suproxin'). Those who were **not told** about the drug's physiological side effects adopted the emotion of a confederate in the room\u2014becoming euphoric with a playful confederate or furious with an angry confederate. This was interpreted as supporting the idea that **cognitive context labels generalized arousal**. The effects were weak and inconsistent, however, and later attempts to replicate the study had mixed results, so it is considered only partial support for two-factor theory."
       - sort_order: 4
         block_type: example
         content:
-          title: 'Clinical Stress Case: Undergraduate Medical School Finals'
-          text: 'During exam week, medical students maintain sustained high vigilance powered by elevated cortisol (**Stage 2: Resistance**). The morning after exams conclude, dozens fall severely ill with respiratory infections, migraines, and severe fatigue. Their bodies have entered **Stage 3: Exhaustion**, characterized by acute immunosuppression.'
+          title: 'Clinical Stress Case: Long-Term Family Caregiving'
+          text: 'An adult begins caring full time for a parent with advanced dementia. In the first weeks, sudden demands trigger a surge of sympathetic arousal (**Stage 1: Alarm**). Over the following months, the caregiver copes with elevated cortisol and constant vigilance (**Stage 2: Resistance**). After a year or more without relief, the caregiver is chronically fatigued, catches infections more often, and recovers slowly: the pattern Selye called **Stage 3: Exhaustion**, in which prolonged stress weakens the body''s defenses. (Falling ill right after a short stressor such as exam week is different; it is often called a ''let-down'' effect.)'
       - sort_order: 5
         block_type: callout
         content:
@@ -2872,8 +2892,8 @@ domains:
         definition: 'Selye''s concept of the body''s adaptive response to chronic stress across three progressive phases: alarm, resistance, and exhaustion.'
         example: A soldier in combat experiencing acute alarm, enduring weeks of sustained resistance, and ultimately collapsing from physical exhaustion.
       - term: Facial Feedback Hypothesis
-        definition: The tendency of facial muscle states to trigger corresponding feelings such as fear, anger, or happiness.
-        example: Holding a pen between one's teeth to force a smiling expression, which subsequently increases ratings of cartoon humor.
+        definition: The hypothesis that facial expressions can feed back to and slightly strengthen the corresponding feelings; research finds the effect, if present, to be small and inconsistent.
+        example: A famous 1988 study reported that holding a pen in the teeth (forcing a smile) made cartoons seem funnier, but a 17-laboratory replication in 2016 did not find the effect.
       assessment_items:
       - prompt: 'An individual walks past an alley and encounters a snarling bear. Their heart races, and they immediately conclude: ''My heart is pounding, therefore I must be terrified.'' Which theory of emotion does this thought process represent?'
         interaction_type: single_choice
@@ -2902,7 +2922,7 @@ domains:
           options:
           - Sustained elevated arousal and continuous cortisol secretion
           - Immediate sudden sympathetic shock and lowered blood pressure
-          - Total bodily collapse and severe immune system breakdown
+          - Depleted resources and weakened immune defenses
           - Temporary rebound parasympathetic sleep and muscular atonia
         scoring_spec:
           correct_index: 0
@@ -3019,8 +3039,8 @@ domains:
       - sort_order: 2
         block_type: markdown
         content:
-          text: "### Jean Piaget's Four Stages of Cognitive Development\n\nChildren construct knowledge through **schemas**, updating them via **assimilation** (interpreting new experiences using existing schemas) and **accommodation** (adapting schemas to incorporate new information):\n\n| Stage | Typical Age | Key Developmental Milestones | Diagnostic Limitations |\n| :--- | :--- | :--- | :--- |\n| **Sensorimotor** | 0\u20132 years | Exploring through senses/motor actions; **Object Permanence** (~8 months); Stranger anxiety | Lacks symbolic mental representation |\n| **Preoperational** | 2\u20137 years | Symbolic play, language expansion, intuitive reasoning | **Egocentrism** (3-mountains task); Animism; Centration; **Lacks Conservation** |\n| **Concrete Operational** | 7\u201311 years | **Conservation** mastery (volume, mass, number); Mathematical reversibility; Hierarchical classification | Cannot perform abstract hypothetical deductive logic |\n| **Formal Operational** | 12+ years |\
-            \ **Abstract logic**, hypothetical-deductive reasoning, moral ideals, systemic problem solving | Post-formal cognitive expansion continues into adulthood |"
+          text: "### Jean Piaget's Four Stages of Cognitive Development\n\nChildren construct knowledge through **schemas**, updating them via **assimilation** (interpreting new experiences using existing schemas) and **accommodation** (adapting schemas to incorporate new information):\n\n| Stage | Typical Age | Key Developmental Milestones | Diagnostic Limitations |\n| :--- | :--- | :--- | :--- |\n| **Sensorimotor** | 0\u20132 years | Exploring through senses/motor actions; **Object Permanence** (~8 months, by Piaget's estimate) | Lacks symbolic mental representation |\n| **Preoperational** | 2\u20137 years | Symbolic play, language expansion, intuitive reasoning | **Egocentrism** (3-mountains task); Animism; Centration; **Lacks Conservation** |\n| **Concrete Operational** | 7\u201311 years | **Conservation** mastery (volume, mass, number); Mathematical reversibility; Hierarchical classification | Cannot perform abstract hypothetical deductive logic |\n| **Formal Operational** | 12+ years\
+            \ | **Abstract logic**, hypothetical-deductive reasoning, moral ideals, systemic problem solving | Post-formal cognitive expansion continues into adulthood |\n\nPiaget's ages are approximate. Later research using infants' looking times (for example, Ren\xE9e Baillargeon's studies) suggests that infants understand more about hidden objects, earlier, than Piaget's reaching tasks showed, and development is now seen as more gradual than strict stages imply."
       - sort_order: 3
         block_type: callout
         content:
@@ -3175,7 +3195,7 @@ domains:
     - slug: psyc-attachment-parenting
       name: Attachment Bonds and Baumrind Parenting Styles
       short_definition: Emotional bonding in infancy (Harlow's contact comfort, Ainsworth's Strange Situation) and Baumrind's four parenting frameworks.
-      description: Harlow disproved nourishment-based bonding; Ainsworth classified secure, avoidant, and resistant attachments; authoritative parenting yields optimal autonomy.
+      description: Harlow challenged nourishment-based accounts of bonding; Ainsworth classified secure, avoidant, and resistant attachments; authoritative parenting is associated with the best outcomes.
       citation: OpenStax Psychology 1e, Section 9.3
     - slug: psyc-psychosocial-moral-development
       name: Eriksonian Psychosocial and Kohlberg Moral Development
@@ -3208,8 +3228,8 @@ domains:
       - sort_order: 2
         block_type: markdown
         content:
-          text: "### Diana Baumrind's Four Parenting Styles\n\n| Parenting Style | Warmth & Responsiveness | Demandingness & Discipline | Long-Term Child Outcomes |\n| :--- | :--- | :--- | :--- |\n| **Authoritative** | High | High (reasonable, democratic rules) | Highest self-esteem, self-reliance, and social competence |\n| **Authoritarian** | Low | High (rigid, coercive, 'because I said so') | Lower self-esteem, higher anxiety, obedient but unhappy |\n| **Permissive** | High | Low (few demands, zero discipline) | Impulsive, demanding, poor academic self-regulation |\n| **Neglectful / Uninvolved** | Low | Low (absent, indifferent) | Poorest outcomes: delinquency, emotional detachment |\n\n### Erik Erikson's Psychosocial Crises Across the Lifespan\n\n- **Infancy (0\u20131 yr):** Trust vs. Mistrust\n- **Toddlerhood (1\u20133 yr):** Autonomy vs. Shame and Doubt\n- **Preschool (3\u20136 yr):** Initiative vs. Guilt\n- **Elementary (6\u201312 yr):** Industry vs. Inferiority\n- **Adolescence (12\u2013\
-            18 yr):** **Identity vs. Role Confusion**\n- **Young Adulthood (20s\u201330s):** **Intimacy vs. Isolation**\n- **Middle Adulthood (40s\u201360s):** **Generativity vs. Stagnation**\n- **Late Adulthood (65+ yr):** **Integrity vs. Despair**"
+          text: "### Diana Baumrind's Four Parenting Styles\n\n| Parenting Style | Warmth & Responsiveness | Demandingness & Discipline | Child Outcomes Associated With the Style |\n| :--- | :--- | :--- | :--- |\n| **Authoritative** | High | High (reasonable, democratic rules) | Highest self-esteem, self-reliance, and social competence |\n| **Authoritarian** | Low | High (rigid, coercive, 'because I said so') | Lower self-esteem, higher anxiety, obedient but unhappy |\n| **Permissive** | High | Low (few demands, zero discipline) | Impulsive, demanding, poor academic self-regulation |\n| **Neglectful / Uninvolved** | Low | Low (absent, indifferent) | Poorest outcomes: delinquency, emotional detachment |\n\nThese links are **correlations**, found mostly in Western middle-class families; they do not prove that parenting style alone causes the outcomes (children's temperament also shapes how parents respond), and the benefits of each style vary across cultures.\n\n### Erik Erikson's Psychosocial\
+            \ Crises Across the Lifespan\n\n- **Infancy (0\u20131 yr):** Trust vs. Mistrust\n- **Toddlerhood (1\u20133 yr):** Autonomy vs. Shame and Doubt\n- **Preschool (3\u20136 yr):** Initiative vs. Guilt\n- **Elementary (6\u201312 yr):** Industry vs. Inferiority\n- **Adolescence (12\u201318 yr):** **Identity vs. Role Confusion**\n- **Young Adulthood (20s\u201330s):** **Intimacy vs. Isolation**\n- **Middle Adulthood (40s\u201360s):** **Generativity vs. Stagnation**\n- **Late Adulthood (65+ yr):** **Integrity vs. Despair**"
       - sort_order: 3
         block_type: markdown
         content:
@@ -3351,7 +3371,7 @@ domains:
         citation: OpenStax Psychology 1e, CC BY 4.0
     flashcards:
     - front: What did Harry Harlow's study with rhesus monkeys disprove about attachment?
-      back: It disproved that attachment is based merely on who feeds the infant, proving contact comfort is foundational.
+      back: It contradicted the idea that attachment is based merely on who feeds the infant, showing that contact comfort is central.
       concept_slugs:
       - psyc-attachment-parenting
     - front: What characterizes authoritative parenting?
@@ -3368,7 +3388,7 @@ domains:
   objectives:
   - code: '9.1'
     title: Analyze psychodynamic defense mechanisms, psychosexual stages, and humanistic self-actualization
-    description: Evaluate Freud's tripartite mind structure, classify ego defense mechanisms, review neo-Freudian perspectives, and explain Rogers's unconditional positive regard.
+    description: Evaluate Freud's tripartite mind structure and psychosexual stages, classify ego defense mechanisms, review neo-Freudian perspectives, and explain Rogers's unconditional positive regard and Maslow's self-actualization.
     sort_order: 1
     importance: core
     citation: College Board Objective 9.1
@@ -3376,7 +3396,7 @@ domains:
     - slug: psyc-freudian-psychodynamics
       name: Freudian Personality Structure and Defense Mechanisms
       short_definition: Psychoanalytic personality model balancing the id (pleasure), ego (reality), and superego (morality) via unconscious defense mechanisms.
-      description: The ego mediates psychic conflict through defense mechanisms including repression, projection, displacement, reaction formation, and sublimation.
+      description: In Freud's theory the ego mediates psychic conflict through defense mechanisms including repression, projection, displacement, reaction formation, and sublimation; personality forms through psychosexual stages, and neo-Freudians such as Jung, Adler, and Horney revised the model.
       citation: OpenStax Psychology 1e, Section 11.2
     - slug: psyc-humanistic-personality
       name: Humanistic Self-Concept and Unconditional Regard
@@ -3387,7 +3407,7 @@ domains:
       - psyc-freudian-psychodynamics
     lessons:
     - title: Psychodynamic and Humanistic Perspectives on Personality
-      description: Id, ego, superego, defense mechanisms, Jung's collective unconscious, Rogers's self-concept, and Maslow's self-actualization.
+      description: Id, ego, superego, psychosexual stages, defense mechanisms, Jung's collective unconscious, Rogers's self-concept, and Maslow's self-actualization.
       emoji: "\U0001F3AD"
       tags:
       - personality
@@ -3420,12 +3440,14 @@ domains:
 
             | Defense Mechanism | Psychological Definition | Clinical Example |
             | :--- | :--- | :--- |
-            | **Repression** | Primary defense; banishing anxiety-arousing thoughts to the unconscious | Forgetting traumatic childhood memories of physical abuse |
+            | **Repression** | In Freud's theory, the basic defense: pushing anxiety-arousing thoughts out of awareness | 'Forgetting' an unpleasant dentist appointment you were dreading |
             | **Projection** | Attributing one's own unacceptable impulses onto others | A deceitful person constantly accusing coworkers of being dishonest |
             | **Reaction Formation** | Switching unacceptable impulses into their exact opposites | Masking unconscious romantic attraction behind exaggerated hostility |
             | **Displacement** | Shifting aggressive/sexual impulses toward a less threatening target | Yelling at your child after receiving a harsh reprimand from your boss |
             | **Sublimation** | Channeling unacceptable impulses into socially constructive pursuits | Channeling aggressive hostility into professional contact sports or surgery |
             | **Regression** | Retreating to an earlier, more infantile psychosexual stage | An adult throwing a screaming temper tantrum when denied a promotion |
+
+            **A caution about repression:** repression is a Freudian concept with limited empirical support. Traumatic events are usually remembered all too well rather than forgotten, and therapy techniques aimed at 'recovering' supposedly repressed memories have produced vivid false memories (as Elizabeth Loftus's research showed).
       - sort_order: 3
         block_type: callout
         content:
@@ -3441,8 +3463,14 @@ domains:
         block_type: callout
         content:
           type: warning
-          title: 'Cognitive Pitfall: Sublimation is Uniquely Adaptive'
-          body: Unlike other defense mechanisms which are often maladaptive, **sublimation** is considered an adaptive defense mechanism because it channels forbidden primal drives into culturally productive and praised outcomes (e.g., artistic creation or athletic prowess).
+          title: 'Cognitive Pitfall: Sublimation is Considered Adaptive'
+          body: Unlike most defense mechanisms, which are often maladaptive, **sublimation** is considered one of the more mature, adaptive defenses (along with humor, for example) because it channels forbidden primal drives into culturally productive and praised outcomes (e.g., artistic creation or athletic prowess).
+      - sort_order: 6
+        block_type: markdown
+        content:
+          text: "### Freud's Psychosexual Stages\n\nFreud proposed that personality forms in childhood as pleasure-seeking energy (libido) centers on different body zones. Unresolved conflict at a stage could leave a **fixation**, an adult trait tied to that stage:\n1. **Oral (0\u20131 yr):** Pleasure from sucking and feeding; fixation was said to show up as smoking, overeating, or dependency.\n2. **Anal (1\u20133 yr):** Conflict centers on toilet training; fixation was said to produce excessive orderliness (anal-retentive) or messiness.\n3. **Phallic (3\u20136 yr):** Focus on the genitals; Freud's **Oedipus complex**, resolved by identifying with the same-sex parent, which forms the superego.\n4. **Latency (6 yr\u2013puberty):** Sexual feelings are dormant; energy goes into school, friendships, and skills.\n5. **Genital (puberty on):** Mature sexual interests directed toward others.\n\n### The Neo-Freudians\n\nFollowers who kept Freud's focus on the unconscious but placed less weight on\
+            \ sexual drives:\n- **Carl Jung:** Added the **collective unconscious**, a shared, inherited layer of the mind containing **archetypes**, universal images and themes (such as the shadow, the hero, and the persona) that Jung believed came from our species' ancestral history and explain recurring symbols in myths across cultures. He also described introversion and extraversion.\n- **Alfred Adler:** Emphasized social motives and the drive to overcome childhood feelings of **inferiority**.\n- **Karen Horney:** Argued that **basic anxiety** from insecure childhood relationships, along with social and cultural forces, shapes personality, and challenged Freud's views of women.\n\n### Maslow and Self-Actualization\n\nAbraham Maslow, like Rogers a founder of **humanistic psychology**, studied healthy, accomplished people rather than patients. He described **self-actualization** as fulfilling one's potential, at the top of his hierarchy of needs; self-actualizing people tended to be realistic,\
+            \ accepting, spontaneous, and focused on problems beyond themselves.\n\n**Evaluating these theories:** Psychodynamic ideas drew attention to unconscious processes and childhood, but many specific claims (psychosexual stages, the collective unconscious) are hard to test and have little empirical support. Humanistic ideas shaped counseling but were criticized as vague and overly optimistic."
       terms:
       - term: Superego
         definition: The component of personality that represents internalized societal ideals, moral standards, and conscience, striving for perfection.
@@ -3506,7 +3534,7 @@ domains:
           - The reciprocal determinism schema
         scoring_spec:
           correct_index: 2
-        explanation: Carl Jung proposed the collective unconscious, an inherited layer of the unconscious mind containing universal evolutionary memories and symbolic archetypes (such as the shadow, anima, and hero) shared across all human cultures.
+        explanation: Carl Jung proposed the collective unconscious, which he described as an inherited layer of the unconscious mind containing archetypes (universal images such as the shadow, the hero, and the persona) shared across human cultures. It is an influential idea but difficult to test and has little empirical support.
         difficulty: intermediate
         cognitive_level: recall
         citation: OpenStax Psychology 1e, Section 11.2
@@ -3559,7 +3587,7 @@ domains:
     - slug: psyc-big-five-traits
       name: Big Five Trait Taxonomy (OCEAN)
       short_definition: 'Five broad empirical dimensions of personality: Openness, Conscientiousness, Extraversion, Agreeableness, and Neuroticism.'
-      description: Paul Costa and Robert McCrae established the OCEAN five-factor model as the cross-culturally validated standard for describing individual trait differences.
+      description: The OCEAN five-factor model, refined by Paul Costa and Robert McCrae among others, is the most widely accepted taxonomy for describing individual trait differences, though rival models and cross-cultural exceptions are debated.
       citation: OpenStax Psychology 1e, Section 11.7
     - slug: psyc-social-cognitive-assessment
       name: Reciprocal Determinism, Locus of Control, and Personality Testing
@@ -3590,7 +3618,7 @@ domains:
           text: |-
             ### The Big Five Trait Taxonomy (OCEAN)
 
-            Developed by Paul Costa and Robert McCrae through factor analysis, the **Five-Factor Model (OCEAN)** represents the gold standard of contemporary trait psychology:
+            Built up through factor analysis of trait descriptions and refined by Paul Costa and Robert McCrae, among others, the **Five-Factor Model (OCEAN)** is the most widely accepted trait taxonomy in contemporary psychology (rivals such as the six-factor HEXACO model exist, and the five factors replicate less cleanly in some non-Western samples):
 
             | Dimension | High End Characteristics | Low End Characteristics |
             | :--- | :--- | :--- |
@@ -3630,7 +3658,7 @@ domains:
         block_type: example
         content:
           title: 'Applied Workplace Case: Predicting Occupational Performance'
-          text: An industrial-organizational psychologist evaluates candidate profiles for an airline pilot position. Research confirms that **Conscientiousness** is the single strongest Big Five predictor of job performance across diverse occupations. For pilots, high Conscientiousness (methodical adherence to preflight checklists) and low Neuroticism (emotional stability during turbulence) are paramount.
+          text: An industrial-organizational psychologist evaluates candidate profiles for an airline pilot position. Research confirms that **Conscientiousness** is the most consistent Big Five predictor of job performance across diverse occupations. For pilots, high Conscientiousness (methodical adherence to preflight checklists) and low Neuroticism (emotional stability during turbulence) are paramount.
       - sort_order: 5
         block_type: callout
         content:
@@ -3782,7 +3810,7 @@ domains:
     - slug: psyc-disorder-classification
       name: Diagnostic Classification and Biopsychosocial Etiology
       short_definition: Defining psychological disorders via deviance, distress, and dysfunction, classified by the DSM-5-TR under the diathesis-stress framework.
-      description: The medical model views disorders as illnesses; the diathesis-stress model integrates genetic predisposition with environmental stressors; Rosenhan demonstrated diagnostic labeling bias.
+      description: The medical model views disorders as illnesses; the diathesis-stress model integrates genetic predisposition with environmental stressors; Rosenhan's contested study is the classic illustration of diagnostic labeling bias.
       citation: OpenStax Psychology 1e, Section 15.1 & 15.2
     - slug: psyc-anxiety-ocd-ptsd
       name: Anxiety Disorders, OCD, and PTSD
@@ -3829,8 +3857,8 @@ domains:
             | Disorder | Core Symptom Profile | Diagnostic Hallmark |
             | :--- | :--- | :--- |
             | **Generalized Anxiety Disorder (GAD)** | Chronic, diffuse, unfocused apprehension lasting $\ge 6$ months | 'Free-floating' anxiety accompanied by muscle tension and fatigue |
-            | **Panic Disorder** | Recurrent sudden surges of terrifying autonomic panic | Anticipatory terror; frequently accompanied by **agoraphobia** |
-            | **Specific Phobia** | Persistent, irrational fear and avoidance of a specific object | Disproportionate dread; recognized by adult as irrational |
+            | **Panic Disorder** | Recurrent sudden surges of terrifying autonomic panic | Persistent worry about future attacks; often co-occurs with **agoraphobia** (fear of places where escape would be hard), which DSM-5 diagnoses separately |
+            | **Specific Phobia** | Persistent, irrational fear and avoidance of a specific object | Fear out of proportion to the actual danger, lasting 6 months or more |
             | **Obsessive-Compulsive Disorder (OCD)** | Intrusive thoughts paired with repetitive ritualistic acts | **Obsessions** (anxiety-provoking thoughts) drive **Compulsions** (anxiety-reducing behaviors) |
             | **Post-Traumatic Stress Disorder (PTSD)** | Follows severe life-threatening trauma | Intrusive flashbacks, nightmares, hyperarousal, avoidance of trauma cues |
       - sort_order: 3
@@ -3843,7 +3871,7 @@ domains:
         block_type: example
         content:
           title: 'Historical Psychiatric Experiment: David Rosenhan''s Hospital Study'
-          text: In 1973, David Rosenhan sent eight sane pseudopatients to various psychiatric hospitals claiming they heard a single auditory voice saying 'empty, hollow, thud.' All were admitted and diagnosed with schizophrenia. Once admitted, they acted completely normal. Hospital staff failed to detect them; normal behaviors (like writing notes in a diary) were documented as pathological 'patient engages in excessive note-taking behavior.' The study demonstrated the profound, persistent biasing power of **diagnostic labels**.
+          text: 'In 1973, David Rosenhan reported sending eight healthy pseudopatients to psychiatric hospitals claiming they heard a voice saying words such as ''empty,'' ''hollow,'' and ''thud.'' According to his report, all were admitted: seven were diagnosed with schizophrenia and one with manic-depressive psychosis. Once admitted, they acted normally. Staff did not detect them (though some fellow patients reportedly did), and ordinary behavior was read through the diagnosis; a nurse''s note about one pseudopatient''s note-taking read ''patient engages in writing behavior.'' Rosenhan concluded that **diagnostic labels** strongly bias how behavior is interpreted. The study is famous but contested: critics at the time (such as Robert Spitzer) questioned its logic, and later investigations, including journalist Susannah Cahalan''s 2019 book, have raised serious doubts about its methods and how its data were reported.'
       - sort_order: 5
         block_type: callout
         content:
@@ -3882,7 +3910,7 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
-      - prompt: In David Rosenhan's famous 1973 study 'On Being Sane in Insane Places,' what did the behavior of the hospital staff toward the pseudopatients reveal?
+      - prompt: In David Rosenhan's famous 1973 study 'On Being Sane in Insane Places,' what did Rosenhan conclude from how hospital staff treated the pseudopatients?
         interaction_type: single_choice
         response_spec:
           options:
@@ -3892,7 +3920,7 @@ domains:
           - Antipsychotic medications produced immediate behavioral remission
         scoring_spec:
           correct_index: 1
-        explanation: Rosenhan's study demonstrated that once individuals were labeled with schizophrenia, hospital staff interpreted completely normal, ordinary behaviors (such as pacing out of boredom or taking notes) as pathological manifestations of mental illness.
+        explanation: Rosenhan reported that once the pseudopatients were labeled with a diagnosis (usually schizophrenia), staff interpreted ordinary behaviors (such as pacing out of boredom or taking notes) as signs of mental illness. The study's methods and data have since been seriously questioned, so it is best treated as Rosenhan's claim rather than an established finding.
         difficulty: intermediate
         cognitive_level: analysis
         citation: OpenStax Psychology 1e, Section 15.1
@@ -3909,7 +3937,7 @@ domains:
           options:
           - Obsessive-compulsive disorder
           - Bipolar II hypomania
-          - Panic disorder with agoraphobia
+          - Panic disorder with comorbid agoraphobia
           - Schizotypal personality disorder
         scoring_spec:
           correct_index: 2
@@ -3987,7 +4015,7 @@ domains:
     - slug: psyc-mood-bipolar-disorders
       name: Depressive and Bipolar Disorders
       short_definition: Mood disturbances spanning Major Depressive Disorder (anhedonia, lethargy) and Bipolar Disorder (alternating depression and mania).
-      description: Depression involves monoamine deficits and pessimistic cognitive triads; Bipolar I requires at least one full manic episode.
+      description: Depression is associated with disturbances in monoamine and other neural systems and with pessimistic cognitive triads; Bipolar I requires at least one full manic episode.
       citation: OpenStax Psychology 1e, Section 15.6 & 15.7
     - slug: psyc-schizophrenia-personality
       name: Schizophrenia Spectrum and Personality Disorders
@@ -4379,7 +4407,7 @@ domains:
     - slug: psyc-treatment-efficacy-meta-analysis
       name: Evaluating Treatment Outcomes and Therapeutic Alliance
       short_definition: Empirical evaluation of psychotherapy efficacy through meta-analysis and the foundational role of the therapeutic alliance.
-      description: Meta-analyses demonstrate that psychotherapy is substantially more effective than no treatment, mediated by empathy, hope, and the therapeutic alliance.
+      description: Meta-analyses demonstrate that psychotherapy is substantially more effective than no treatment; common factors such as empathy, hope, and the therapeutic alliance are among the best-supported predictors of outcome.
       citation: OpenStax Psychology 1e, Section 16.4
       prerequisites:
       - psyc-biomedical-pharmacology
@@ -4407,8 +4435,8 @@ domains:
       - sort_order: 2
         block_type: markdown
         content:
-          text: "### Brain Stimulation Modalities and Outcome Research\n\n- **Electroconvulsive Therapy (ECT):** A biomedical therapy for severe, treatment-resistant depression in which a brief electrical current is sent through the brain of an anesthetized patient to trigger a controlled seizure. Highly effective for acute suicidal depression; primary side effect is temporary anterograde/retrograde memory loss.\n- **Repetitive Transcranial Magnetic Stimulation (rTMS):** Delivers repeated magnetic pulses to the left prefrontal cortex to stimulate inactive neural circuits without producing seizures or memory loss.\n\n### Evaluating Therapy Outcomes: Meta-Analysis\n\nIn 1952, Hans Eysenck claimed two-thirds of untreated neurotic patients improve on their own through **spontaneous remission**. Subsequent large-scale **meta-analyses** (statistical syntheses of hundreds of randomized controlled trials) conducted by Mary Lee Smith and Gene Glass decisively disproved Eysenck, revealing that **the\
-            \ average treated therapy client is better off than 80% of untreated control individuals**. The single strongest predictor of positive outcome across all therapy types is the **therapeutic alliance**\u2014the empathic, collaborative bond between therapist and client."
+          text: "### Brain Stimulation Modalities and Outcome Research\n\n- **Electroconvulsive Therapy (ECT):** A biomedical therapy for severe, treatment-resistant depression in which a brief electrical current is sent through the brain of an anesthetized patient to trigger a controlled seizure. Highly effective for acute suicidal depression; primary side effect is temporary anterograde/retrograde memory loss.\n- **Repetitive Transcranial Magnetic Stimulation (rTMS):** Delivers repeated magnetic pulses to the left prefrontal cortex to stimulate inactive neural circuits without producing seizures or memory loss.\n\n### Evaluating Therapy Outcomes: Meta-Analysis\n\nIn 1952, Hans Eysenck claimed two-thirds of untreated neurotic patients improve on their own through **spontaneous remission**. Later **meta-analyses** (statistical syntheses of hundreds of controlled outcome studies) by Mary Lee Smith, Gene Glass, and colleagues contradicted Eysenck's pessimistic conclusion, finding that **the\
+            \ average treated therapy client is better off than about 80% of untreated control individuals** (their 1977 analysis put the figure at about 75%; the 1980 update at about 80%). Among the best-supported predictors of positive outcome across therapy types is the **therapeutic alliance**\u2014the empathic, collaborative bond between therapist and client\u2014although it explains only part of the variation in outcomes."
       - sort_order: 3
         block_type: callout
         content:
@@ -4489,7 +4517,7 @@ domains:
           - The specific theoretical modality practiced by the clinician accounts for virtually all variance in patient recovery and symptom reduction.
         scoring_spec:
           correct_index: 0
-        explanation: 'Meta-analytic reviews synthesizing hundreds of controlled outcome studies demonstrate that psychotherapy is effective: the average treated client is better off than approximately 80% of untreated individuals on waitlists, refuting Eysenck''s spontaneous remission claims.'
+        explanation: 'Meta-analytic reviews synthesizing hundreds of controlled outcome studies demonstrate that psychotherapy is effective: the average treated client is better off than approximately 80% of untreated individuals on waitlists, contradicting Eysenck''s claim that therapy adds little beyond spontaneous remission.'
         difficulty: intermediate
         cognitive_level: comprehension
         citation: OpenStax Psychology 1e, Section 16.4
@@ -4555,7 +4583,7 @@ domains:
     - slug: psyc-conformity-obedience
       name: Conformity, Compliance, and Milgram Obedience
       short_definition: Social pressure paradigms including Asch line conformity, normative/informational influence, and Milgram's destructive obedience.
-      description: Asch demonstrated visual judgment conformity; Milgram demonstrated that 65% of participants obey legitimate authority commands to deliver lethal shocks.
+      description: Asch demonstrated visual judgment conformity; Milgram found that 65% of participants in his baseline study obeyed an authority's commands to deliver what they believed were dangerous shocks (the shocks were fake).
       citation: OpenStax Psychology 1e, Section 12.3
       prerequisites:
       - psyc-attribution-dissonance
@@ -4595,11 +4623,11 @@ domains:
           text: |-
             ### Classic Social Influence Experiments
 
-            | Landmark Study | Lead Investigator | Experimental Paradigm | Definitive Research Finding |
+            | Landmark Study | Lead Investigator | Experimental Paradigm | Reported Finding |
             | :--- | :--- | :--- | :--- |
             | **Conformity Studies (1955)** | **Solomon Asch** | Participants matched line lengths in a group of confederates giving unanimously wrong answers | ~37% of trials produced conformity; driven by **normative influence** (avoiding rejection) |
-            | **Obedience to Authority (1963)** | **Stanley Milgram** | Teachers commanded by an authority figure to administer escalating electrical shocks to a screaming learner | **65% of ordinary participants** obeyed orders to deliver the maximum 450-volt lethal shock |
-            | **Stanford Prison Experiment (1971)** | **Philip Zimbardo** | College students randomly assigned to mock guards or prisoners in a simulated basement prison | Deindividuation and institutional roles rapidly overrode personal morality within 6 days |
+            | **Obedience to Authority (1963)** | **Stanley Milgram** | Teachers commanded by an authority figure to administer escalating electrical shocks to a protesting learner (a confederate; no real shocks were given) | **65% of ordinary participants** obeyed orders to deliver what they believed was a dangerous 450-volt shock |
+            | **Stanford Prison Experiment (1971)** | **Philip Zimbardo** | College students randomly assigned to mock guards or prisoners in a simulated basement prison | Reported that guards quickly became abusive and the study was stopped after 6 days. A famous but heavily criticized demonstration: guards were encouraged by the researchers to be tough, participants may have acted out expected roles, and a 2002 BBC prison study did not reproduce the result. It is not reliable evidence that roles alone override morality. |
       - sort_order: 3
         block_type: callout
         content:
@@ -4621,8 +4649,8 @@ domains:
         block_type: callout
         content:
           type: warning
-          title: 'Cognitive Pitfall: FAE Appears Primarily in Individualistic Cultures'
-          body: The **Fundamental Attribution Error** is significantly more pronounced in Western **individualistic cultures** (which emphasize personal autonomy) and is markedly lower in East Asian **collectivist cultures** (which naturally emphasize situational and social context).
+          title: 'Cognitive Pitfall: The FAE Varies Across Cultures'
+          body: The **Fundamental Attribution Error** occurs across cultures, but it tends to be somewhat stronger in Western **individualistic cultures** (which emphasize personal autonomy) and somewhat weaker in some East Asian **collectivist** samples (which emphasize situational and social context), especially when situational pressures are made obvious. The difference is modest and depends on the task.
       terms:
       - term: Fundamental Attribution Error
         definition: The tendency for observers to underestimate situational factors and overestimate dispositional personality factors when explaining others' behavior.
@@ -4686,7 +4714,7 @@ domains:
           - Approximately 65% of participants
         scoring_spec:
           correct_index: 3
-        explanation: In Milgram's baseline obedience study, 65% (26 out of 40) of participants administered the final 450-volt electrical shock, despite the learner screaming in agony and subsequently going silent.
+        explanation: In Milgram's baseline obedience study, 65% (26 out of 40) of participants administered the final 450-volt electrical shock, despite the learner pounding on the wall in protest and then falling silent.
         difficulty: beginner
         cognitive_level: recall
         citation: OpenStax Psychology 1e, Section 12.3
@@ -4751,7 +4779,7 @@ domains:
         concept_slugs:
         - psyc-attribution-dissonance
         citation: OpenStax Psychology 1e, CC BY 4.0
-      - question_text: In Stanley Milgram's classic obedience experiments, which situational factor significantly reduced participants' willingness to administer the highest voltage shocks?
+      - question_text: In Stanley Milgram's obedience experiments, which variation reduced obedience most dramatically, to about 10% of participants?
         options:
         - Conducting the experiment at prestigious Yale University rather than a downtown office
         - Observing peer confederate teachers rebel and refuse to obey the experimenter
@@ -4785,8 +4813,8 @@ domains:
       citation: OpenStax Psychology 1e, Section 12.4
     - slug: psyc-prejudice-altruism
       name: Prejudice, Ingroup Bias, and the Bystander Effect
-      short_definition: Social relations spanning stereotypes, ingroup/outgroup bias, scapegoating, and bystander apathy via diffusion of responsibility.
-      description: "Darley and Latan\xE9 proved that emergency intervention decreases as bystander group size increases due to pluralistic ignorance and diffused responsibility."
+      short_definition: Social relations spanning stereotypes, ingroup/outgroup bias, scapegoating, and the bystander effect via diffusion of responsibility.
+      description: "Darley and Latan\xE9 showed that the likelihood of any one person intervening in an emergency falls as the number of bystanders rises, owing to pluralistic ignorance and diffused responsibility."
       citation: OpenStax Psychology 1e, Section 12.5 & 12.6
       prerequisites:
       - psyc-group-dynamics
@@ -4816,7 +4844,7 @@ domains:
             - **Social Loafing:** The tendency for people in a collective group to exert less effort when pooling efforts toward a common goal than when individually accountable *(e.g., pulling less hard during a tug-of-war)*.
             - **Deindividuation:** The loss of self-awareness and personal restraint occurring in group situations that foster anonymity and high emotional arousal *(e.g., cyber mob bullying, nighttime riot vandalism)*.
             - **Group Polarization:** The enhancement and strengthening of a group's prevailing inclinations and attitudes following discussion among like-minded individuals.
-            - **Groupthink (Irving Janis):** The mode of thinking that occurs when the desire for harmony and consensus in a cohesive decision-making group suppresses realistic dissenting viewpoints *(e.g., the Bay of Pigs invasion failure, NASA Challenger launch disaster)*.
+            - **Groupthink (Irving Janis):** The mode of thinking that occurs when the desire for harmony and consensus in a cohesive decision-making group suppresses realistic dissenting viewpoints *(e.g., Janis's own example, the failed 1961 Bay of Pigs invasion)*.
       - sort_order: 2
         block_type: markdown
         content:
@@ -4835,7 +4863,7 @@ domains:
         content:
           type: key_concept
           title: "Darley and Latan\xE9's Bystander Effect"
-          body: "Spurred by the murder of Kitty Genovese, John Darley and Bibb Latan\xE9 demonstrated that an individual is significantly **less likely to help in an emergency as the number of passive bystanders increases**. This bystander apathy is driven by:\n1. **Diffusion of Responsibility:** Believing someone else will step forward or call emergency services.\n2. **Pluralistic Ignorance:** Looking to other passive observers and concluding that because no one is reacting, the situation must not be a genuine crisis."
+          body: "Spurred by news coverage of the 1964 murder of Kitty Genovese (the original story of 38 unresponsive witnesses was later shown to be exaggerated), John Darley and Bibb Latan\xE9 demonstrated that an individual is significantly **less likely to help in an emergency as the number of passive bystanders increases**. This **bystander effect** is driven by:\n1. **Diffusion of Responsibility:** Believing someone else will step forward or call emergency services.\n2. **Pluralistic Ignorance:** Looking to other passive observers and concluding that because no one is reacting, the situation must not be a genuine crisis."
       - sort_order: 4
         block_type: example
         content:
@@ -4943,7 +4971,7 @@ domains:
           is_protected: true
           exposure: timed_exam_only
       questions:
-      - question_text: "The tragic murder of Kitty Genovese in 1964 stimulated social psychologists John Darley and Bibb Latan\xE9 to study which phenomenon?"
+      - question_text: "News coverage of the 1964 murder of Kitty Genovese (later shown to have exaggerated how many witnesses did nothing) prompted social psychologists John Darley and Bibb Latan\xE9 to study which phenomenon?"
         options:
         - Social loafing in collaborative group tasks
         - Deindividuation in anonymous crowds
@@ -5056,7 +5084,7 @@ domains:
 
             - **68.26%** of all observations fall within $\pm 1$ standard deviation of the mean.
             - **95.44%** fall within $\pm 2$ standard deviations of the mean.
-            - **99.74%** fall within $\pm 3$ standard deviations of the mean.
+            - **99.7%** fall within $\pm 3$ standard deviations of the mean.
 
             Scientific test construction demands rigorous validation across both reliability (consistency) and validity (truthfulness/accuracy):
 
@@ -5073,7 +5101,7 @@ domains:
         content:
           type: key_concept
           title: Theories of Intelligence and Deviation IQ
-          body: 'Early intelligence testing pioneered by Alfred Binet used **mental age** ($MA$). William Stern formulated the ratio IQ: $IQ = (MA / CA) \times 100$. Modern tests like David Wechsler''s **WAIS** and **WISC** abandoned ratio IQ in favor of **deviation IQ**, standardizing performance against representative age cohorts with a fixed mean of 100 and standard deviation of 15. In theory, **Charles Spearman** posited a general cognitive factor ($g$); **Howard Gardner** proposed eight independent multiple intelligences; and **Robert Sternberg** formulated the triarchic theory (analytical, creative, and practical intelligence).'
+          body: 'Early intelligence testing pioneered by Alfred Binet used **mental age** ($MA$). William Stern formulated the ratio IQ: $IQ = (MA / CA) \times 100$. Modern tests like David Wechsler''s **WAIS** and **WISC** abandoned ratio IQ in favor of **deviation IQ**, standardizing performance against representative age cohorts with a fixed mean of 100 and standard deviation of 15. In theory, **Charles Spearman** posited a general cognitive factor ($g$); **Howard Gardner** proposed eight relatively separate multiple intelligences (an influential theory, but weakly supported by test data, since different abilities tend to correlate, which supports $g$); and **Robert Sternberg** formulated the triarchic theory (analytical, creative, and practical intelligence).'
       - sort_order: 5
         block_type: example
         content:
@@ -5083,13 +5111,13 @@ domains:
 
             - **Student A** scores 115 (+1 SD above the mean). By applying the 68-95-99.7 rule, 50% score below the mean and 34.1% fall between the mean and +1 SD, meaning Student A scored higher than approximately 84% of test takers.
             - **Student B** scores 130 (+2 SD above the mean). Scoring higher than approximately 97.5% of test takers, placing Student B in the top 2.5% of the population.
-            - When the 1,000 students retake an alternate form 30 days later, the Pearson correlation coefficient between test administrations is $r = +0.94$, demonstrating exceptional test-retest reliability.
+            - When the 1,000 students retake the same test 30 days later, the Pearson correlation coefficient between test administrations is $r = +0.94$, demonstrating exceptional test-retest reliability.
       terms:
       - term: Standard Deviation
         definition: A computed measure of how much scores vary around the mean score in a distribution, establishing data dispersion.
         example: On the WAIS intelligence test, a standard deviation of 15 indicates that scores between 85 and 115 represent normal average cognitive performance.
       - term: Statistical Significance
-        definition: A statistical criterion indicating that the observed experimental effect or difference is unlikely to have arisen by random chance alone, conventionally set at p < 0.05.
+        definition: A statistical criterion indicating that a result at least as extreme as the one observed would be unlikely if the null hypothesis (no real effect) were true, conventionally set at p < 0.05.
         example: A novel psychotherapy demonstrating symptom reduction with p = 0.01, indicating only a 1% probability of observing such results under the null hypothesis.
       - term: Construct Validity
         definition: The extent to which an operational test or measurement tool accurately captures the underlying theoretical, unobservable psychological attribute it was designed to evaluate.
@@ -5151,7 +5179,7 @@ domains:
           - The likelihood of observing a difference of this magnitude by chance alone under the null hypothesis is less than five percent.
         scoring_spec:
           correct_index: 3
-        explanation: A p-value of 0.02 is below the conventional alpha threshold of 0.05, indicating statistical significance. This means there is only a 2% probability that the observed difference between the experimental and control groups occurred by chance alone assuming the null hypothesis (no true drug effect) is true. It does not measure effect size, percent of cured patients, or clinical magnitude.
+        explanation: A p-value of 0.02 is below the conventional alpha threshold of 0.05, indicating statistical significance. This means that if the null hypothesis (no true drug effect) were true, a difference at least this large between the experimental and control groups would occur only about 2% of the time. It is not the probability that the result is due to chance or that the null hypothesis is true. It does not measure effect size, percent of cured patients, or clinical magnitude.
         difficulty: advanced
         cognitive_level: application
         citation: OpenStax Psychology 1e, Section 2.3

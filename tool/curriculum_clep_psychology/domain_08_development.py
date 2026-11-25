@@ -68,10 +68,11 @@ DOMAIN_08 = {
                                     "Children construct knowledge through **schemas**, updating them via **assimilation** (interpreting new experiences using existing schemas) and **accommodation** (adapting schemas to incorporate new information):\n\n"
                                     "| Stage | Typical Age | Key Developmental Milestones | Diagnostic Limitations |\n"
                                     "| :--- | :--- | :--- | :--- |\n"
-                                    "| **Sensorimotor** | 0–2 years | Exploring through senses/motor actions; **Object Permanence** (~8 months); Stranger anxiety | Lacks symbolic mental representation |\n"
+                                    "| **Sensorimotor** | 0–2 years | Exploring through senses/motor actions; **Object Permanence** (~8 months, by Piaget's estimate) | Lacks symbolic mental representation |\n"
                                     "| **Preoperational** | 2–7 years | Symbolic play, language expansion, intuitive reasoning | **Egocentrism** (3-mountains task); Animism; Centration; **Lacks Conservation** |\n"
                                     "| **Concrete Operational** | 7–11 years | **Conservation** mastery (volume, mass, number); Mathematical reversibility; Hierarchical classification | Cannot perform abstract hypothetical deductive logic |\n"
-                                    "| **Formal Operational** | 12+ years | **Abstract logic**, hypothetical-deductive reasoning, moral ideals, systemic problem solving | Post-formal cognitive expansion continues into adulthood |"
+                                    "| **Formal Operational** | 12+ years | **Abstract logic**, hypothetical-deductive reasoning, moral ideals, systemic problem solving | Post-formal cognitive expansion continues into adulthood |\n\n"
+                                    "Piaget's ages are approximate. Later research using infants' looking times (for example, Renée Baillargeon's studies) suggests that infants understand more about hidden objects, earlier, than Piaget's reaching tasks showed, and development is now seen as more gradual than strict stages imply."
                                 )
                             },
                         },
@@ -225,7 +226,7 @@ DOMAIN_08 = {
                     "slug": "psyc-attachment-parenting",
                     "name": "Attachment Bonds and Baumrind Parenting Styles",
                     "short_definition": "Emotional bonding in infancy (Harlow's contact comfort, Ainsworth's Strange Situation) and Baumrind's four parenting frameworks.",
-                    "description": "Harlow disproved nourishment-based bonding; Ainsworth classified secure, avoidant, and resistant attachments; authoritative parenting yields optimal autonomy.",
+                    "description": "Harlow challenged nourishment-based accounts of bonding; Ainsworth classified secure, avoidant, and resistant attachments; authoritative parenting is associated with the best outcomes.",
                     "citation": "OpenStax Psychology 1e, Section 9.3",
                 },
                 {
@@ -269,12 +270,13 @@ DOMAIN_08 = {
                             "content": {
                                 "text": (
                                     "### Diana Baumrind's Four Parenting Styles\n\n"
-                                    "| Parenting Style | Warmth & Responsiveness | Demandingness & Discipline | Long-Term Child Outcomes |\n"
+                                    "| Parenting Style | Warmth & Responsiveness | Demandingness & Discipline | Child Outcomes Associated With the Style |\n"
                                     "| :--- | :--- | :--- | :--- |\n"
                                     "| **Authoritative** | High | High (reasonable, democratic rules) | Highest self-esteem, self-reliance, and social competence |\n"
                                     "| **Authoritarian** | Low | High (rigid, coercive, 'because I said so') | Lower self-esteem, higher anxiety, obedient but unhappy |\n"
                                     "| **Permissive** | High | Low (few demands, zero discipline) | Impulsive, demanding, poor academic self-regulation |\n"
                                     "| **Neglectful / Uninvolved** | Low | Low (absent, indifferent) | Poorest outcomes: delinquency, emotional detachment |\n\n"
+                                    "These links are **correlations**, found mostly in Western middle-class families; they do not prove that parenting style alone causes the outcomes (children's temperament also shapes how parents respond), and the benefits of each style vary across cultures.\n\n"
                                     "### Erik Erikson's Psychosocial Crises Across the Lifespan\n\n"
                                     "- **Infancy (0–1 yr):** Trust vs. Mistrust\n"
                                     "- **Toddlerhood (1–3 yr):** Autonomy vs. Shame and Doubt\n"
@@ -418,7 +420,7 @@ DOMAIN_08 = {
             "flashcards": [
                 {
                     "front": "What did Harry Harlow's study with rhesus monkeys disprove about attachment?",
-                    "back": "It disproved that attachment is based merely on who feeds the infant, proving contact comfort is foundational.",
+                    "back": "It contradicted the idea that attachment is based merely on who feeds the infant, showing that contact comfort is central.",
                     "concept_slugs": ["psyc-attachment-parenting"],
                 },
                 {

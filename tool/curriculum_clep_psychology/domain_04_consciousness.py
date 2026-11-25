@@ -232,12 +232,17 @@ DOMAIN_04 = {
                                 "text": (
                                     "### Psychoactive Drug Classifications\n\n"
                                     "- **Depressants (Alcohol, Barbiturates, Benzodiazepines):** Reduce neural activity and slow body functions by enhancing the inhibitory neurotransmitter **GABA**.\n"
-                                    "- **Stimulants (Caffeine, Nicotine, Cocaine, Amphetamines):** Excite neural activity, elevate heart rate, and suppress appetite by blocking the reuptake of **dopamine** and **norepinephrine**.\n"
-                                    "- **Opioids / Narcotics (Morphine, Heroin, Codeine, Fentanyl):** Depress neural functioning, relieve pain, and produce euphoria by binding to endogenous **endorphin** receptor sites.\n"
-                                    "- **Hallucinogens (LSD, Psilocybin, MDMA):** Distort visual and auditory perceptions and evoke sensory images without sensory input, primarily acting as **serotonin** receptor agonists.\n\n"
+                                    "- **Stimulants (Caffeine, Nicotine, Cocaine, Amphetamines):** Excite neural activity, elevate heart rate, and suppress appetite, but through different mechanisms: **cocaine** blocks the reuptake of **dopamine** and **norepinephrine**; **amphetamines** mainly increase their release; **caffeine** blocks **adenosine** receptors (adenosine normally builds sleep pressure); and **nicotine** stimulates nicotinic **acetylcholine** receptors.\n"
+                                    "- **Opioids / Narcotics (Morphine, Heroin, Codeine, Fentanyl):** Depress neural functioning, relieve pain, and produce euphoria by binding to the opioid receptors that the body's own **endorphins** use.\n"
+                                    "- **Hallucinogens (LSD, Psilocybin):** Distort visual and auditory perceptions and evoke sensory images without sensory input; LSD and psilocybin act mainly as agonists at a type of **serotonin** receptor. **MDMA (Ecstasy)** is usually treated as a stimulant-hallucinogen hybrid because it works differently, releasing serotonin and blocking its reuptake. **Marijuana (THC)** acts on cannabinoid receptors and has mild hallucinogenic effects.\n\n"
                                     "### Dependence and Tolerance\n\n"
                                     "- **Tolerance:** Requiring larger and larger drug dosages to achieve the initial physiological effect.\n"
-                                    "- **Physical Dependence & Withdrawal:** Physiological adaptation characterized by physical illness, cramping, or tremors upon cessation."
+                                    "- **Physical Dependence & Withdrawal:** Physiological adaptation characterized by physical illness, cramping, or tremors upon cessation.\n\n"
+                                    "### Hypnosis\n\n"
+                                    "**Hypnosis** is a cooperative interaction in which a hypnotist offers suggestions about perceptions, thoughts, or actions, and a responsive person experiences them as happening on their own. People differ widely in **hypnotic suggestibility**, which is a fairly stable trait. Two accounts compete:\n"
+                                    "- **Dissociation theory (Ernest Hilgard):** Hypnosis splits consciousness. In pain studies, a 'hidden observer' part of the person could report pain that the hypnotized part said it did not feel.\n"
+                                    "- **Social-cognitive (role) theory:** Hypnotized people are not in a special state; they are highly motivated to act out the role of a good hypnotic subject, guided by their expectations.\n\n"
+                                    "Hypnosis has real but limited uses: it can reduce pain and is sometimes added to therapy. It does **not** reliably improve memory. 'Hypnotically refreshed' recall mixes accurate and false details and raises confidence in both, so many courts restrict such testimony."
                                 )
                             },
                         },
@@ -268,7 +273,7 @@ DOMAIN_04 = {
                             "content": {
                                 "type": "warning",
                                 "title": "Cognitive Pitfall: Alcohol Classification",
-                                "body": "Even though small amounts of alcohol can cause behavioral disinhibition and an initial sense of euphoria, alcohol is biologically classified as a **depressant** because it systematically suppresses central nervous system functioning by acting as a GABA agonist.",
+                                "body": "Even though small amounts of alcohol can cause behavioral disinhibition and an initial sense of euphoria, alcohol is biologically classified as a **depressant** because it systematically suppresses central nervous system functioning, partly by enhancing the inhibitory effect of GABA.",
                             },
                         },
                     ],
@@ -338,7 +343,7 @@ DOMAIN_04 = {
                                 ]
                             },
                             "scoring_spec": {"correct_index": 3},
-                            "explanation": "Alcohol, barbiturates, and benzodiazepines are depressants. They reduce neural activity and slow autonomic functions, primarily by acting as GABA receptor agonists, which enhances inhibitory neurotransmission across the central nervous system.",
+                            "explanation": "Alcohol, barbiturates, and benzodiazepines are depressants. They reduce neural activity and slow autonomic functions, largely by increasing the effect of GABA at its receptors, which enhances inhibitory neurotransmission across the central nervous system.",
                             "difficulty": "beginner",
                             "cognitive_level": "recall",
                             "citation": "OpenStax Psychology 1e, Section 4.5",

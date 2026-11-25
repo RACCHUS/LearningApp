@@ -13,7 +13,7 @@ DOMAIN_09 = {
         {
             "code": "9.1",
             "title": "Analyze psychodynamic defense mechanisms, psychosexual stages, and humanistic self-actualization",
-            "description": "Evaluate Freud's tripartite mind structure, classify ego defense mechanisms, review neo-Freudian perspectives, and explain Rogers's unconditional positive regard.",
+            "description": "Evaluate Freud's tripartite mind structure and psychosexual stages, classify ego defense mechanisms, review neo-Freudian perspectives, and explain Rogers's unconditional positive regard and Maslow's self-actualization.",
             "sort_order": 1,
             "importance": "core",
             "citation": "College Board Objective 9.1",
@@ -22,7 +22,7 @@ DOMAIN_09 = {
                     "slug": "psyc-freudian-psychodynamics",
                     "name": "Freudian Personality Structure and Defense Mechanisms",
                     "short_definition": "Psychoanalytic personality model balancing the id (pleasure), ego (reality), and superego (morality) via unconscious defense mechanisms.",
-                    "description": "The ego mediates psychic conflict through defense mechanisms including repression, projection, displacement, reaction formation, and sublimation.",
+                    "description": "In Freud's theory the ego mediates psychic conflict through defense mechanisms including repression, projection, displacement, reaction formation, and sublimation; personality forms through psychosexual stages, and neo-Freudians such as Jung, Adler, and Horney revised the model.",
                     "citation": "OpenStax Psychology 1e, Section 11.2",
                 },
                 {
@@ -37,7 +37,7 @@ DOMAIN_09 = {
             "lessons": [
                 {
                     "title": "Psychodynamic and Humanistic Perspectives on Personality",
-                    "description": "Id, ego, superego, defense mechanisms, Jung's collective unconscious, Rogers's self-concept, and Maslow's self-actualization.",
+                    "description": "Id, ego, superego, psychosexual stages, defense mechanisms, Jung's collective unconscious, Rogers's self-concept, and Maslow's self-actualization.",
                     "emoji": "🎭",
                     "tags": ["personality", "freud", "defense-mechanisms", "humanism", "rogers"],
                     "concept_slugs": [
@@ -68,12 +68,13 @@ DOMAIN_09 = {
                                     "When the ego experiences anxiety from id-superego conflict, it unconsciously distorts reality:\n\n"
                                     "| Defense Mechanism | Psychological Definition | Clinical Example |\n"
                                     "| :--- | :--- | :--- |\n"
-                                    "| **Repression** | Primary defense; banishing anxiety-arousing thoughts to the unconscious | Forgetting traumatic childhood memories of physical abuse |\n"
+                                    "| **Repression** | In Freud's theory, the basic defense: pushing anxiety-arousing thoughts out of awareness | 'Forgetting' an unpleasant dentist appointment you were dreading |\n"
                                     "| **Projection** | Attributing one's own unacceptable impulses onto others | A deceitful person constantly accusing coworkers of being dishonest |\n"
                                     "| **Reaction Formation** | Switching unacceptable impulses into their exact opposites | Masking unconscious romantic attraction behind exaggerated hostility |\n"
                                     "| **Displacement** | Shifting aggressive/sexual impulses toward a less threatening target | Yelling at your child after receiving a harsh reprimand from your boss |\n"
                                     "| **Sublimation** | Channeling unacceptable impulses into socially constructive pursuits | Channeling aggressive hostility into professional contact sports or surgery |\n"
-                                    "| **Regression** | Retreating to an earlier, more infantile psychosexual stage | An adult throwing a screaming temper tantrum when denied a promotion |"
+                                    "| **Regression** | Retreating to an earlier, more infantile psychosexual stage | An adult throwing a screaming temper tantrum when denied a promotion |\n\n"
+                                    "**A caution about repression:** repression is a Freudian concept with limited empirical support. Traumatic events are usually remembered all too well rather than forgotten, and therapy techniques aimed at 'recovering' supposedly repressed memories have produced vivid false memories (as Elizabeth Loftus's research showed)."
                                 )
                             },
                         },
@@ -104,8 +105,31 @@ DOMAIN_09 = {
                             "block_type": "callout",
                             "content": {
                                 "type": "warning",
-                                "title": "Cognitive Pitfall: Sublimation is Uniquely Adaptive",
-                                "body": "Unlike other defense mechanisms which are often maladaptive, **sublimation** is considered an adaptive defense mechanism because it channels forbidden primal drives into culturally productive and praised outcomes (e.g., artistic creation or athletic prowess).",
+                                "title": "Cognitive Pitfall: Sublimation is Considered Adaptive",
+                                "body": "Unlike most defense mechanisms, which are often maladaptive, **sublimation** is considered one of the more mature, adaptive defenses (along with humor, for example) because it channels forbidden primal drives into culturally productive and praised outcomes (e.g., artistic creation or athletic prowess).",
+                            },
+                        },
+                        {
+                            "sort_order": 6,
+                            "block_type": "markdown",
+                            "content": {
+                                "text": (
+                                    "### Freud's Psychosexual Stages\n\n"
+                                    "Freud proposed that personality forms in childhood as pleasure-seeking energy (libido) centers on different body zones. Unresolved conflict at a stage could leave a **fixation**, an adult trait tied to that stage:\n"
+                                    "1. **Oral (0–1 yr):** Pleasure from sucking and feeding; fixation was said to show up as smoking, overeating, or dependency.\n"
+                                    "2. **Anal (1–3 yr):** Conflict centers on toilet training; fixation was said to produce excessive orderliness (anal-retentive) or messiness.\n"
+                                    "3. **Phallic (3–6 yr):** Focus on the genitals; Freud's **Oedipus complex**, resolved by identifying with the same-sex parent, which forms the superego.\n"
+                                    "4. **Latency (6 yr–puberty):** Sexual feelings are dormant; energy goes into school, friendships, and skills.\n"
+                                    "5. **Genital (puberty on):** Mature sexual interests directed toward others.\n\n"
+                                    "### The Neo-Freudians\n\n"
+                                    "Followers who kept Freud's focus on the unconscious but placed less weight on sexual drives:\n"
+                                    "- **Carl Jung:** Added the **collective unconscious**, a shared, inherited layer of the mind containing **archetypes**, universal images and themes (such as the shadow, the hero, and the persona) that Jung believed came from our species' ancestral history and explain recurring symbols in myths across cultures. He also described introversion and extraversion.\n"
+                                    "- **Alfred Adler:** Emphasized social motives and the drive to overcome childhood feelings of **inferiority**.\n"
+                                    "- **Karen Horney:** Argued that **basic anxiety** from insecure childhood relationships, along with social and cultural forces, shapes personality, and challenged Freud's views of women.\n\n"
+                                    "### Maslow and Self-Actualization\n\n"
+                                    "Abraham Maslow, like Rogers a founder of **humanistic psychology**, studied healthy, accomplished people rather than patients. He described **self-actualization** as fulfilling one's potential, at the top of his hierarchy of needs; self-actualizing people tended to be realistic, accepting, spontaneous, and focused on problems beyond themselves.\n\n"
+                                    "**Evaluating these theories:** Psychodynamic ideas drew attention to unconscious processes and childhood, but many specific claims (psychosexual stages, the collective unconscious) are hard to test and have little empirical support. Humanistic ideas shaped counseling but were criticized as vague and overly optimistic."
+                                )
                             },
                         },
                     ],
@@ -175,7 +199,7 @@ DOMAIN_09 = {
                                 ]
                             },
                             "scoring_spec": {"correct_index": 2},
-                            "explanation": "Carl Jung proposed the collective unconscious, an inherited layer of the unconscious mind containing universal evolutionary memories and symbolic archetypes (such as the shadow, anima, and hero) shared across all human cultures.",
+                            "explanation": "Carl Jung proposed the collective unconscious, which he described as an inherited layer of the unconscious mind containing archetypes (universal images such as the shadow, the hero, and the persona) shared across human cultures. It is an influential idea but difficult to test and has little empirical support.",
                             "difficulty": "intermediate",
                             "cognitive_level": "recall",
                             "citation": "OpenStax Psychology 1e, Section 11.2",
@@ -209,7 +233,7 @@ DOMAIN_09 = {
                     "slug": "psyc-big-five-traits",
                     "name": "Big Five Trait Taxonomy (OCEAN)",
                     "short_definition": "Five broad empirical dimensions of personality: Openness, Conscientiousness, Extraversion, Agreeableness, and Neuroticism.",
-                    "description": "Paul Costa and Robert McCrae established the OCEAN five-factor model as the cross-culturally validated standard for describing individual trait differences.",
+                    "description": "The OCEAN five-factor model, refined by Paul Costa and Robert McCrae among others, is the most widely accepted taxonomy for describing individual trait differences, though rival models and cross-cultural exceptions are debated.",
                     "citation": "OpenStax Psychology 1e, Section 11.7",
                 },
                 {
@@ -239,7 +263,7 @@ DOMAIN_09 = {
                             "content": {
                                 "text": (
                                     "### The Big Five Trait Taxonomy (OCEAN)\n\n"
-                                    "Developed by Paul Costa and Robert McCrae through factor analysis, the **Five-Factor Model (OCEAN)** represents the gold standard of contemporary trait psychology:\n\n"
+                                    "Built up through factor analysis of trait descriptions and refined by Paul Costa and Robert McCrae, among others, the **Five-Factor Model (OCEAN)** is the most widely accepted trait taxonomy in contemporary psychology (rivals such as the six-factor HEXACO model exist, and the five factors replicate less cleanly in some non-Western samples):\n\n"
                                     "| Dimension | High End Characteristics | Low End Characteristics |\n"
                                     "| :--- | :--- | :--- |\n"
                                     "| **Openness** | Imaginative, intellectually curious, prefers variety | Practical, concrete, prefers routine and familiarity |\n"
@@ -282,7 +306,7 @@ DOMAIN_09 = {
                                 "title": "Applied Workplace Case: Predicting Occupational Performance",
                                 "text": (
                                     "An industrial-organizational psychologist evaluates candidate profiles for an airline pilot position. "
-                                    "Research confirms that **Conscientiousness** is the single strongest Big Five predictor of job performance across diverse occupations. "
+                                    "Research confirms that **Conscientiousness** is the most consistent Big Five predictor of job performance across diverse occupations. "
                                     "For pilots, high Conscientiousness (methodical adherence to preflight checklists) and low Neuroticism (emotional stability during turbulence) are paramount."
                                 ),
                             },

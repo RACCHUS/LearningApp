@@ -760,7 +760,7 @@
     },
     {
       "shingle_words": 8,
-      "manifest_shingles": 30115,
+      "manifest_shingles": 32112,
       "books": {
         "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
           "matched_shingles": 18,
@@ -828,7 +828,7 @@
         {
           "code": "1.1",
           "segment": "lesson: Historical Foundations and Modern Perspectives in Psychology",
-          "words": 1011,
+          "words": 1024,
           "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
             "share": 0.0,
             "longest_run_words": 0
@@ -841,7 +841,7 @@
         {
           "code": "1.1",
           "segment": "objective text",
-          "words": 218,
+          "words": 223,
           "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
             "share": 0.0,
             "longest_run_words": 0
@@ -854,7 +854,7 @@
         {
           "code": "1.2",
           "segment": "lesson: Scientific Methods: Experiments, Correlations, and Ethical S",
-          "words": 1316,
+          "words": 1325,
           "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
             "share": 0.0,
             "longest_run_words": 0
@@ -919,13 +919,13 @@
         {
           "code": "2.2",
           "segment": "lesson: Brain Architecture and Hemispheric Specialization",
-          "words": 1243,
+          "words": 1390,
           "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
-            "share": 0.0008,
+            "share": 0.0007,
             "longest_run_words": 8
           },
           "06aba565-9432-40f6-97ee-b8a361f118a8@de7e40c": {
-            "share": 0.0008,
+            "share": 0.0007,
             "longest_run_words": 8
           }
         },
@@ -958,7 +958,7 @@
         {
           "code": "3.1",
           "segment": "lesson: Sensory Reception, Transduction, and Thresholds",
-          "words": 1001,
+          "words": 994,
           "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
             "share": 0.0,
             "longest_run_words": 0
@@ -984,7 +984,7 @@
         {
           "code": "3.2",
           "segment": "lesson: Visual Anatomy, Color Theories, and Perceptual Organization",
-          "words": 1028,
+          "words": 1291,
           "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
             "share": 0.0,
             "longest_run_words": 0
@@ -1049,7 +1049,7 @@
         {
           "code": "4.2",
           "segment": "lesson: Sleep Disorders, Theories of Dreaming, and Psychoactive Drug",
-          "words": 905,
+          "words": 1120,
           "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
             "share": 0.0,
             "longest_run_words": 0
@@ -1088,7 +1088,7 @@
         {
           "code": "5.1",
           "segment": "lesson: Classical Conditioning: Principles and Extinction",
-          "words": 1073,
+          "words": 1120,
           "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
             "share": 0.0,
             "longest_run_words": 0
@@ -1101,7 +1101,7 @@
         {
           "code": "5.1",
           "segment": "objective text",
-          "words": 169,
+          "words": 178,
           "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
             "share": 0.0,
             "longest_run_words": 0
@@ -1114,13 +1114,13 @@
         {
           "code": "5.2",
           "segment": "lesson: Operant Conditioning: Reinforcement, Schedules, and Observat",
-          "words": 1069,
+          "words": 1242,
           "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
-            "share": 0.0009,
+            "share": 0.0008,
             "longest_run_words": 8
           },
           "06aba565-9432-40f6-97ee-b8a361f118a8@de7e40c": {
-            "share": 0.0009,
+            "share": 0.0008,
             "longest_run_words": 8
           }
         },
@@ -1153,13 +1153,13 @@
         {
           "code": "6.1",
           "segment": "lesson: Memory Systems: Encoding, Storage, and Retrieval",
-          "words": 1145,
+          "words": 1164,
           "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
-            "share": 0.0044,
+            "share": 0.0043,
             "longest_run_words": 9
           },
           "06aba565-9432-40f6-97ee-b8a361f118a8@de7e40c": {
-            "share": 0.0044,
+            "share": 0.0043,
             "longest_run_words": 9
           }
         },
@@ -1218,7 +1218,7 @@
         {
           "code": "7.1",
           "segment": "lesson: Theories of Motivation and Motivational Drives",
-          "words": 756,
+          "words": 857,
           "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
             "share": 0.0,
             "longest_run_words": 0
@@ -1231,7 +1231,7 @@
         {
           "code": "7.1",
           "segment": "objective text",
-          "words": 149,
+          "words": 169,
           "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
             "share": 0.0,
             "longest_run_words": 0
@@ -1244,13 +1244,13 @@
         {
           "code": "7.2",
           "segment": "lesson: Theories of Emotion, Stress, and Selye's GAS",
-          "words": 957,
+          "words": 1062,
           "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
-            "share": 0.0011,
+            "share": 0.0009,
             "longest_run_words": 8
           },
           "06aba565-9432-40f6-97ee-b8a361f118a8@de7e40c": {
-            "share": 0.0011,
+            "share": 0.0009,
             "longest_run_words": 8
           }
         },
@@ -1283,7 +1283,7 @@
         {
           "code": "8.1",
           "segment": "lesson: Cognitive and Motor Development Across Childhood",
-          "words": 985,
+          "words": 1032,
           "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
             "share": 0.002,
             "longest_run_words": 8
@@ -1309,7 +1309,7 @@
         {
           "code": "8.2",
           "segment": "lesson: Attachment, Parenting Styles, and Psychosocial Moral Develop",
-          "words": 1080,
+          "words": 1121,
           "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
             "share": 0.0,
             "longest_run_words": 0
@@ -1322,7 +1322,7 @@
         {
           "code": "8.2",
           "segment": "objective text",
-          "words": 169,
+          "words": 177,
           "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
             "share": 0.0,
             "longest_run_words": 0
@@ -1348,7 +1348,7 @@
         {
           "code": "9.1",
           "segment": "lesson: Psychodynamic and Humanistic Perspectives on Personality",
-          "words": 842,
+          "words": 1244,
           "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
             "share": 0.0,
             "longest_run_words": 0
@@ -1361,7 +1361,7 @@
         {
           "code": "9.1",
           "segment": "objective text",
-          "words": 156,
+          "words": 185,
           "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
             "share": 0.0,
             "longest_run_words": 0
@@ -1374,7 +1374,7 @@
         {
           "code": "9.2",
           "segment": "lesson: Trait Perspectives, Social-Cognitive Theory, and Personality",
-          "words": 925,
+          "words": 956,
           "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
             "share": 0.0,
             "longest_run_words": 0
@@ -1387,7 +1387,7 @@
         {
           "code": "9.2",
           "segment": "objective text",
-          "words": 165,
+          "words": 177,
           "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
             "share": 0.0,
             "longest_run_words": 0
@@ -1413,13 +1413,13 @@
         {
           "code": "10.1",
           "segment": "lesson: Psychological Disorders: Classification, Anxiety, OCD, and T",
-          "words": 1023,
+          "words": 1109,
           "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
-            "share": 0.002,
+            "share": 0.0018,
             "longest_run_words": 9
           },
           "06aba565-9432-40f6-97ee-b8a361f118a8@de7e40c": {
-            "share": 0.002,
+            "share": 0.0018,
             "longest_run_words": 9
           }
         },
@@ -1452,7 +1452,7 @@
         {
           "code": "10.2",
           "segment": "objective text",
-          "words": 149,
+          "words": 157,
           "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
             "share": 0.0,
             "longest_run_words": 0
@@ -1504,7 +1504,7 @@
         {
           "code": "11.2",
           "segment": "lesson: Biomedical Therapies, Psychopharmacology, and Treatment Outc",
-          "words": 1030,
+          "words": 1061,
           "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
             "share": 0.0,
             "longest_run_words": 0
@@ -1517,7 +1517,7 @@
         {
           "code": "11.2",
           "segment": "objective text",
-          "words": 152,
+          "words": 162,
           "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
             "share": 0.0,
             "longest_run_words": 0
@@ -1543,20 +1543,20 @@
         {
           "code": "12.1",
           "segment": "lesson: Social Thinking: Attribution, Cognitive Dissonance, and Obed",
-          "words": 1271,
+          "words": 1346,
           "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
-            "share": 0.0008,
+            "share": 0.0007,
             "longest_run_words": 8
           },
           "06aba565-9432-40f6-97ee-b8a361f118a8@de7e40c": {
-            "share": 0.0008,
+            "share": 0.0007,
             "longest_run_words": 8
           }
         },
         {
           "code": "12.1",
           "segment": "objective text",
-          "words": 162,
+          "words": 175,
           "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
             "share": 0.0,
             "longest_run_words": 0
@@ -1569,7 +1569,7 @@
         {
           "code": "12.2",
           "segment": "lesson: Group Influence, Prejudice, and the Bystander Effect",
-          "words": 1077,
+          "words": 1106,
           "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
             "share": 0.0,
             "longest_run_words": 0
@@ -1582,7 +1582,7 @@
         {
           "code": "12.2",
           "segment": "objective text",
-          "words": 153,
+          "words": 163,
           "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
             "share": 0.0,
             "longest_run_words": 0
@@ -1608,7 +1608,7 @@
         {
           "code": "13.1",
           "segment": "lesson: Statistical Measures, Psychometric Standards, and Intelligen",
-          "words": 1526,
+          "words": 1572,
           "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
             "share": 0.0,
             "longest_run_words": 0
@@ -1662,7 +1662,8 @@
       "release_id": "openstax-psychology-1e",
       "declared_release_book": "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc",
       "decision": "reference",
-      "rationale": "0.06% of the manifest's 8-word shingles occur in the 1st edition (longest run 9 words: standard terms such as 'diagnostic and statistical manual of mental disorders dsm 5'). The 4 shingles found only in the CC BY-NC-SA 2e are the materials list of Duncker's candle problem ('a candle, a book of matches and a box of thumbtacks'), a standard description of a classic experiment, not adapted 2e text. The lessons are independently written; OpenStax 1e is cited for alignment and section reference."
+      "rationale": "0.06% of the manifest's 8-word shingles occur in the 1st edition (longest run 9 words: standard terms such as 'diagnostic and statistical manual of mental disorders dsm 5'). The 4 shingles found only in the CC BY-NC-SA 2e are the materials list of Duncker's candle problem ('a candle, a book of matches and a box of thumbtacks'), a standard description of a classic experiment, not adapted 2e text. The lessons are independently written; OpenStax 1e is cited for alignment and section reference.",
+      "rerun_note": "Re-run 2026-11-25 after the factual-review corrections (new teaching on hearing, hypnosis, psychosexual stages, neo-Freudians, Maslow and the hunger hormones): 32,112 shingles, 18 (0.06%) in 1e and 22 (0.07%) in 2e, longest runs 9 and 11 words, the same standard-term passages as before. None of the new text matches either edition."
     }
   ]
 }
