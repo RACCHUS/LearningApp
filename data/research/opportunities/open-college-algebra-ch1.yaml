@@ -1,0 +1,50 @@
+# Opportunity brief (ingestion plan v1.2 §4.2). Aggregate public data only.
+# Unknown is null, not zero. Validate: python tool/verify_research.py
+id: open-college-algebra-ch1
+title: College Algebra chapter 1 (open textbook pilot)
+target_slug: open-openstax-college-algebra-1e
+lane: strategic
+intended_learner: Adults preparing for a first college algebra course or a credit-by-exam algebra test
+locale: en-US
+outcome: Fluency with the chapter 1 prerequisites (real numbers, exponents, radicals, polynomials, factoring, rational expressions), measured by held-out checks
+demand_status: unmeasured
+observations: []
+factors:
+  demand:
+    score: null
+    evidence: &id001 []
+    rated_by: null
+  underserved_need:
+    score: null
+    evidence: *id001
+    rated_by: null
+  outcome_value:
+    score: null
+    evidence: *id001
+    rated_by: null
+  cross_goal_reuse:
+    score: null
+    evidence: *id001
+    rated_by: null
+  source_feasibility:
+    score: 5
+    evidence:
+    - 'data/content_sources.json: openstax-college-algebra-1e is approved (CC BY 4.0) with adapt and redistribute'
+    rated_by: 'ai-drafted-by-claude (method: registry status and allowed uses)'
+  improvement_potential:
+    score: null
+    evidence: *id001
+    rated_by: null
+gates:
+  permitted_operation: true
+  source_trust: true
+  outcome_defined: true
+  safety_ok: true
+  capacity_ok: null
+  validation_feasible: true
+effort:
+  size: S
+  reason: 'Live (R6): improvements only, such as more practice families and Bridges'
+  operator_minutes: null
+recommendation: improve
+notes: Demand, need, outcome value, reuse and improvement potential are not yet researched (null, not zero).

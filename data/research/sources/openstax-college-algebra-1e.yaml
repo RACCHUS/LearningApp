@@ -1,0 +1,28 @@
+# Source candidate (ingestion plan v1.2 §5.2). Not a reuse approval: the
+# runtime policy is data/content_sources.json. Validate: python tool/verify_research.py
+id: openstax-college-algebra-1e
+publisher: OpenStax, Rice University
+resource: College Algebra (1st edition)
+edition_or_release: 1e
+canonical_url: https://openstax.org/books/college-algebra/pages/preface
+locale: en-US
+subjects:
+- mathematics
+- algebra
+metadata_checked_at: '2026-11-20'
+license_claim: CC BY 4.0
+license_evidence_locator: https://openstax.org/books/college-algebra/pages/preface
+rights_review_state: verified
+permitted_actions:
+- discover
+- link
+- reference
+- quote
+- adapt
+- redistribute
+- ai_transform
+format: web book; archive JSON (CNXML/XHTML)
+acquisition_method: tool/import_open_textbook.py
+recommendation: register
+decision_reason: Registered and approved; in use for the College Algebra pilot
+registry_source_id: openstax-college-algebra-1e

@@ -1,0 +1,50 @@
+# Opportunity brief (ingestion plan v1.2 §4.2). Aggregate public data only.
+# Unknown is null, not zero. Validate: python tool/verify_research.py
+id: excel-fundamentals
+title: Microsoft Excel fundamentals (skill pilot)
+target_slug: software-excel-fundamentals
+lane: strategic
+intended_learner: Adults starting to use spreadsheets at work
+locale: en-US
+outcome: Entering data and writing a SUM total over a range in the real Excel application, shown by a self-checked hands-on task and held-out checks
+demand_status: unmeasured
+observations: []
+factors:
+  demand:
+    score: null
+    evidence: &id001 []
+    rated_by: null
+  underserved_need:
+    score: null
+    evidence: *id001
+    rated_by: null
+  outcome_value:
+    score: null
+    evidence: *id001
+    rated_by: null
+  cross_goal_reuse:
+    score: null
+    evidence: *id001
+    rated_by: null
+  source_feasibility:
+    score: 2
+    evidence:
+    - 'data/content_sources.json: microsoft-support is approved for link and reference only; lessons are original'
+    rated_by: 'ai-drafted-by-claude (method: registry status and allowed uses)'
+  improvement_potential:
+    score: null
+    evidence: *id001
+    rated_by: null
+gates:
+  permitted_operation: true
+  source_trust: true
+  outcome_defined: true
+  safety_ok: true
+  capacity_ok: null
+  validation_feasible: true
+effort:
+  size: M
+  reason: Live (PILOT-4); further domains need new original lessons and tasks
+  operator_minutes: null
+recommendation: improve
+notes: Second task family (skill target). Verified grading of real workbooks stays off (needs a hosted worker).
