@@ -39,7 +39,7 @@ select is_empty(
   $$ select p.proname from pg_proc p join pg_namespace n on n.oid = p.pronamespace
       where n.nspname in ('public', 'private')
         and p.prosrc ilike '%learner_resource_sections%'
-        and p.proname <> 'set_learner_resource_sections' $$,
+        and p.proname not in ('set_learner_resource_sections', 'set_learner_resource_section_studied') $$,
   'no other function reads a learner''s outline map');
 
 -- A resource to hang the outline on (gate ON for the set-up).

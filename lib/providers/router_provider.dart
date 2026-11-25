@@ -1,3 +1,4 @@
+import 'package:learning_pwa/screens/companion/companion_screen.dart';
 import 'package:learning_pwa/screens/settings_screen.dart';
 import 'package:learning_pwa/screens/governance/moderation_queue_screen.dart'
     deferred as moderation_queue;
@@ -178,6 +179,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: 'target-outline',
         builder: (context, state) =>
             TargetOutlineScreen(targetId: state.pathParameters['targetId']!),
+      ),
+      GoRoute(
+        path: '/target/:targetId/companion/:resourceId',
+        name: 'target-companion',
+        builder: (context, state) => CompanionRouteScreen(
+          targetId: state.pathParameters['targetId']!,
+          resourceId: state.pathParameters['resourceId']!,
+        ),
       ),
       GoRoute(
         path: '/overview/:targetId',

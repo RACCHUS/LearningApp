@@ -62,6 +62,30 @@ void main() {
       expect(parsed.truncated, isFalse);
     });
 
+    test('a length on the line becomes a time estimate in whole minutes', () {
+      final parsed = OutlineMapper.parse(
+        [
+          'Intro (12:30)',
+          'Deep dive - 1:02:33',
+          'Exponents 25 min',
+          'Radicals (1 h 20 min)',
+          'Review 2 hours',
+          'No length here',
+          'Tiny 0:20',
+        ].join('\n'),
+      );
+      expect(parsed.titles, [
+        'Intro',
+        'Deep dive',
+        'Exponents',
+        'Radicals',
+        'Review',
+        'No length here',
+        'Tiny',
+      ]);
+      expect(parsed.minutes, [13, 63, 25, 80, 120, null, 1]);
+    });
+
     test('a ratio in a title is not mistaken for a timestamp', () {
       expect(OutlineMapper.parse('Mixing at 3:2').titles, ['Mixing at 3:2']);
     });

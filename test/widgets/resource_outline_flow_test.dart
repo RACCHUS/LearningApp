@@ -189,6 +189,31 @@ void main() {
   );
 
   testWidgets(
+    'a length in the pasted line fills the minutes, and the learner can change it',
+    (tester) async {
+      await pump(tester);
+      await pasteAndMatch(
+        tester,
+        'Chapter 1: Exponents (12:30)\nChapter 2: Functions',
+      );
+      expect(find.text('13'), findsOneWidget);
+      await tester.enterText(
+        find.byKey(const ValueKey('outline_minutes_1_1')),
+        '45',
+      );
+      await tester.tap(find.byKey(const Key('outline_save')));
+      await tester.pumpAndSettle();
+      final saved = (await LocalLearnerResourceStore().list('t1')).single;
+      expect([for (final s in saved.sections) s.minutes], [13, 45]);
+      expect(saved.sections.first.title, 'Chapter 1: Exponents');
+      expect(
+        find.textContaining('Continue: Chapter 1: Exponents'),
+        findsOneWidget,
+      );
+    },
+  );
+
+  testWidgets(
     'the learner can untick a suggestion and choose from all objectives',
     (tester) async {
       await pump(tester);

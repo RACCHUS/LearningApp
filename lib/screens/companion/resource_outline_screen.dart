@@ -14,6 +14,7 @@ class _Draft {
     this.title, {
     Set<String>? keys,
     this.source = SectionMapSource.learner,
+    this.minutes,
   }) : keys = {...?keys},
        suggested = {...?keys};
 
@@ -26,6 +27,9 @@ class _Draft {
   /// suggestion can be ticked again.
   Set<String> suggested;
   SectionMapSource source;
+
+  /// The learner's own estimate for this part, if any.
+  int? minutes;
 }
 
 /// The outline of one outside resource (companion plan v1.0 §3.4, EX-3):
@@ -52,6 +56,9 @@ class _ResourceOutlineScreenState extends ConsumerState<ResourceOutlineScreen> {
   final _paste = TextEditingController();
   final _answer = TextEditingController();
   List<_Draft>? _drafts;
+
+  /// Bumped when the drafts are replaced, so the minute fields start fresh.
+  int _generation = 0;
   String? _pasteNote;
   String? _aiNote;
   bool _aiError = false;
@@ -83,8 +90,10 @@ class _ResourceOutlineScreenState extends ConsumerState<ResourceOutlineScreen> {
             source: proposals[i].isEmpty
                 ? SectionMapSource.learner
                 : SectionMapSource.outlineMatch,
+            minutes: parsed.minutes[i],
           ),
       ];
+      _generation++;
       _pasteNote = parsed.truncated
           ? 'That was long, so only the first ${_parts(parsed.titles.length)} were kept.'
           : null;
@@ -263,6 +272,7 @@ class _ResourceOutlineScreenState extends ConsumerState<ResourceOutlineScreen> {
           s.title,
           keys: s.objectiveKeys.where(known.contains).toSet(),
           source: s.source,
+          minutes: s.minutes,
         ),
     ];
     final mapped = drafts.where((d) => d.keys.isNotEmpty).length;
@@ -349,6 +359,40 @@ class _ResourceOutlineScreenState extends ConsumerState<ResourceOutlineScreen> {
                           RegExp(r'^\d').hasMatch(d.title) ? d.title : '${i + 1}. ${d.title}',
                           style: theme.textTheme.bodyLarge?.copyWith(
                             fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(
+                          DesignTokens.space2,
+                          DesignTokens.space2,
+                          DesignTokens.space2,
+                          0,
+                        ),
+                        child: SizedBox(
+                          width: 180,
+                          child: TextFormField(
+                            key: ValueKey('outline_minutes_${_generation}_$i'),
+                            initialValue: d.minutes?.toString() ?? '',
+                            keyboardType: TextInputType.number,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
+                              LengthLimitingTextInputFormatter(3),
+                            ],
+                            decoration: const InputDecoration(
+                              isDense: true,
+                              border: OutlineInputBorder(),
+                              labelText: 'Minutes (optional)',
+                            ),
+                            onChanged: (v) {
+                              final n = int.tryParse(v);
+                              d.minutes =
+                                  n != null &&
+                                      n >= 1 &&
+                                      n <= ResourceSection.maxMinutes
+                                  ? n
+                                  : null;
+                            },
                           ),
                         ),
                       ),
@@ -505,6 +549,7 @@ class _ResourceOutlineScreenState extends ConsumerState<ResourceOutlineScreen> {
                               source: d.keys.isEmpty
                                   ? SectionMapSource.learner
                                   : d.source,
+                              minutes: d.minutes,
                             ),
                         ], done: 'Outline saved.'),
                   icon: const Icon(Icons.check),

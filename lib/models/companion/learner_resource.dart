@@ -46,7 +46,13 @@ enum SectionMapSource {
 /// One part of the learner's outside resource (a chapter, unit or video),
 /// with the objectives the learner confirmed it covers.
 class ResourceSection {
-  const ResourceSection({required this.title, this.objectiveKeys = const {}, this.source = SectionMapSource.learner});
+  const ResourceSection({
+    required this.title,
+    this.objectiveKeys = const {},
+    this.source = SectionMapSource.learner,
+    this.minutes,
+    this.studiedAt,
+  });
 
   static const int maxTitleLength = 200;
   static const int maxSections = 200;
@@ -56,6 +62,24 @@ class ResourceSection {
   final Set<String> objectiveKeys;
   final SectionMapSource source;
 
+  static const int maxMinutes = 600;
+
+  /// The learner's own estimate of how long this part takes, if they gave one.
+  final int? minutes;
+
+  /// When the learner marked this part studied. Self-report, never evidence.
+  final DateTime? studiedAt;
+
+  bool get studied => studiedAt != null;
+
+  ResourceSection copyWith({DateTime? Function()? studiedAt}) => ResourceSection(
+    title: title,
+    objectiveKeys: objectiveKeys,
+    source: source,
+    minutes: minutes,
+    studiedAt: studiedAt == null ? this.studiedAt : studiedAt(),
+  );
+
   factory ResourceSection.fromJson(Map<String, dynamic> json) => ResourceSection(
     title: '${json['title'] ?? ''}',
     objectiveKeys: {
@@ -63,14 +87,35 @@ class ResourceSection {
         if (k is String && k.isNotEmpty) k,
     },
     source: SectionMapSource.fromWire(json['map_source'] ?? json['source']),
+    minutes: _minutes(json['est_minutes'] ?? json['minutes']),
+    studiedAt: json['studied_at'] is String ? DateTime.tryParse(json['studied_at'] as String) : null,
   );
+
+  static int? _minutes(Object? v) {
+    final n = v is num ? v.round() : null;
+    return n != null && n >= 1 && n <= maxMinutes ? n : null;
+  }
 
   /// The shape `set_learner_resource_sections` takes.
   Map<String, dynamic> toRpcJson() => {
     'title': title,
     'objective_keys': objectiveKeys.toList()..sort(),
     'source': source.wire,
+    if (minutes != null) 'minutes': minutes,
   };
+
+  /// Device storage: the RPC shape plus the studied mark.
+  Map<String, dynamic> toJson() => {
+    ...toRpcJson(),
+    'studied_at': studiedAt?.toUtc().toIso8601String(),
+  };
+}
+
+/// "25 min", "1 h 35 min", "2 h".
+String formatStudyMinutes(int minutes) {
+  final h = minutes ~/ 60, m = minutes % 60;
+  if (h == 0) return '$m min';
+  return m == 0 ? '$h h' : '$h h $m min';
 }
 
 /// A learner's own outside resource for one goal. Private to the learner.
@@ -107,6 +152,21 @@ class LearnerResource {
     for (final s in sections)
       if (s.objectiveKeys.contains(key)) s.title,
   ];
+
+  /// The first part not yet marked studied: where to pick up. Null when
+  /// there is no outline or every part is marked.
+  int? get nextSectionIndex {
+    final i = sections.indexWhere((s) => !s.studied);
+    return i < 0 ? null : i;
+  }
+
+  int get studiedSectionCount => sections.where((s) => s.studied).length;
+
+  /// The learner's own estimates for the parts not yet studied, added up.
+  int get remainingMinutes => sections.where((s) => !s.studied).fold(0, (sum, s) => sum + (s.minutes ?? 0));
+
+  /// Parts not yet studied that have no estimate, so the total is a floor.
+  int get remainingWithoutEstimate => sections.where((s) => !s.studied && s.minutes == null).length;
 
   int get studiedCount => objectives.values.where((v) => v != null).length;
 
@@ -171,7 +231,7 @@ class LearnerResource {
         {'objective_key': e.key, 'studied_at': e.value?.toUtc().toIso8601String()},
     ],
     'learner_resource_sections': [
-      for (final (i, s) in sections.indexed) {...s.toRpcJson(), 'position': i + 1},
+      for (final (i, s) in sections.indexed) {...s.toJson(), 'position': i + 1},
     ],
   };
 }

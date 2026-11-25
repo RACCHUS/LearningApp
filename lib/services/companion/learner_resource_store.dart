@@ -29,7 +29,13 @@ abstract class LearnerResourceStore {
 
   /// Replaces the resource's outline. The objectives of the sections are
   /// also ticked as covered; nothing is unticked or marked studied.
+  /// A part whose title is unchanged keeps its "studied" mark.
   Future<void> setSections(String resourceId, List<ResourceSection> sections);
+
+  /// Marks one part (0-based [index]) studied or not. Self-report only. When
+  /// every part covering an objective is studied, the objective is marked
+  /// studied too; unmarking a part never unmarks an objective.
+  Future<void> setSectionStudied(String resourceId, int index, bool studied);
 
   Future<void> delete(String resourceId);
 }
@@ -47,7 +53,7 @@ class SupabaseLearnerResourceStore implements LearnerResourceStore {
         .from('learner_external_resources')
         .select(
           'id,target_id,title,kind,url,access,learner_resource_objectives(objective_key,studied_at),'
-          'learner_resource_sections(position,title,objective_keys,map_source)',
+          'learner_resource_sections(position,title,objective_keys,map_source,est_minutes,studied_at)',
         )
         .eq('target_id', targetId)
         .order('created_at');
@@ -98,6 +104,12 @@ class SupabaseLearnerResourceStore implements LearnerResourceStore {
       'p_resource_id': resourceId,
       'p_sections': [for (final s in sections) s.toRpcJson()],
     },
+  );
+
+  @override
+  Future<void> setSectionStudied(String resourceId, int index, bool studied) => _client.rpc(
+    'set_learner_resource_section_studied',
+    params: {'p_resource_id': resourceId, 'p_position': index + 1, 'p_studied': studied},
   );
 
   @override
@@ -191,7 +203,12 @@ class LocalLearnerResourceStore implements LearnerResourceStore {
     if (sections.length > ResourceSection.maxSections) throw StateError('too_many_sections');
     final clean = [
       for (final s in sections)
-        ResourceSection(title: s.title.trim(), objectiveKeys: s.objectiveKeys, source: s.source),
+        ResourceSection(
+          title: s.title.trim(),
+          objectiveKeys: s.objectiveKeys,
+          source: s.source,
+          minutes: s.minutes,
+        ),
     ];
     if (clean.any((s) => s.title.isEmpty || s.title.length > ResourceSection.maxTitleLength)) {
       throw ArgumentError('title');
@@ -199,7 +216,12 @@ class LocalLearnerResourceStore implements LearnerResourceStore {
     await _update(
       resourceId,
       (r) => r.copyWith(
-        sections: clean,
+        sections: [
+          for (final s in clean)
+            s.copyWith(
+              studiedAt: () => r.sections.where((o) => o.title == s.title && o.studied).firstOrNull?.studiedAt,
+            ),
+        ],
         objectives: {
           for (final s in clean)
             for (final k in s.objectiveKeys) k: null,
@@ -208,6 +230,25 @@ class LocalLearnerResourceStore implements LearnerResourceStore {
       ),
     );
   }
+
+  @override
+  Future<void> setSectionStudied(String resourceId, int index, bool studied) => _update(resourceId, (r) {
+    if (index < 0 || index >= r.sections.length) throw StateError('section_not_found');
+    final now = DateTime.now().toUtc();
+    final sections = [...r.sections];
+    sections[index] = sections[index].copyWith(
+      studiedAt: () => studied ? (sections[index].studiedAt ?? now) : null,
+    );
+    if (!studied) return r.copyWith(sections: sections);
+    final objectives = {...r.objectives};
+    for (final key in sections[index].objectiveKeys) {
+      final covering = sections.where((s) => s.objectiveKeys.contains(key));
+      if (objectives.containsKey(key) && objectives[key] == null && covering.every((s) => s.studied)) {
+        objectives[key] = now;
+      }
+    }
+    return r.copyWith(sections: sections, objectives: objectives);
+  });
 
   @override
   Future<void> delete(String resourceId) async {
@@ -236,7 +277,12 @@ Future<int> moveLocalResourcesToAccount(LocalLearnerResourceStore local, Learner
         if (e.value != null) await account.setStudied(id, e.key, true);
       }
     }
-    if (r.sections.isNotEmpty) await account.setSections(id, r.sections);
+    if (r.sections.isNotEmpty) {
+      await account.setSections(id, r.sections);
+      for (final (i, s) in r.sections.indexed) {
+        if (s.studied) await account.setSectionStudied(id, i, true);
+      }
+    }
     await local.delete(r.id);
     moved++;
   }

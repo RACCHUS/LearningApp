@@ -10,6 +10,7 @@ import 'package:learning_pwa/providers/learning_support_controller_provider.dart
 import 'package:learning_pwa/providers/learning_target_provider.dart';
 import 'package:learning_pwa/providers/target_readiness_provider.dart';
 import 'package:learning_pwa/theme/design_tokens.dart';
+import 'package:learning_pwa/screens/companion/companion_screen.dart';
 import 'package:learning_pwa/screens/companion/goal_gaps_screen.dart';
 import 'package:learning_pwa/screens/companion/resource_outline_screen.dart';
 import 'package:learning_pwa/widgets/companion/learner_resources_card.dart';
@@ -194,6 +195,22 @@ class LearnerResourceScreen extends ConsumerWidget {
                 icon: const Icon(Icons.fact_check_outlined),
                 label: const Text('Check yourself in LearningApp'),
               ),
+              if (resource.sections.isNotEmpty)
+                FilledButton.tonalIcon(
+                  key: const Key('learner_resource_companion'),
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => CompanionScreen(goal: goal, resourceId: resource.id),
+                    ),
+                  ),
+                  icon: const Icon(Icons.playlist_play),
+                  label: Text(
+                    resource.nextSectionIndex == null
+                        ? 'Study plan'
+                        : 'Continue: ${resource.sections[resource.nextSectionIndex!].title}',
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
               if (outline.itemCount > 0)
                 OutlinedButton.icon(
                   key: const Key('learner_resource_outline'),
