@@ -15,9 +15,12 @@ class AssessmentGradingException implements Exception {
 /// Server-side grading for assessment items whose answer keys are hidden from
 /// direct client reads (FIX-12).
 ///
-/// `grade_assessment_items` returns each answered item's `scoring_spec` and
-/// `explanation`. The client merges them back into the item so the canonical
-/// evaluator and answer-review UI keep a single scoring implementation.
+/// `grade_and_record_assessment_items` grades exactly like
+/// `grade_assessment_items` and returns each answered item's `scoring_spec`
+/// and `explanation`; for signed-in learners who opted in to analytics it also
+/// records their first answer for question statistics (plan v1.2 §16.4). The
+/// client merges the result back into the item so the canonical evaluator and
+/// answer-review UI keep a single scoring implementation.
 typedef GradingTransport = Future<dynamic> Function(
   List<Map<String, dynamic>> payload,
 );
@@ -108,7 +111,7 @@ class AssessmentGradingService {
       raw = _transport != null
           ? await _transport(payload)
           : await _client.rpc(
-              'grade_assessment_items',
+              'grade_and_record_assessment_items',
               params: {'p_responses': payload},
             );
     } catch (_) {
