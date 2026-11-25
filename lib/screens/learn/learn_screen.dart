@@ -7,6 +7,7 @@ import 'package:learning_pwa/providers/learning_strategy_provider.dart';
 import 'package:learning_pwa/providers/next_action_provider.dart';
 import 'package:learning_pwa/services/next_action_engine.dart';
 import 'package:learning_pwa/theme/design_tokens.dart';
+import 'package:learning_pwa/widgets/companion/outside_study_widgets.dart';
 import 'package:learning_pwa/widgets/account_actions.dart';
 import 'package:learning_pwa/widgets/app_shell.dart';
 import 'package:learning_pwa/widgets/help/help_action.dart';
@@ -105,6 +106,7 @@ class _LearnBody extends StatelessWidget {
         const LearningApproachSelector(),
         const SizedBox(height: DesignTokens.space3),
         ContinueCard(action: action),
+        const OutsideStepCard(),
         const SizedBox(height: DesignTokens.space5),
         const PreReaderEntryBanner(),
         if (secondaryFastAction != null) ...[

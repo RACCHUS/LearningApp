@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../providers/target_readiness_provider.dart';
 import '../../services/planning/readiness_projection.dart';
 import '../../theme/design_tokens.dart';
+import '../companion/outside_study_widgets.dart';
 
 /// Projected finish on the daily plan (ingestion plan v1.2 §8.7): study time
 /// left on what LearningApp covers for the target, and roughly when the
@@ -138,6 +139,9 @@ class ReadinessProjectionCard extends ConsumerWidget {
                 const SizedBox(height: DesignTokens.space2),
                 l,
               ],
+              OutsideStudyFinishLine(
+                dailyGoalMinutes: projection.dailyGoalMinutes,
+              ),
             ],
           ),
         ),

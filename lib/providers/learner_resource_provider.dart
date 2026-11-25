@@ -3,6 +3,7 @@ import 'package:learning_pwa/models/companion/goal_coverage.dart';
 import 'package:learning_pwa/models/companion/learner_resource.dart';
 import 'package:learning_pwa/models/content_generation/coverage_matrix.dart';
 import 'package:learning_pwa/models/governance/site_feature_keys.dart';
+import 'package:learning_pwa/models/learning_context.dart';
 import 'package:learning_pwa/providers/learning_context_provider.dart';
 import 'package:learning_pwa/providers/learning_target_provider.dart';
 import 'package:learning_pwa/providers/site_feature_provider.dart';
@@ -41,6 +42,14 @@ final learnerResourceStoreProvider = Provider<LearnerResourceStore>((ref) {
 final learnerResourcesProvider = FutureProvider.family<List<LearnerResource>, String>((ref, targetId) async {
   if (!ref.watch(learnerResourcesEnabledProvider) || targetId.isEmpty) return const [];
   return ref.watch(learnerResourceStoreProvider).list(targetId);
+});
+
+/// The next outside step for the active goal. Null when the active context
+/// is not a goal, the switch is off, or nothing outside is left to study.
+final activeOutsideStudyPlanProvider = FutureProvider<OutsideStudyPlan?>((ref) async {
+  final context = ref.watch(activeLearningContextProvider);
+  if (context == null || context.rootType != ContextRootType.target || context.rootId.isEmpty) return null;
+  return OutsideStudyPlan.from(context.rootId, await ref.watch(learnerResourcesProvider(context.rootId).future));
 });
 
 /// How many guest resources are still on this device while an account is in
