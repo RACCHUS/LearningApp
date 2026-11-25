@@ -5,6 +5,7 @@ import 'package:learning_pwa/models/daily_plan.dart';
 import 'package:learning_pwa/models/learning_context.dart';
 import 'package:learning_pwa/providers/daily_plan_provider.dart';
 import 'package:learning_pwa/providers/learning_context_provider.dart';
+import 'package:learning_pwa/providers/target_readiness_provider.dart';
 import 'package:learning_pwa/theme/design_tokens.dart';
 
 /// Card displayed on the Progress screen rendering today's Daily Study Plan,
@@ -301,6 +302,9 @@ class DailyPlanCard extends ConsumerWidget {
           .read(learningContextsProvider.notifier)
           .updateScopeConfig(context.id, newConfig);
       ref.invalidate(dailyPlanProvider);
+      // LearningContext equality is by id, so dependents aren't told the
+      // exam date changed; refresh the projected finish explicitly.
+      ref.invalidate(readinessProjectionProvider);
     }
   }
 
@@ -312,6 +316,7 @@ class DailyPlanCard extends ConsumerWidget {
         .read(learningContextsProvider.notifier)
         .updateScopeConfig(context.id, newConfig);
     ref.invalidate(dailyPlanProvider);
+    ref.invalidate(readinessProjectionProvider);
   }
 }
 
