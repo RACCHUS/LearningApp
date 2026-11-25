@@ -18,7 +18,7 @@ source_releases:
 target:
   slug: open-openstax-college-algebra-1e
   title: College Algebra (open textbook)
-  version_code: OPENSTAX-EBC5BEB-R6
+  version_code: OPENSTAX-EBC5BEB-R7
   version_title: College Algebra by OpenStax, CC BY 4.0
   version_description: Open textbook sections imported as LearningApp lessons.
   volatility_class: V0
@@ -1160,6 +1160,67 @@ domains:
         - open-openstax-college-algebra-1e-1-1
       concept_slugs:
       - open-openstax-college-algebra-1e-1-1
+    flashcards:
+    - front: What does “algebraic expression” mean?
+      back: Constants and variables combined using addition, subtraction, multiplication, and division
+      concept_slugs:
+      - open-openstax-college-algebra-1e-1-1
+      citation: College Algebra (OpenStax), Section 1.1, https://openstax.org/books/college-algebra/pages/1-1-real-numbers-algebra-essentials, CC BY 4.0
+      source_release_id: openstax-college-algebra-1e
+    - front: What does “base” mean?
+      back: In exponential notation, the expression that is being multiplied
+      concept_slugs:
+      - open-openstax-college-algebra-1e-1-1
+      citation: College Algebra (OpenStax), Section 1.1, https://openstax.org/books/college-algebra/pages/1-1-real-numbers-algebra-essentials, CC BY 4.0
+      source_release_id: openstax-college-algebra-1e
+    - front: What does “constant” mean?
+      back: A quantity that does not change value
+      concept_slugs:
+      - open-openstax-college-algebra-1e-1-1
+      citation: College Algebra (OpenStax), Section 1.1, https://openstax.org/books/college-algebra/pages/1-1-real-numbers-algebra-essentials, CC BY 4.0
+      source_release_id: openstax-college-algebra-1e
+    - front: What does “equation” mean?
+      back: A mathematical statement indicating that two expressions are equal
+      concept_slugs:
+      - open-openstax-college-algebra-1e-1-1
+      citation: College Algebra (OpenStax), Section 1.1, https://openstax.org/books/college-algebra/pages/1-1-real-numbers-algebra-essentials, CC BY 4.0
+      source_release_id: openstax-college-algebra-1e
+    - front: What does “exponent” mean?
+      back: In exponential notation, the raised number or variable that indicates how many times the base is being multiplied
+      concept_slugs:
+      - open-openstax-college-algebra-1e-1-1
+      citation: College Algebra (OpenStax), Section 1.1, https://openstax.org/books/college-algebra/pages/1-1-real-numbers-algebra-essentials, CC BY 4.0
+      source_release_id: openstax-college-algebra-1e
+    - front: What does “exponential notation” mean?
+      back: A shorthand method of writing products of the same factor
+      concept_slugs:
+      - open-openstax-college-algebra-1e-1-1
+      citation: College Algebra (OpenStax), Section 1.1, https://openstax.org/books/college-algebra/pages/1-1-real-numbers-algebra-essentials, CC BY 4.0
+      source_release_id: openstax-college-algebra-1e
+    - front: What does “formula” mean?
+      back: An equation expressing a relationship between constant and variable quantities
+      concept_slugs:
+      - open-openstax-college-algebra-1e-1-1
+      citation: College Algebra (OpenStax), Section 1.1, https://openstax.org/books/college-algebra/pages/1-1-real-numbers-algebra-essentials, CC BY 4.0
+      source_release_id: openstax-college-algebra-1e
+    - front: What does “irrational numbers” mean?
+      back: The set of all numbers that are not rational; they cannot be written as either a terminating or repeating decimal; they cannot be expressed as a fraction of two integers
+      concept_slugs:
+      - open-openstax-college-algebra-1e-1-1
+      citation: College Algebra (OpenStax), Section 1.1, https://openstax.org/books/college-algebra/pages/1-1-real-numbers-algebra-essentials, CC BY 4.0
+      source_release_id: openstax-college-algebra-1e
+    - front: What does “order of operations” mean?
+      back: A set of rules governing how mathematical expressions are to be evaluated, assigning priorities to operations
+      concept_slugs:
+      - open-openstax-college-algebra-1e-1-1
+      citation: College Algebra (OpenStax), Section 1.1, https://openstax.org/books/college-algebra/pages/1-1-real-numbers-algebra-essentials, CC BY 4.0
+      source_release_id: openstax-college-algebra-1e
+    - front: What does “real number line” mean?
+      back: A horizontal line used to represent the real numbers. An arbitrary fixed point is chosen to represent 0; positive numbers lie to the right of 0 and negative numbers to the left.
+      concept_slugs:
+      - open-openstax-college-algebra-1e-1-1
+      citation: College Algebra (OpenStax), Section 1.1, https://openstax.org/books/college-algebra/pages/1-1-real-numbers-algebra-essentials, CC BY 4.0
+      source_release_id: openstax-college-algebra-1e
   - code: '1.2'
     title: Exponents and Scientific Notation
     description: Use the product rule of exponents; Use the quotient rule of exponents; Use the power rule of exponents; Use the zero exponent rule of exponents; Use the negative rule of exponents; Find the power of a product and a quotient; Simplify exponential expressions; Use scientific notation.
@@ -2195,6 +2256,19 @@ domains:
         - open-openstax-college-algebra-1e-1-2
       concept_slugs:
       - open-openstax-college-algebra-1e-1-2
+    flashcards:
+    - front: What does “real numbers” mean?
+      back: The sets of rational numbers and irrational numbers taken together
+      concept_slugs:
+      - open-openstax-college-algebra-1e-1-2
+      citation: College Algebra (OpenStax), Section 1.2, https://openstax.org/books/college-algebra/pages/1-2-exponents-and-scientific-notation, CC BY 4.0
+      source_release_id: openstax-college-algebra-1e
+    - front: What does “variable” mean?
+      back: A quantity that may change value
+      concept_slugs:
+      - open-openstax-college-algebra-1e-1-2
+      citation: College Algebra (OpenStax), Section 1.2, https://openstax.org/books/college-algebra/pages/1-2-exponents-and-scientific-notation, CC BY 4.0
+      source_release_id: openstax-college-algebra-1e
   - code: '1.3'
     title: Radicals and Rational Exponents
     description: Evaluate square roots; Use the product rule to simplify square roots; Use the quotient rule to simplify square roots; Add and subtract square roots; Rationalize denominators; Use rational roots.
@@ -3085,6 +3159,31 @@ domains:
         - open-openstax-college-algebra-1e-1-3
       concept_slugs:
       - open-openstax-college-algebra-1e-1-3
+    flashcards:
+    - front: What does “index” mean?
+      back: The number above the radical sign indicating the nth root
+      concept_slugs:
+      - open-openstax-college-algebra-1e-1-3
+      citation: College Algebra (OpenStax), Section 1.3, https://openstax.org/books/college-algebra/pages/1-3-radicals-and-rational-exponents, CC BY 4.0
+      source_release_id: openstax-college-algebra-1e
+    - front: What does “radical” mean?
+      back: The symbol used to indicate a root
+      concept_slugs:
+      - open-openstax-college-algebra-1e-1-3
+      citation: College Algebra (OpenStax), Section 1.3, https://openstax.org/books/college-algebra/pages/1-3-radicals-and-rational-exponents, CC BY 4.0
+      source_release_id: openstax-college-algebra-1e
+    - front: What does “radical expression” mean?
+      back: An expression containing a radical symbol
+      concept_slugs:
+      - open-openstax-college-algebra-1e-1-3
+      citation: College Algebra (OpenStax), Section 1.3, https://openstax.org/books/college-algebra/pages/1-3-radicals-and-rational-exponents, CC BY 4.0
+      source_release_id: openstax-college-algebra-1e
+    - front: What does “radicand” mean?
+      back: The number under the radical symbol
+      concept_slugs:
+      - open-openstax-college-algebra-1e-1-3
+      citation: College Algebra (OpenStax), Section 1.3, https://openstax.org/books/college-algebra/pages/1-3-radicals-and-rational-exponents, CC BY 4.0
+      source_release_id: openstax-college-algebra-1e
   - code: '1.4'
     title: Polynomials
     description: Identify the degree and leading coefficient of polynomials; Add and subtract polynomials; Multiply polynomials; Use FOIL to multiply binomials; Perform operations with polynomials of several variables.
@@ -3853,6 +3952,61 @@ domains:
         - open-openstax-college-algebra-1e-1-4
       concept_slugs:
       - open-openstax-college-algebra-1e-1-4
+    flashcards:
+    - front: What does “binomial” mean?
+      back: A polynomial containing two terms
+      concept_slugs:
+      - open-openstax-college-algebra-1e-1-4
+      citation: College Algebra (OpenStax), Section 1.4, https://openstax.org/books/college-algebra/pages/1-4-polynomials, CC BY 4.0
+      source_release_id: openstax-college-algebra-1e
+    - front: What does “degree” mean?
+      back: The highest power of the variable that occurs in a polynomial
+      concept_slugs:
+      - open-openstax-college-algebra-1e-1-4
+      citation: College Algebra (OpenStax), Section 1.4, https://openstax.org/books/college-algebra/pages/1-4-polynomials, CC BY 4.0
+      source_release_id: openstax-college-algebra-1e
+    - front: What does “difference of squares” mean?
+      back: The binomial that results when a binomial is multiplied by a binomial with the same terms, but the opposite sign
+      concept_slugs:
+      - open-openstax-college-algebra-1e-1-4
+      citation: College Algebra (OpenStax), Section 1.4, https://openstax.org/books/college-algebra/pages/1-4-polynomials, CC BY 4.0
+      source_release_id: openstax-college-algebra-1e
+    - front: What does “leading coefficient” mean?
+      back: The coefficient of the leading term
+      concept_slugs:
+      - open-openstax-college-algebra-1e-1-4
+      citation: College Algebra (OpenStax), Section 1.4, https://openstax.org/books/college-algebra/pages/1-4-polynomials, CC BY 4.0
+      source_release_id: openstax-college-algebra-1e
+    - front: What does “leading term” mean?
+      back: The term containing the highest degree
+      concept_slugs:
+      - open-openstax-college-algebra-1e-1-4
+      citation: College Algebra (OpenStax), Section 1.4, https://openstax.org/books/college-algebra/pages/1-4-polynomials, CC BY 4.0
+      source_release_id: openstax-college-algebra-1e
+    - front: What does “monomial” mean?
+      back: A polynomial containing one term
+      concept_slugs:
+      - open-openstax-college-algebra-1e-1-4
+      citation: College Algebra (OpenStax), Section 1.4, https://openstax.org/books/college-algebra/pages/1-4-polynomials, CC BY 4.0
+      source_release_id: openstax-college-algebra-1e
+    - front: What does “perfect square trinomial” mean?
+      back: The trinomial that results when a binomial is squared
+      concept_slugs:
+      - open-openstax-college-algebra-1e-1-4
+      citation: College Algebra (OpenStax), Section 1.4, https://openstax.org/books/college-algebra/pages/1-4-polynomials, CC BY 4.0
+      source_release_id: openstax-college-algebra-1e
+    - front: What does “polynomial” mean?
+      back: A sum of terms each consisting of a variable raised to a nonnegative integer power
+      concept_slugs:
+      - open-openstax-college-algebra-1e-1-4
+      citation: College Algebra (OpenStax), Section 1.4, https://openstax.org/books/college-algebra/pages/1-4-polynomials, CC BY 4.0
+      source_release_id: openstax-college-algebra-1e
+    - front: What does “trinomial” mean?
+      back: A polynomial containing three terms
+      concept_slugs:
+      - open-openstax-college-algebra-1e-1-4
+      citation: College Algebra (OpenStax), Section 1.4, https://openstax.org/books/college-algebra/pages/1-4-polynomials, CC BY 4.0
+      source_release_id: openstax-college-algebra-1e
   - code: '1.5'
     title: Factoring Polynomials
     description: Factor the greatest common factor of a polynomial; Factor a trinomial; Factor by grouping; Factor a perfect square trinomial; Factor a difference of squares; Factor the sum and difference of cubes; Factor expressions using fractional or negative exponents.
@@ -4655,6 +4809,13 @@ domains:
         - open-openstax-college-algebra-1e-1-5
       concept_slugs:
       - open-openstax-college-algebra-1e-1-5
+    flashcards:
+    - front: What does “greatest common factor” mean?
+      back: The largest polynomial that divides evenly into each polynomial
+      concept_slugs:
+      - open-openstax-college-algebra-1e-1-5
+      citation: College Algebra (OpenStax), Section 1.5, https://openstax.org/books/college-algebra/pages/1-5-factoring-polynomials, CC BY 4.0
+      source_release_id: openstax-college-algebra-1e
   - code: '1.6'
     title: Rational Expressions
     description: Simplify rational expressions; Multiply rational expressions; Divide rational expressions; Add and subtract rational expressions; Simplify complex rational expressions.
@@ -5306,3 +5467,16 @@ domains:
         - open-openstax-college-algebra-1e-1-6
       concept_slugs:
       - open-openstax-college-algebra-1e-1-6
+    flashcards:
+    - front: What does “least common denominator” mean?
+      back: The smallest multiple that two denominators have in common
+      concept_slugs:
+      - open-openstax-college-algebra-1e-1-6
+      citation: College Algebra (OpenStax), Section 1.6, https://openstax.org/books/college-algebra/pages/1-6-rational-expressions, CC BY 4.0
+      source_release_id: openstax-college-algebra-1e
+    - front: What does “rational expression” mean?
+      back: The quotient of two polynomial expressions
+      concept_slugs:
+      - open-openstax-college-algebra-1e-1-6
+      citation: College Algebra (OpenStax), Section 1.6, https://openstax.org/books/college-algebra/pages/1-6-rational-expressions, CC BY 4.0
+      source_release_id: openstax-college-algebra-1e
