@@ -22,6 +22,38 @@ final learnerResourcesEnabledProvider = Provider<bool>((ref) {
   );
 });
 
+/// Switch `content.companion_capture` (default OFF): the entry points that
+/// carry a link from another page into the add-a-resource form (companion
+/// plan v1.0, EX-6). It needs the learner-resources switch too, because the
+/// save goes through that server gate.
+final companionCaptureEnabledProvider = Provider<bool>((ref) {
+  return ref.watch(learnerResourcesEnabledProvider) &&
+      isSiteFeatureEnabled(
+        ref.watch(siteFeatureSnapshotProvider).valueOrNull,
+        SiteFeatureKeys.contentCompanionCapture,
+        runtimeReady: SiteFeatureRuntime.snapshotEnabled,
+      );
+});
+
+/// A goal the learner already has, to attach a captured resource to.
+typedef CaptureGoal = ({String targetId, String label});
+
+/// The learner's goals, the active one first. Only goals: a course or a
+/// study set is not something an outside resource is mapped to.
+final captureGoalsProvider = Provider<List<CaptureGoal>>((ref) {
+  final state = ref.watch(learningContextsProvider);
+  final seen = <String>{};
+  final goals = <CaptureGoal>[];
+  for (final c in [
+    ...state.contexts.where((c) => c.id == state.activeId),
+    ...state.contexts.where((c) => c.id != state.activeId),
+  ]) {
+    if (c.rootType != ContextRootType.target || c.rootId.isEmpty || !seen.add(c.rootId)) continue;
+    goals.add((targetId: c.rootId, label: c.label));
+  }
+  return goals;
+});
+
 /// True when there is an account (or anonymous session) to save to.
 final learnerResourcesUseAccountProvider = Provider<bool>(
   (ref) => ref.watch(learnerIdProvider) != 'local-user',

@@ -51,6 +51,7 @@ abstract final class SiteFeatureKeys {
   static const String learningReadinessProjection =
       'learning.readiness_projection';
   static const String contentLearnerResources = 'content.learner_resources';
+  static const String contentCompanionCapture = 'content.companion_capture';
 
   static const Set<String> all = {
     telFast,
@@ -94,5 +95,6 @@ abstract final class SiteFeatureKeys {
     learningObjectiveReadinessView,
     learningReadinessProjection,
     contentLearnerResources,
+    contentCompanionCapture,
   };
 }

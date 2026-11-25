@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:learning_pwa/models/companion/learner_resource.dart';
 import 'package:learning_pwa/models/learning_support/external_companion.dart';
 import 'package:learning_pwa/providers/learner_resource_provider.dart';
+import 'package:learning_pwa/screens/companion/add_resource_screen.dart';
 import 'package:learning_pwa/screens/companion/companion_screen.dart';
 import 'package:learning_pwa/screens/companion/goal_gaps_screen.dart';
 import 'package:learning_pwa/screens/companion/learner_resource_screen.dart';
@@ -151,6 +152,15 @@ class LearnerResourcesCard extends ConsumerWidget {
                 icon: const Icon(Icons.add),
                 label: const Text("Add something you're using"),
               ),
+              if (ref.watch(companionCaptureEnabledProvider))
+                TextButton.icon(
+                  key: const Key('learner_resources_capture'),
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(builder: (_) => const AddResourceScreen()),
+                  ),
+                  icon: const Icon(Icons.bookmark_add_outlined, size: 18),
+                  label: const Text('Add from another page with one tap'),
+                ),
             ],
           ),
         ),
