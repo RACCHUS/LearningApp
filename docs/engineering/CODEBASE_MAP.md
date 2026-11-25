@@ -1,7 +1,6 @@
 # LearningApp Codebase Map
 
 Read **one section**, not the whole file. Each section gives the owner, the contract that must not break, and the tests to run. Line numbers were verified at `06221ed`; if they have drifted, search for the named symbol and fix the section.
-The `<!-- map-ref ... -->` comments are structured references meant for a future validator (not yet built or in CI); prose paths are not checked.
 
 ## How to use
 
@@ -221,6 +220,16 @@ Read to understand; no refactor proposals.
 - Contracts: `tool/lint_manifest.dart` (stable item IDs), `content/schema/curriculum_manifest.schema.json`, `tool/ci/check_algebra_manifest_parity.py`.
 <!-- map-ref path="test/tool/curriculum_stable_ids_test.dart" role="test" -->
 - Tests: `test/tool/curriculum_stable_ids_test.dart`, `test/services/curriculum_manifest_test.dart`, `tool/tests/test_check_algebra_manifest_parity.py`. Known gap: REST transport has no direct test.
+
+## Outside-resource companion {#companion}
+
+Gate `content.learner_resources` (OFF). Plan: `LEARNINGAPP_EXTERNAL_RESOURCE_COMPANION_PLAN_V1_0_2026-11-25.md`. "Studied" is self-report and never feeds readiness.
+<!-- map-ref path="lib/screens/companion/learner_resource_screen.dart" role="owner" -->
+- Owner: that screen; card `widgets/companion/learner_resources_card.dart`; storage `services/companion/learner_resource_store.dart` (account or device); bundled companions stay in `learning_support/`.
+<!-- map-ref path="supabase/migrations/20261125030000_learner_external_resources.sql" role="contract" -->
+- Contract: gated write RPCs in that migration; catalog files checked by `tool/verify_external_resources.py`.
+<!-- map-ref path="supabase/tests/learner_external_resources_test.sql" role="test" -->
+- Tests: that pgTAP file (incl. no other function reads the tables), `test/widgets/learner_resources_flow_test.dart`, `test/services/learner_resource_store_test.dart`.
 
 ## Database and deployment (protected) {#database}
 

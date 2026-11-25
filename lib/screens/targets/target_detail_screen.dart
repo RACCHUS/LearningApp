@@ -13,6 +13,7 @@ import '../../providers/version_governance_provider.dart';
 import '../../theme/design_tokens.dart';
 import '../../widgets/governance/target_version_migration_dialog.dart';
 import '../../widgets/targets/target_readiness_card.dart';
+import '../../widgets/companion/learner_resources_card.dart';
 import '../../widgets/targets/objective_readiness_card.dart';
 import '../../widgets/targets/target_coverage_card.dart';
 import '../../widgets/targets/exam_preparation_overview_card.dart';
@@ -387,6 +388,10 @@ class TargetDetailScreen extends ConsumerWidget {
                         TargetReadinessCard(targetVersionId: ver.id),
                         const SizedBox(height: DesignTokens.space3),
                         ObjectiveReadinessCard(targetVersionId: ver.id),
+                        LearnerResourcesCard(
+                          targetId: target.id,
+                          targetVersionId: ver.id,
+                        ),
                         if (ver.isPublished) ...[
                           TargetCoverageCard(
                             targetSlug: target.slug,

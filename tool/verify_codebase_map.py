@@ -27,8 +27,10 @@ import sys
 from pathlib import Path, PurePosixPath
 
 DEFAULT_MAP = "docs/engineering/CODEBASE_MAP.md"
-MAX_LINES = 250
-MAX_BYTES = 20 * 1024
+# Raised from 250 / 20 KiB on 2026-11-25 for the companion section (EX-1): the
+# map was exactly at its cap, so a new feature area could not be listed.
+MAX_LINES = 260
+MAX_BYTES = 21 * 1024
 
 REF = re.compile(
     r'^<!-- map-ref path="([^"]+)" role="(owner|contract|test|policy)"'
