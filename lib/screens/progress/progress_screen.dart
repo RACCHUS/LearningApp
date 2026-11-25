@@ -16,6 +16,7 @@ import 'package:learning_pwa/providers/learning_context_provider.dart';
 import 'package:learning_pwa/models/scope.dart';
 import 'package:learning_pwa/providers/scope_resolver_provider.dart';
 import 'package:learning_pwa/widgets/targets/target_readiness_card.dart';
+import 'package:learning_pwa/widgets/targets/objective_readiness_card.dart';
 import 'package:learning_pwa/widgets/progress/exam_part_progress_card.dart';
 import 'package:learning_pwa/widgets/progress/reference_context_progress_card.dart';
 import 'package:learning_pwa/widgets/progress/reference_practice_account_export_card.dart';
@@ -268,6 +269,7 @@ class _CurrentContextSection extends ConsumerWidget {
             activeContext.targetVersionId!.isNotEmpty) ...[
           TargetReadinessCard(targetVersionId: activeContext.targetVersionId!),
           const SizedBox(height: DesignTokens.space3),
+          ObjectiveReadinessCard(targetVersionId: activeContext.targetVersionId!),
           if (activeContext.rootType == ContextRootType.target) ...[
             ExamPartProgressCard(
               key: ValueKey(
