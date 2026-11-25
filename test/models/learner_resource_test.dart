@@ -65,6 +65,18 @@ void main() {
       expect(outline.groups.first.items.first.label, '1.1 Exponents');
     });
 
+    test('areas keep their own order when objective positions restart in each area', () {
+      final outline = ResourceOutline.fromNodes([
+        node('d1', 'First', order: 1),
+        node('d2', 'Second', order: 2),
+        node('b1', 'B one', parent: 'd2', code: '2.1', order: 1),
+        node('a1', 'A one', parent: 'd1', code: '1.1', order: 2),
+        node('a0', 'A zero', parent: 'd1', code: '1.0', order: 1),
+      ]);
+      expect(outline.groups.map((g) => g.title), ['First', 'Second']);
+      expect(outline.groups.first.items.map((i) => i.key), ['1.0', '1.1']);
+    });
+
     test('coverage uses blueprint weights when every area has one', () {
       final outline = ResourceOutline.fromNodes(nodes);
       expect(outline.usesWeights, isTrue);
