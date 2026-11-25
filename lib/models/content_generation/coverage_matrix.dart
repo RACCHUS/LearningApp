@@ -18,6 +18,8 @@ enum CoverageRole {
 /// Cell states with the plan's icon and the text label it requires.
 enum CoverageState {
   reviewed('✓', 'Reviewed'),
+  verified('★', 'Independently checked'),
+  partial('◔', 'Some checks'),
   imported('◐', 'Imported'),
   external('⇢', 'Outside resource'),
   draft('✎', 'Your draft'),
@@ -58,35 +60,49 @@ class CoverageRow {
   /// who attached a private lesson to this objective. Reviewed and
   /// imported cells are left as they are: a draft never outranks them.
   CoverageRow withDraft() => CoverageRow(
-        objectiveId: objectiveId,
-        code: code,
-        title: title,
-        priority: priority,
-        cells: {
-          for (final e in cells.entries)
-            e.key: e.value == CoverageState.gap && draftableRoles.contains(e.key)
-                ? CoverageState.draft
-                : e.value,
-        },
-      );
+    objectiveId: objectiveId,
+    code: code,
+    title: title,
+    priority: priority,
+    cells: {
+      for (final e in cells.entries)
+        e.key: e.value == CoverageState.gap && draftableRoles.contains(e.key)
+            ? CoverageState.draft
+            : e.value,
+    },
+  );
 
   List<CoverageRole> get gaps => [
     for (final e in cells.entries)
       if (e.value == CoverageState.gap) e.key,
   ];
 
+  /// Independent checks an objective needs before its Check cell counts as
+  /// covered (ingestion plan v1.2 §8.2; the readiness gate's minimum, D-14).
+  static const independentChecksNeeded = 6;
+
   /// Builds a row from `get_coverage_matrix` data and the bundled Bridges.
   ///
   /// Content cells are "Imported" while any lesson is tagged `unreviewed`,
-  /// "Reviewed" otherwise, and a gap when nothing is there. The Bridge cell
-  /// uses the Bridges that apply to the objective's lesson tags (Bridges are
-  /// not yet human-reviewed, so "Imported"). Access is "Not yet verified":
+  /// "Reviewed" otherwise, and a gap when nothing is there. Practice counts
+  /// reveal-the-answer prompts and graded lesson questions. Check counts
+  /// independent (held-out) checks only: "Independently checked" at
+  /// [independentChecksNeeded] or more, "Some checks" below that, a gap at
+  /// none. A server older than `held_out_items` falls back to the graded
+  /// question count, as before.
+  ///
+  /// The Bridge cell uses the Bridges that apply to the objective's lesson
+  /// tags (Bridges are not yet human-reviewed, so "Imported"). Access is
+  /// "Not yet verified":
   /// read-aloud exists for all text, but no accessible adaptation has been
   /// checked for these objectives.
-  factory CoverageRow.fromServer(Map<String, dynamic> row, BridgeLibrary bridges) {
+  factory CoverageRow.fromServer(
+    Map<String, dynamic> row,
+    BridgeLibrary bridges,
+  ) {
     final unreviewed = row['unreviewed'] == true;
-    CoverageState content(String key) {
-      final n = (row[key] as num?)?.toInt() ?? 0;
+    int count(String key) => (row[key] as num?)?.toInt() ?? 0;
+    CoverageState content(int n) {
       if (n == 0) return CoverageState.gap;
       return unreviewed ? CoverageState.imported : CoverageState.reviewed;
     }
@@ -103,19 +119,29 @@ class CoverageRow {
           ? (row['priority'] as num).toDouble()
           : double.tryParse('${row['priority']}') ?? 0,
       cells: {
-        CoverageRole.teach: content('teach_blocks'),
-        CoverageRole.example: content('example_blocks'),
-        CoverageRole.practice: content('practice_items'),
-        CoverageRole.check: content('check_items'),
+        CoverageRole.teach: content(count('teach_blocks')),
+        CoverageRole.example: content(count('example_blocks')),
+        CoverageRole.practice: content(
+          count('practice_items') + count('graded_practice_items'),
+        ),
+        CoverageRole.check: row.containsKey('held_out_items')
+            ? _check(count('held_out_items'))
+            : content(count('check_items')),
         CoverageRole.bridge: helps.isEmpty
             ? CoverageState.gap
             : helps.every((b) => b.evidence.humanReviewed)
-                ? CoverageState.reviewed
-                : CoverageState.imported,
+            ? CoverageState.reviewed
+            : CoverageState.imported,
         CoverageRole.access: CoverageState.notVerified,
       },
     );
   }
+
+  static CoverageState _check(int heldOut) => heldOut >= independentChecksNeeded
+      ? CoverageState.verified
+      : heldOut > 0
+      ? CoverageState.partial
+      : CoverageState.gap;
 }
 
 /// One missing piece for one objective: what the Need cards and the Create
@@ -149,14 +175,14 @@ class CoverageSummary {
   /// Check or Bridge), in outline order. Access is "not yet verified"
   /// everywhere, so it is not listed as a need.
   List<CoverageNeed> get needs => [
-        for (final r in rows)
-          if (r.gaps.where((g) => g != CoverageRole.access).isNotEmpty)
-            CoverageNeed(
-              row: r,
-              missing: [
-                for (final g in r.gaps)
-                  if (g != CoverageRole.access) g,
-              ],
-            ),
-      ];
+    for (final r in rows)
+      if (r.gaps.where((g) => g != CoverageRole.access).isNotEmpty)
+        CoverageNeed(
+          row: r,
+          missing: [
+            for (final g in r.gaps)
+              if (g != CoverageRole.access) g,
+          ],
+        ),
+  ];
 }
