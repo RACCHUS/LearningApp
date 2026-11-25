@@ -26,6 +26,7 @@ from tool.curriculum_clep_algebra.domain_02_equations_and_inequalities import DO
 from tool.curriculum_clep_algebra.domain_03_functions_and_properties import DOMAIN_03
 from tool.curriculum_clep_algebra.domain_04_number_systems_and_operations import DOMAIN_04
 from tool.curriculum_clep_algebra.formative_lesson_questions import FORMATIVE_QUESTIONS_BY_LESSON
+from tool.check_notation import wrap_bare_latex_option
 
 OUTPUT_PATH = ROOT / "content/clep_college_algebra.yaml"
 
@@ -151,6 +152,15 @@ def build_manifest() -> dict:
                 # Attach 2 formative check-for-understanding questions per lesson
                 title = l.get("title", "")
                 l["questions"] = FORMATIVE_QUESTIONS_BY_LESSON.get(title, [])
+
+                # Notation profile (plan v1.2 §8.9): an answer option that is a
+                # bare LaTeX expression is wrapped in $...$ so it renders as math.
+                for q in l["questions"]:
+                    q["options"] = [wrap_bare_latex_option(o) for o in q.get("options", [])]
+                for item in l.get("assessment_items", []):
+                    spec = item.get("response_spec") or {}
+                    if "options" in spec:
+                        spec["options"] = [wrap_bare_latex_option(o) for o in spec["options"]]
 
                 # Tag all 60 simulation assessment items with explicit bank, protection, and domain metadata
                 for item in l.get("assessment_items", []):

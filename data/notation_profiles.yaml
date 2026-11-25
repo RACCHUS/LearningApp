@@ -1,0 +1,22 @@
+# Notation profile per curriculum manifest (ingestion plan v1.2 §8.9).
+# Check: python tool/check_notation.py (CI). Rules are described there.
+#   math_markup          latex: math is written as $...$ LaTeX and rendered;
+#                        plain: no rendered math is expected.
+#   decimal_separator    "." (en-US).
+#   thousands_separator  "," (en-US).
+#   excel_function_case  upper: Excel functions are written SUM(, AVERAGE(.
+#   interval_notation    brackets: [a, b) style, never ]a, b[.
+#   function_notation    f(x).
+defaults: &en_us
+  decimal_separator: "."
+  thousands_separator: ","
+manifests:
+  open_openstax_college_algebra_1e.yaml: {<<: *en_us, math_markup: latex, interval_notation: brackets, function_notation: f(x)}
+  open_openstax_prealgebra_1e.yaml: {<<: *en_us, math_markup: latex}
+  clep_college_algebra.yaml: {<<: *en_us, math_markup: latex, interval_notation: brackets, function_notation: f(x)}
+  clep_introductory_psychology.yaml: {<<: *en_us, math_markup: latex}
+  excel_fundamentals.yaml: {<<: *en_us, math_markup: plain, excel_function_case: upper}
+  security_plus_sy0_701.yaml: {<<: *en_us, math_markup: latex}
+  bs_computer_science.yaml: {<<: *en_us, math_markup: plain}
+  software_engineer_career.yaml: {<<: *en_us, math_markup: plain}
+  adult_literacy_foundations.yaml: {<<: *en_us, math_markup: plain}

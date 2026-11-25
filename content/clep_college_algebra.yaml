@@ -239,9 +239,9 @@ domains:
         interaction_type: single_choice
         response_spec:
           options:
-          - \frac{4x^4}{y^2}
-          - \frac{4x^9}{y^2}
-          - \frac{8x^4}{y^2}
+          - $\frac{4x^4}{y^2}$
+          - $\frac{4x^9}{y^2}$
+          - $\frac{8x^4}{y^2}$
           - 4x^4 y^2
         scoring_spec:
           correct_index: 0
@@ -262,15 +262,15 @@ domains:
           exposure: timed_exam_only
           domain_code: '1.0'
       - id: alg-sim-simplify-radical-72x5y6
-        prompt: Which expression represents the fully simplified radical form of \sqrt{72x^5
-          y^6} where $x > 0$ and $y > 0$?
+        prompt: Which expression represents the fully simplified radical form of $\sqrt{72x^5
+          y^6}$ where $x > 0$ and $y > 0$?
         interaction_type: single_choice
         response_spec:
           options:
-          - 36x^2 y^3 \sqrt{2x}
-          - 6x^2 y^3 \sqrt{2x}
-          - 12x^2 y^3 \sqrt{x}
-          - 6x^4 y^6 \sqrt{2x}
+          - $36x^2 y^3 \sqrt{2x}$
+          - $6x^2 y^3 \sqrt{2x}$
+          - $12x^2 y^3 \sqrt{x}$
+          - $6x^4 y^6 \sqrt{2x}$
         scoring_spec:
           correct_index: 1
         explanation: 'Factor the radicand into perfect squares and remaining factors:
@@ -288,15 +288,15 @@ domains:
           exposure: timed_exam_only
           domain_code: '1.0'
       - id: alg-sim-scientific-notation-quotient
-        prompt: Evaluate the quotient \frac{4.8 \times 10^8}{1.2 \times 10^{-4}} and
-          express the result in proper scientific notation.
+        prompt: Evaluate the quotient $\frac{4.8 \times 10^8}{1.2 \times 10^{-4}}$
+          and express the result in proper scientific notation.
         interaction_type: single_choice
         response_spec:
           options:
-          - 4.0 \times 10^4
-          - 4.0 \times 10^{-12}
-          - 4.0 \times 10^{12}
-          - 4.0 \times 10^{2}
+          - $4.0 \times 10^4$
+          - $4.0 \times 10^{-12}$
+          - $4.0 \times 10^{12}$
+          - $4.0 \times 10^{2}$
         scoring_spec:
           correct_index: 2
         explanation: 'Divide the numerical coefficients and subtract the exponents
@@ -317,10 +317,10 @@ domains:
         question_text: Which expression is equivalent to $x^{-4}$ for all non-zero
           real numbers $x$?
         options:
-        - \frac{1}{x^4}
+        - $\frac{1}{x^4}$
         - -x^4
         - -4x
-        - \frac{4}{x}
+        - $\frac{4}{x}$
         correct_answer: 0
         explanation: By definition of negative exponents, a^(-n) = 1 / a^n for any
           non-zero base a. Thus x^(-4) = 1 / x^4.
@@ -331,10 +331,10 @@ domains:
         question_text: What is the radical equivalent of the rational exponent expression
           $x^{2/5}$ for $x \geq 0$?
         options:
-        - \sqrt{x^5}
-        - \sqrt[5]{x^2}
+        - $\sqrt{x^5}$
+        - $\sqrt[5]{x^2}$
         - 5x^2
-        - 2\sqrt[5]{x}
+        - $2\sqrt[5]{x}$
         correct_answer: 1
         explanation: 'In rational exponents a^(m/n), the denominator n is the root
           index and the numerator m is the power: x^(2/5) = cbrt5(x^2) = (cbrt5(x))^2.'
@@ -609,7 +609,8 @@ domains:
       expressions with unlike denominators, and simplify complex fractions.
     sort_order: 3
     importance: core
-    citation: 'OpenStax College Algebra 1e, Section 1.6: Rational Expressions'
+    citation: 'OpenStax College Algebra 1e, Section 1.6: Rational Expressions; Section
+      3.2: Domain and Range'
     concepts:
     - slug: alg-domain-restrictions
       name: Domain Restrictions of Rational Expressions
@@ -617,7 +618,7 @@ domains:
         zero.
       description: Division by zero is undefined. The domain of a rational expression
         P(x)/Q(x) consists of all real numbers except values where Q(x) = 0.
-      citation: OpenStax College Algebra 1e, Section 1.6
+      citation: OpenStax College Algebra 1e, Sections 1.6 and 3.2
     - slug: alg-rational-operations
       name: Arithmetic Operations on Rational Expressions
       short_definition: Multiplication, division, and addition/subtraction using common
@@ -738,7 +739,7 @@ domains:
           0).'
         difficulty: beginner
         cognitive_level: comprehension
-        citation: OpenStax College Algebra 1e, Section 1.6
+        citation: OpenStax College Algebra 1e, Sections 1.6 and 3.2
         concept_slugs:
         - alg-domain-restrictions
         metadata:
@@ -754,18 +755,18 @@ domains:
         interaction_type: single_choice
         response_spec:
           options:
-          - \frac{1}{x + y}
-          - \frac{x + y}{xy}
-          - \frac{xy}{x - y}
-          - \frac{xy}{x + y}
+          - $\frac{1}{x + y}$
+          - $\frac{x + y}{xy}$
+          - $\frac{xy}{x - y}$
+          - $\frac{xy}{x + y}$
         scoring_spec:
           correct_index: 3
         explanation: 'Multiply numerator and denominator by the LCD of all inner fractions,
-          which is x^2 y^2 (valid for all non-zero x, y with x != \pm y): Numerator
+          which is x^2 y^2 (valid for all non-zero x, y with $x \neq \pm y$): Numerator
           becomes (1/x - 1/y) * x^2 y^2 = xy^2 - x^2 y = xy(y - x). Denominator becomes
           (1/x^2 - 1/y^2) * x^2 y^2 = y^2 - x^2 = (y - x)(y + x). Dividing gives [xy(y
-          - x)] / [(y - x)(y + x)] = xy / (x + y). Note that x != \pm y ensures that
-          neither (y - x) nor (y + x) equals zero.'
+          - x)] / [(y - x)(y + x)] = xy / (x + y). Note that $x \neq \pm y$ ensures
+          that neither (y - x) nor (y + x) equals zero.'
         difficulty: intermediate
         cognitive_level: analysis
         citation: OpenStax College Algebra 1e, Section 1.6
@@ -783,10 +784,10 @@ domains:
         interaction_type: single_choice
         response_spec:
           options:
-          - \frac{7x - 11}{(x - 3)(x + 2)}
-          - \frac{7}{2x - 1}
-          - \frac{7x + 19}{(x - 3)(x + 2)}
-          - \frac{7x - 1}{(x - 3)(x + 2)}
+          - $\frac{7x - 11}{(x - 3)(x + 2)}$
+          - $\frac{7}{2x - 1}$
+          - $\frac{7x + 19}{(x - 3)(x + 2)}$
+          - $\frac{7x - 1}{(x - 3)(x + 2)}$
         scoring_spec:
           correct_index: 0
         explanation: 'The LCD is (x - 3)(x + 2). Rewrite each fraction over the LCD:
@@ -810,7 +811,7 @@ domains:
         options:
         - x = 4
         - x = -4
-        - x = -\frac{1}{3}
+        - $x = -\frac{1}{3}$
         - x = 0
         correct_answer: 0
         explanation: 'Domain restrictions occur where the denominator is zero: 2x
@@ -858,8 +859,9 @@ domains:
       values.
     sort_order: 4
     importance: core
-    citation: 'OpenStax College Algebra 1e, Section 1.1: Real Numbers; Section 2.6:
-      Absolute Value'
+    citation: 'OpenStax College Algebra 1e, Section 1.1: Real Numbers: Algebra Essentials;
+      Section 2.6: Other Types of Equations; Section 2.7: Linear Inequalities and
+      Absolute Value Inequalities'
     concepts:
     - slug: alg-absolute-value-definition
       name: Piecewise Definition of Absolute Value
@@ -874,7 +876,7 @@ domains:
         is given by d(a, b) = |a - b| = |b - a|.
       description: Allows geometric inequalities and intervals to be represented compactly
         using absolute value notation.
-      citation: OpenStax College Algebra 1e, Section 1.1
+      citation: OpenStax College Algebra 1e, Section 2.7
       prerequisites:
       - alg-absolute-value-definition
     - slug: alg-absolute-value-properties
@@ -1013,7 +1015,7 @@ domains:
           this distance to be strictly less than 7 gives |x + 4| < 7.
         difficulty: intermediate
         cognitive_level: application
-        citation: OpenStax College Algebra 1e, Section 1.1
+        citation: OpenStax College Algebra 1e, Section 2.7
         concept_slugs:
         - alg-distance-real-line
         metadata:
@@ -1221,10 +1223,10 @@ domains:
         interaction_type: single_choice
         response_spec:
           options:
-          - 3\log_2(x) + \frac{1}{2}\log_2(y) - 4\log_2(z)
-          - 3\log_2(x) + 2\log_2(y) - 4\log_2(z)
-          - \frac{3\log_2(x) \cdot \frac{1}{2}\log_2(y)}{4\log_2(z)}
-          - 3\log_2(x) - \frac{1}{2}\log_2(y) - 4\log_2(z)
+          - $3\log_2(x) + \frac{1}{2}\log_2(y) - 4\log_2(z)$
+          - $3\log_2(x) + 2\log_2(y) - 4\log_2(z)$
+          - $\frac{3\log_2(x) \cdot \frac{1}{2}\log_2(y)}{4\log_2(z)}$
+          - $3\log_2(x) - \frac{1}{2}\log_2(y) - 4\log_2(z)$
         scoring_spec:
           correct_index: 0
         explanation: 'Apply the quotient rule: log_2(x^3 sqrt(y)) - log_2(z^4). Next
@@ -1248,10 +1250,10 @@ domains:
         interaction_type: single_choice
         response_spec:
           options:
-          - \ln\left(\frac{x^2 \sqrt[3]{y}}{z}\right)
-          - \ln\left(\frac{x^2 z}{\sqrt[3]{y}}\right)
-          - \ln\left(\frac{2x z}{\frac{1}{3}y}\right)
-          - \ln\left(x^2 - \sqrt[3]{y} + z\right)
+          - $\ln\left(\frac{x^2 \sqrt[3]{y}}{z}\right)$
+          - $\ln\left(\frac{x^2 z}{\sqrt[3]{y}}\right)$
+          - $\ln\left(\frac{2x z}{\frac{1}{3}y}\right)$
+          - $\ln\left(x^2 - \sqrt[3]{y} + z\right)$
         scoring_spec:
           correct_index: 1
         explanation: 'First apply the power rule to move coefficients into exponents:
@@ -1314,10 +1316,10 @@ domains:
         question_text: According to the power property of logarithms, which expression
           is equivalent to $\log_b(x^5)$ for $x > 0$?
         options:
-        - (\log_b x)^5
-        - 5\log_b(x)
-        - \log_b(5x)
-        - \log_b(x) + 5
+        - $(\log_b x)^5$
+        - $5\log_b(x)$
+        - $\log_b(5x)$
+        - $\log_b(x) + 5$
         correct_answer: 1
         explanation: The power property of logarithms states that log_b(M^p) = p *
           log_b(M). Bringing the exponent to the front gives 5 log_b(x).
@@ -1355,8 +1357,9 @@ domains:
       notation.
     sort_order: 1
     importance: core
-    citation: 'OpenStax College Algebra 1e, Section 2.1: Linear Equations; Section
-      2.2: Linear Models; Section 2.7: Linear Inequalities'
+    citation: 'OpenStax College Algebra 1e, Section 2.2: Linear Equations in One Variable;
+      Section 2.3: Models and Applications; Section 2.7: Linear Inequalities and Absolute
+      Value Inequalities'
     concepts:
     - slug: alg-linear-equations
       name: Solving Linear Equations in One Variable
@@ -1364,7 +1367,7 @@ domains:
         = c using inverse operations.
       description: Clearing denominators with the LCD, expanding parentheses with
         the distributive property, collecting like terms, and isolating the variable.
-      citation: OpenStax College Algebra 1e, Section 2.1
+      citation: OpenStax College Algebra 1e, Section 2.2
     - slug: alg-linear-models
       name: Linear Applications and Rate Models
       short_definition: Translating verbal descriptions into linear equations y =
@@ -1372,7 +1375,7 @@ domains:
         value.
       description: Formulating models for cost, revenue, distance-rate-time, and mixture
         problems.
-      citation: OpenStax College Algebra 1e, Section 2.2
+      citation: OpenStax College Algebra 1e, Section 2.3
       prerequisites:
       - alg-linear-equations
     - slug: alg-linear-inequalities
@@ -1398,7 +1401,7 @@ domains:
       - alg-linear-equations
       - alg-linear-models
       - alg-linear-inequalities
-      citation: OpenStax College Algebra 1e, Sections 2.1, 2.2, & 2.7
+      citation: OpenStax College Algebra 1e, Sections 2.2, 2.3, & 2.7
       terms:
       - term: Linear Equation
         definition: An equation in which the highest power of the variable is 1, in
@@ -1488,10 +1491,10 @@ domains:
         interaction_type: single_choice
         response_spec:
           options:
-          - x = \frac{27}{4}
-          - x = \frac{29}{4}
-          - x = \frac{31}{4}
-          - x = \frac{35}{4}
+          - $x = \frac{27}{4}$
+          - $x = \frac{29}{4}$
+          - $x = \frac{31}{4}$
+          - $x = \frac{35}{4}$
         scoring_spec:
           correct_index: 3
         explanation: 'Multiply the entire equation by the LCD of 4 and 6, which is
@@ -1500,7 +1503,7 @@ domains:
           4x - 11 = 24. Add 11 to both sides: 4x = 35. Divide by 4: x = 35/4.'
         difficulty: intermediate
         cognitive_level: application
-        citation: OpenStax College Algebra 1e, Section 2.1
+        citation: OpenStax College Algebra 1e, Section 2.2
         concept_slugs:
         - alg-linear-equations
         metadata:
@@ -1555,7 +1558,7 @@ domains:
           miles without exceeding the budget.'
         difficulty: intermediate
         cognitive_level: application
-        citation: OpenStax College Algebra 1e, Section 2.2
+        citation: OpenStax College Algebra 1e, Section 2.3
         concept_slugs:
         - alg-linear-models
         - alg-linear-inequalities
@@ -1582,10 +1585,10 @@ domains:
         question_text: When solving the inequality $-3x \leq 12$, what is the correct
           resulting inequality?
         options:
-        - x \leq -4
-        - x \geq 4
-        - x \leq 4
-        - x \geq -4
+        - $x \leq -4$
+        - $x \geq 4$
+        - $x \leq 4$
+        - $x \geq -4$
         correct_answer: 3
         explanation: 'Dividing both sides of an inequality by a negative number reverses
           the inequality direction: -3x / (-3) >= 12 / (-3) => x >= -4.'
@@ -1617,7 +1620,8 @@ domains:
       Delta = b^2 - 4ac.
     sort_order: 2
     importance: core
-    citation: 'OpenStax College Algebra 1e, Section 2.5: Quadratic Equations'
+    citation: 'OpenStax College Algebra 1e, Section 2.5: Quadratic Equations; Section
+      5.1: Quadratic Functions'
     concepts:
     - slug: alg-quadratic-methods
       name: Solving Quadratic Equations
@@ -1641,7 +1645,7 @@ domains:
         t + h_0 and parabolic optimization.
       description: Solving for time of flight (roots), maximum height (vertex), and
         ground impact.
-      citation: OpenStax College Algebra 1e, Section 2.5
+      citation: OpenStax College Algebra 1e, Section 5.1
       prerequisites:
       - alg-quadratic-methods
     lessons:
@@ -1742,10 +1746,10 @@ domains:
         interaction_type: single_choice
         response_spec:
           options:
-          - x = -3 and x = \frac{1}{2}
-          - x = 3 and x = -\frac{1}{2}
-          - x = -3 and x = -\frac{1}{2}
-          - x = 3 and x = \frac{1}{2}
+          - $x = -3 and x = \frac{1}{2}$
+          - $x = 3 and x = -\frac{1}{2}$
+          - $x = -3 and x = -\frac{1}{2}$
+          - $x = 3 and x = \frac{1}{2}$
         scoring_spec:
           correct_index: 1
         explanation: 'Factor the quadratic trinomial using the ac method: a*c = 2*(-3)
@@ -1809,7 +1813,7 @@ domains:
           = 5 (landing). Thus, the rocket returns to the ground at t = 5 seconds.'
         difficulty: intermediate
         cognitive_level: application
-        citation: OpenStax College Algebra 1e, Section 2.5
+        citation: OpenStax College Algebra 1e, Section 5.1
         concept_slugs:
         - alg-quadratic-projectile-model
         metadata:
@@ -1871,7 +1875,8 @@ domains:
       domain restrictions.
     sort_order: 3
     importance: core
-    citation: 'OpenStax College Algebra 1e, Section 2.6: Other Types of Equations'
+    citation: 'OpenStax College Algebra 1e, Section 2.2: Linear Equations in One Variable;
+      Section 2.6: Other Types of Equations'
     concepts:
     - slug: alg-radical-equations
       name: Solving Radical Equations
@@ -1886,7 +1891,7 @@ domains:
         equations.
       description: Any candidate root that makes an original denominator zero is an
         extraneous solution and must be discarded.
-      citation: OpenStax College Algebra 1e, Section 2.6
+      citation: OpenStax College Algebra 1e, Section 2.2
       prerequisites:
       - alg-radical-equations
     - slug: alg-abs-equations
@@ -2035,7 +2040,7 @@ domains:
           Therefore, x = -1 is the unique valid real solution.'
         difficulty: intermediate
         cognitive_level: application
-        citation: OpenStax College Algebra 1e, Section 2.6
+        citation: OpenStax College Algebra 1e, Section 2.2
         concept_slugs:
         - alg-rational-equations
         metadata:
@@ -2124,8 +2129,9 @@ domains:
       systems by consistency and dependence, and solve non-linear systems.
     sort_order: 4
     importance: core
-    citation: 'OpenStax College Algebra 1e, Section 7.1: Systems of Linear Equations
-      (Two Variables); Section 7.3: Systems of Nonlinear Equations'
+    citation: 'OpenStax College Algebra 1e, Section 7.1: Systems of Linear Equations:
+      Two Variables; Section 7.3: Systems of Nonlinear Equations and Inequalities:
+      Two Variables'
     concepts:
     - slug: alg-linear-systems
       name: Linear Systems in Two Variables
@@ -2276,9 +2282,9 @@ domains:
         response_spec:
           options:
           - k = 16 only
-          - Any real number k \neq 16
+          - $Any real number k \neq 16$
           - k = -16 only
-          - Any real number k \neq 8
+          - $Any real number k \neq 8$
         scoring_spec:
           correct_index: 1
         explanation: 'Multiply the first equation by 2: 4x - 6y = 16. The second equation
@@ -2560,10 +2566,10 @@ domains:
         interaction_type: single_choice
         response_spec:
           options:
-          - \frac{200}{\ln 2}
-          - \frac{\ln 2}{0.035}
-          - \frac{0.035}{\ln 2}
-          - \frac{\ln 0.5}{-200}
+          - $\frac{200}{\ln 2}$
+          - $\frac{\ln 2}{0.035}$
+          - $\frac{0.035}{\ln 2}$
+          - $\frac{\ln 0.5}{-200}$
         scoring_spec:
           correct_index: 1
         explanation: 'Half-life occurs when the amount remaining is half the initial
@@ -2601,7 +2607,7 @@ domains:
         options:
         - A = P(1 + r)^t
         - A = P r t
-        - A = P \ln(rt)
+        - $A = P \ln(rt)$
         - A = P e^{rt}
         correct_answer: 3
         explanation: Continuous compound interest is modeled by A = P e^(rt), where
@@ -2765,10 +2771,10 @@ domains:
         interaction_type: single_choice
         response_spec:
           options:
-          - '[2, 5) \cup (5, \infty)'
-          - '[2, 5) \cup [5, \infty)'
-          - (2, 5) \cup (5, \infty)
-          - '[2, 5) \cup (5, 10]'
+          - $[2, 5) \cup (5, \infty)$
+          - $[2, 5) \cup [5, \infty)$
+          - $(2, 5) \cup (5, \infty)$
+          - $[2, 5) \cup (5, 10]$
         scoring_spec:
           correct_index: 0
         explanation: 'Two conditions must be met: (1) The radicand under the square
@@ -2818,10 +2824,10 @@ domains:
         interaction_type: single_choice
         response_spec:
           options:
-          - '[7, \infty)'
-          - '[3, \infty)'
-          - (-\infty, 7]
-          - (-\infty, 3]
+          - $[7, \infty)$
+          - $[3, \infty)$
+          - $(-\infty, 7]$
+          - $(-\infty, 3]$
         scoring_spec:
           correct_index: 2
         explanation: 'The function is in vertex form a(x - h)^2 + k with vertex (3,
@@ -2860,10 +2866,10 @@ domains:
         question_text: What is the domain of the function $f(x) = \sqrt{x - 9}$ in
           interval notation?
         options:
-        - (9, \infty)
-        - '[9, \infty)'
-        - (-\infty, 9]
-        - (-\infty, \infty)
+        - $(9, \infty)$
+        - $[9, \infty)$
+        - $(-\infty, 9]$
+        - $(-\infty, \infty)$
         correct_answer: 1
         explanation: 'The radicand of a square root must be non-negative: x - 9 >=
           0 => x >= 9. In interval notation, this is [9, infinity).'
@@ -3040,10 +3046,10 @@ domains:
         interaction_type: single_choice
         response_spec:
           options:
-          - \frac{1}{x^2 - 1}
-          - \frac{1}{x^2 + 1} - 2
-          - \frac{x^2 + 1}{x - 2}
-          - \frac{1}{(x - 2)^2 + 1}
+          - $\frac{1}{x^2 - 1}$
+          - $\frac{1}{x^2 + 1} - 2$
+          - $\frac{x^2 + 1}{x - 2}$
+          - $\frac{1}{(x - 2)^2 + 1}$
         scoring_spec:
           correct_index: 0
         explanation: 'By definition, (g o f)(x) = g(f(x)). Substitute f(x) into g:
@@ -3065,10 +3071,10 @@ domains:
         interaction_type: single_choice
         response_spec:
           options:
-          - '[0, \infty)'
-          - '[3, \infty)'
-          - (-\infty, 3]
-          - (3, \infty)
+          - $[0, \infty)$
+          - $[3, \infty)$
+          - $(-\infty, 3]$
+          - $(3, \infty)$
         scoring_spec:
           correct_index: 1
         explanation: 'For (f o g)(x) = f(g(x)) = sqrt(2x - 6), two conditions must
@@ -3136,8 +3142,9 @@ domains:
       symmetry, and identify local extrema and intervals of increase and decrease.
     sort_order: 3
     importance: core
-    citation: 'OpenStax College Algebra 1e, Section 3.3: Rates of Change and Behavior
-      of Graphs'
+    citation: 'OpenStax College Algebra 1e, Section 2.1: The Rectangular Coordinate
+      Systems and Graphs; Section 3.3: Rates of Change and Behavior of Graphs; Section
+      3.5: Transformation of Functions'
     concepts:
     - slug: alg-function-intercepts
       name: Intercepts of Functions
@@ -3145,14 +3152,14 @@ domains:
         f(x) = 0.
       description: The y-intercept is where graph crosses the y-axis (at most one
         for functions); x-intercepts are real zeros of the function.
-      citation: OpenStax College Algebra 1e, Section 3.3
+      citation: OpenStax College Algebra 1e, Section 2.1
     - slug: alg-function-symmetry
       name: Even and Odd Function Symmetry
       short_definition: Even functions f(-x) = f(x) have y-axis symmetry; odd functions
         f(-x) = -f(x) have origin symmetry.
       description: Tested algebraically by replacing x with -x and simplifying. Most
         functions are neither even nor odd.
-      citation: OpenStax College Algebra 1e, Section 3.3
+      citation: OpenStax College Algebra 1e, Section 3.5
       prerequisites:
       - alg-function-intercepts
     - slug: alg-extrema-intervals
@@ -3274,7 +3281,7 @@ domains:
           the y-axis).'
         difficulty: beginner
         cognitive_level: comprehension
-        citation: OpenStax College Algebra 1e, Section 3.3
+        citation: OpenStax College Algebra 1e, Section 3.5
         concept_slugs:
         - alg-function-symmetry
         metadata:
@@ -3300,7 +3307,7 @@ domains:
           y-intercept, set x = 0: f(0) = 0^2 - 6(0) + 8 = 8, yielding point (0, 8).'
         difficulty: beginner
         cognitive_level: application
-        citation: OpenStax College Algebra 1e, Section 3.3
+        citation: OpenStax College Algebra 1e, Section 2.1
         concept_slugs:
         - alg-function-intercepts
         metadata:
@@ -3326,7 +3333,7 @@ domains:
           (symmetric about the origin).
         difficulty: intermediate
         cognitive_level: comprehension
-        citation: OpenStax College Algebra 1e, Section 3.3
+        citation: OpenStax College Algebra 1e, Section 3.5
         concept_slugs:
         - alg-function-symmetry
         metadata:
@@ -3564,10 +3571,10 @@ domains:
         interaction_type: single_choice
         response_spec:
           options:
-          - g(x) = -\sqrt{x} + 2
-          - g(x) = \sqrt{x + 2}
-          - g(x) = -\sqrt{x - 2}
-          - g(x) = \sqrt{-x} + 2
+          - $g(x) = -\sqrt{x} + 2$
+          - $g(x) = \sqrt{x + 2}$
+          - $g(x) = -\sqrt{x - 2}$
+          - $g(x) = \sqrt{-x} + 2$
         scoring_spec:
           correct_index: 3
         explanation: 'Reflecting across the y-axis requires replacing x with -x inside
@@ -3757,10 +3764,10 @@ domains:
         interaction_type: single_choice
         response_spec:
           options:
-          - f^{-1}(x) = \frac{3x + 1}{x - 2}
-          - f^{-1}(x) = \frac{x - 3}{2x + 1}
-          - f^{-1}(x) = \frac{3x - 1}{x + 2}
-          - f^{-1}(x) = \frac{2x - 1}{x + 3}
+          - $f^{-1}(x) = \frac{3x + 1}{x - 2}$
+          - $f^{-1}(x) = \frac{x - 3}{2x + 1}$
+          - $f^{-1}(x) = \frac{3x - 1}{x + 2}$
+          - $f^{-1}(x) = \frac{2x - 1}{x + 3}$
         scoring_spec:
           correct_index: 0
         explanation: 'Write as y = (2x + 1)/(x - 3). Interchange x and y: x = (2y
@@ -3785,9 +3792,9 @@ domains:
         interaction_type: single_choice
         response_spec:
           options:
-          - x \geq -2
-          - x \geq 2
-          - x \leq 3
+          - $x \geq -2$
+          - $x \geq 2$
+          - $x \leq 3$
           - All real numbers x
         scoring_spec:
           correct_index: 1
@@ -3813,9 +3820,9 @@ domains:
         interaction_type: single_choice
         response_spec:
           options:
-          - f^{-1}(x) = \frac{1}{4x - 7}
-          - f^{-1}(x) = \frac{x - 7}{4}
-          - f^{-1}(x) = \frac{x + 7}{4}
+          - $f^{-1}(x) = \frac{1}{4x - 7}$
+          - $f^{-1}(x) = \frac{x - 7}{4}$
+          - $f^{-1}(x) = \frac{x + 7}{4}$
           - f^{-1}(x) = 4x + 7
         scoring_spec:
           correct_index: 2
@@ -3852,9 +3859,9 @@ domains:
         question_text: If $f(2) = 9$ for a one-to-one function $f$, what is the value
           of $f^{-1}(9)$?
         options:
-        - \frac{1}{9}
+        - $\frac{1}{9}$
         - '2'
-        - \frac{1}{2}
+        - $\frac{1}{2}$
         - '-9'
         correct_answer: 1
         explanation: By definition of an inverse function, if f(a) = b, then f^(-1)(b)
@@ -4087,7 +4094,7 @@ domains:
           = \frac{4x - 1}{2x + 5}$?
         options:
         - y = 0
-        - y = -\frac{5}{2}
+        - $y = -\frac{5}{2}$
         - y = 2
         - y = 4
         correct_answer: 2
@@ -4147,7 +4154,8 @@ domains:
       distributive, and identity properties, and find prime factorizations.
     sort_order: 1
     importance: core
-    citation: 'OpenStax College Algebra 1e, Section 1.1: Real Numbers: Algebra Essentials'
+    citation: 'OpenStax College Algebra 1e, Section 1.1: Real Numbers: Algebra Essentials
+      (divisibility and primes are original LearningApp content)'
     concepts:
     - slug: alg-real-number-subsets
       name: Subsets of the Real Numbers
@@ -4171,7 +4179,8 @@ domains:
       short_definition: The Fundamental Theorem of Arithmetic and prime factor decomposition.
       description: Every integer greater than 1 factors uniquely into a product of
         prime powers, used to find GCF and LCM.
-      citation: OpenStax College Algebra 1e, Section 1.1
+      citation: Original LearningApp content; divisibility and primes are not covered
+        in OpenStax College Algebra 1e
       prerequisites:
       - alg-real-number-subsets
     lessons:
@@ -4273,10 +4282,10 @@ domains:
         interaction_type: single_choice
         response_spec:
           options:
-          - \frac{\sqrt{49}}{7}
-          - 0.121212\dots
-          - \sqrt{50}
-          - -\frac{3}{8}
+          - $\frac{\sqrt{49}}{7}$
+          - $0.121212\dots$
+          - $\sqrt{50}$
+          - $-\frac{3}{8}$
         scoring_spec:
           correct_index: 2
         explanation: 'Evaluate each number: (A) sqrt(49)/7 = 7/7 = 1 (rational); (B)
@@ -4324,17 +4333,18 @@ domains:
         interaction_type: single_choice
         response_spec:
           options:
-          - 2^3 \times 3^2 \times 5
-          - 2^2 \times 3^3 \times 5
-          - 2^4 \times 3 \times 5
-          - 2^3 \times 3 \times 15
+          - $2^3 \times 3^2 \times 5$
+          - $2^2 \times 3^3 \times 5$
+          - $2^4 \times 3 \times 5$
+          - $2^3 \times 3 \times 15$
         scoring_spec:
           correct_index: 0
         explanation: 'Decompose 360 into prime factors: 360 = 10 * 36 = (2 * 5) *
           (4 * 9) = 2 * 5 * 2^2 * 3^2 = 2^3 * 3^2 * 5. All bases (2, 3, 5) are prime.'
         difficulty: beginner
         cognitive_level: comprehension
-        citation: OpenStax College Algebra 1e, Section 1.1
+        citation: Original LearningApp content; divisibility and primes are not covered
+          in OpenStax College Algebra 1e
         concept_slugs:
         - alg-divisibility-primes
         metadata:
@@ -4361,9 +4371,9 @@ domains:
       - id: alg-fmt-additive-inverse
         question_text: What is the additive inverse of $-8$ in the real number system?
         options:
-        - -\frac{1}{8}
+        - $-\frac{1}{8}$
         - '8'
-        - \frac{1}{8}
+        - $\frac{1}{8}$
         - '0'
         correct_answer: 1
         explanation: The additive inverse of a real number a is -a such that a + (-a)
@@ -4567,10 +4577,10 @@ domains:
         interaction_type: single_choice
         response_spec:
           options:
-          - \frac{7}{5} + \frac{17}{5}i
-          - \frac{5}{13} + \frac{15}{13}i
-          - \frac{13}{13} + \frac{17}{13}i
-          - \frac{7}{13} + \frac{17}{13}i
+          - $\frac{7}{5} + \frac{17}{5}i$
+          - $\frac{5}{13} + \frac{15}{13}i$
+          - $\frac{13}{13} + \frac{17}{13}i$
+          - $\frac{7}{13} + \frac{17}{13}i$
         scoring_spec:
           correct_index: 3
         explanation: 'Multiply numerator and denominator by the conjugate of the denominator,
@@ -4638,8 +4648,9 @@ domains:
       geometric series.
     sort_order: 3
     importance: core
-    citation: 'OpenStax College Algebra 1e, Section 9.1: Sequences and Notations;
-      Section 9.2: Arithmetic Sequences; Section 9.3: Geometric Sequences'
+    citation: 'OpenStax College Algebra 1e, Section 9.1: Sequences and Their Notations;
+      Section 9.2: Arithmetic Sequences; Section 9.3: Geometric Sequences; Section
+      9.4: Series and Their Notations'
     concepts:
     - slug: alg-arithmetic-sequences
       name: Arithmetic Sequences and Series
@@ -4662,7 +4673,7 @@ domains:
       short_definition: An infinite geometric series converges if and only if |r|
         < 1, with sum S_inf = a1 / (1 - r).
       description: If |r| >= 1, the infinite series diverges and has no finite sum.
-      citation: OpenStax College Algebra 1e, Section 9.3
+      citation: OpenStax College Algebra 1e, Section 9.4
       prerequisites:
       - alg-geometric-sequences
     lessons:
@@ -4829,7 +4840,7 @@ domains:
           = 18.'
         difficulty: intermediate
         cognitive_level: comprehension
-        citation: OpenStax College Algebra 1e, Section 9.3
+        citation: OpenStax College Algebra 1e, Section 9.4
         concept_slugs:
         - alg-infinite-geometric-series
         metadata:
@@ -4888,7 +4899,7 @@ domains:
     sort_order: 4
     importance: core
     citation: 'OpenStax College Algebra 1e, Section 9.5: Counting Principles; Section
-      9.6: The Binomial Theorem'
+      9.6: Binomial Theorem'
     concepts:
     - slug: alg-factorials-permutations
       name: Factorials and Permutations

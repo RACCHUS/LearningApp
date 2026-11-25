@@ -65,7 +65,7 @@ PRACTICE = REPO / "content" / "practice"
 # Bump when importer output changes for the same book version, so the
 # corrected lessons publish as a new target version (published versions are
 # immutable). Publish it with retire_previous to replace the old one.
-IMPORT_REVISION = 8
+IMPORT_REVISION = 9
 
 # Topic tags per section, so "Learning help" offers the Bridges for that
 # topic (content/bridges/*.bridge.json `applies_to_tags`). A section that
@@ -268,6 +268,19 @@ def _md_text(text: str) -> str:
     return re.sub(r"([*_`])", r"\\\1", re.sub(r"\s+", " ", text))
 
 
+# Notation profile (plan v1.2 §8.9, revision 9): a text superscript or
+# subscript made only of digits and signs becomes Unicode (ft², 10⁵, H₂O)
+# instead of plain "ft^2", which the app would show with a caret.
+SUPERSCRIPT = dict(zip("0123456789+-−=()", "⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻⁻⁼⁽⁾"))
+SUBSCRIPT = dict(zip("0123456789+-−=()", "₀₁₂₃₄₅₆₇₈₉₊₋₋₌₍₎"))
+
+
+def script(text: str, table: dict[str, str], marker: str) -> str:
+    if text and all(ch in table for ch in text):
+        return "".join(table[ch] for ch in text)
+    return marker + text
+
+
 def inline(e: ET.Element, warnings: list[str]) -> str:
     """Inline content of an element as markdown (text, math, emphasis)."""
     out = [_md_text(e.text or "")]
@@ -287,9 +300,9 @@ def inline(e: ET.Element, warnings: list[str]) -> str:
             inner = inline(c, warnings).strip()
             out.append(f"**{inner}**" if inner else "")
         elif n == "sup":
-            out.append("^" + inline(c, warnings).strip())
+            out.append(script(inline(c, warnings).strip(), SUPERSCRIPT, "^"))
         elif n == "sub":
-            out.append("_" + inline(c, warnings).strip())
+            out.append(script(inline(c, warnings).strip(), SUBSCRIPT, "_"))
         elif n == "br":
             out.append("  \n")
         elif n in ("img", "figure"):

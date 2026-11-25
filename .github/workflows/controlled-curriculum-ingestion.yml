@@ -153,6 +153,12 @@ jobs:
           MANIFEST: ${{ inputs.manifest }}
         run: python3 tool/ci/verify_content_sources.py --publish-check "$MANIFEST"
 
+      - name: Refuse to publish a manifest whose source mapping is unreviewed
+        if: ${{ inputs.stop_after == 'published' }}
+        env:
+          MANIFEST: ${{ inputs.manifest }}
+        run: python3 tool/verify_concept_mappings.py --publish-check "$MANIFEST"
+
       - name: Dry run (validation only, no writes)
         env:
           MANIFEST: ${{ inputs.manifest }}

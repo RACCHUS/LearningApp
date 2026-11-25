@@ -18,7 +18,7 @@ source_releases:
 target:
   slug: open-openstax-prealgebra-1e
   title: Prealgebra (open textbook)
-  version_code: OPENSTAX-EB2E29D-R8
+  version_code: OPENSTAX-EB2E29D-R9
   version_title: Prealgebra by OpenStax, CC BY 4.0
   version_description: Open textbook sections imported as LearningApp lessons.
   volatility_class: V0
