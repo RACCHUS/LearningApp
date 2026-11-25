@@ -48,6 +48,8 @@ abstract final class SiteFeatureKeys {
       'learning.readiness_coverage_gate';
   static const String learningObjectiveReadinessView =
       'learning.objective_readiness_view';
+  static const String learningReadinessProjection =
+      'learning.readiness_projection';
 
   static const Set<String> all = {
     telFast,
@@ -89,5 +91,6 @@ abstract final class SiteFeatureKeys {
     contentFeedbackChips,
     learningReadinessCoverageGate,
     learningObjectiveReadinessView,
+    learningReadinessProjection,
   };
 }

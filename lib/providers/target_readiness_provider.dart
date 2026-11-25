@@ -5,8 +5,10 @@ import '../models/objective_readiness.dart';
 import '../models/readiness_coverage.dart';
 import '../models/user_concept_state.dart';
 import '../services/concept_evidence_service.dart';
+import '../services/planning/readiness_projection.dart';
 import '../services/governance/site_feature_service.dart';
 import '../services/target_readiness_service.dart';
+import 'daily_goal_provider.dart';
 import 'learning_context_provider.dart';
 import 'site_feature_provider.dart';
 
@@ -97,6 +99,74 @@ final objectiveReadinessProvider =
   } catch (_) {
     return null;
   }
+});
+
+/// Reads per-objective study-time estimates (plan v1.2 §8.5 item 4, §8.7).
+abstract class StudyEstimatesApi {
+  Future<Map<String, dynamic>?> fetch(String targetVersionId);
+}
+
+class SupabaseStudyEstimatesApi implements StudyEstimatesApi {
+  @override
+  Future<Map<String, dynamic>?> fetch(String targetVersionId) async {
+    final res = await Supabase.instance.client.rpc(
+      'get_target_study_estimates',
+      params: {'p_target_version_id': targetVersionId},
+    );
+    return res == null ? null : Map<String, dynamic>.from(res as Map);
+  }
+}
+
+final studyEstimatesApiProvider = Provider<StudyEstimatesApi>(
+  (ref) => SupabaseStudyEstimatesApi(),
+);
+
+/// Switch `learning.readiness_projection` (default OFF).
+final readinessProjectionEnabledProvider = Provider<bool>((ref) {
+  return isSiteFeatureEnabled(
+    ref.watch(siteFeatureSnapshotProvider).valueOrNull,
+    SiteFeatureKeys.learningReadinessProjection,
+    runtimeReady: SiteFeatureRuntime.snapshotEnabled,
+  );
+});
+
+/// Projected finish for a target version. Null while the switch is off, when
+/// readiness by objective or the estimates can't be read, or when nothing in
+/// the target has an estimate: the section is then simply not shown.
+final readinessProjectionProvider =
+    FutureProvider.family<ReadinessProjection?, String>((ref, targetVersionId) async {
+  if (!ref.watch(readinessProjectionEnabledProvider) || targetVersionId.isEmpty) {
+    return null;
+  }
+  // Every dependency is watched before the first await, so a change to any
+  // of them (a new exam date, daily goal or status) recomputes the projection.
+  final viewFuture = ref.watch(objectiveReadinessProvider(targetVersionId).future);
+  final goalFuture = ref.watch(dailyGoalMinutesProvider.future);
+  final api = ref.watch(studyEstimatesApiProvider);
+  final context = ref.watch(activeLearningContextProvider);
+  DateTime? examDate;
+  if (context != null && context.targetVersionId == targetVersionId) {
+    final raw = context.scopeConfig['examDate'] ?? context.scopeConfig['targetDate'];
+    if (raw is String && raw.isNotEmpty) examDate = DateTime.tryParse(raw);
+  }
+  final view = await viewFuture;
+  if (view == null) return null;
+  Map<String, StudyEstimate>? estimates;
+  try {
+    final json = await api.fetch(targetVersionId);
+    estimates = json == null ? null : parseStudyEstimates(json);
+  } catch (_) {
+    return null;
+  }
+  if (estimates == null) return null;
+  final dailyGoal = await goalFuture;
+  return projectReadiness(
+    view: view,
+    estimates: estimates,
+    dailyGoalMinutes: dailyGoal,
+    now: DateTime.now(),
+    examDate: examDate,
+  );
 });
 
 final conceptEvidenceServiceProvider = Provider<ConceptEvidenceService>((ref) {

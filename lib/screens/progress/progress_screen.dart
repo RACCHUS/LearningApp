@@ -22,6 +22,7 @@ import 'package:learning_pwa/widgets/progress/reference_context_progress_card.da
 import 'package:learning_pwa/widgets/progress/reference_practice_account_export_card.dart';
 import 'package:learning_pwa/widgets/progress/combined_exam_practice_portability_card.dart';
 import 'package:learning_pwa/widgets/progress/daily_plan_card.dart';
+import 'package:learning_pwa/widgets/progress/readiness_projection_card.dart';
 import 'package:learning_pwa/widgets/progress/reference_practice_erasure_card.dart';
 import 'package:learning_pwa/widgets/progress/reference_practice_batch_erasure_card.dart';
 import 'package:learning_pwa/models/user_concept_state.dart' as ucs;
@@ -265,6 +266,8 @@ class _CurrentContextSection extends ConsumerWidget {
         const SizedBox(height: DesignTokens.space3),
         DailyPlanCard(context: activeContext),
         const SizedBox(height: DesignTokens.space3),
+        if (activeContext.targetVersionId != null && activeContext.targetVersionId!.isNotEmpty)
+          ReadinessProjectionCard(targetVersionId: activeContext.targetVersionId!),
         if (activeContext.targetVersionId != null &&
             activeContext.targetVersionId!.isNotEmpty) ...[
           TargetReadinessCard(targetVersionId: activeContext.targetVersionId!),

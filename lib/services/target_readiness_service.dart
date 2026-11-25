@@ -23,6 +23,18 @@ class TargetReadinessService {
   })  : _supabase = supabase ?? Supabase.instance.client,
         _evidenceService = evidenceService ?? ConceptEvidenceService(supabase: supabase);
 
+  /// The calibrated RPC is for signed-in learners only, so a guest (learner id
+  /// 'local-user', no session) goes straight to the local calculation instead
+  /// of a call that is refused with 401. If the session can't be read, keep
+  /// the previous behaviour and try the RPC.
+  bool _hasSession() {
+    try {
+      return _supabase.auth.currentSession != null;
+    } catch (_) {
+      return true;
+    }
+  }
+
   /// Evaluates FSRS-calibrated readiness at an optional target exam date via server RPC.
   Future<CalibratedReadiness?> evaluateCalibratedReadiness({
     required String targetVersionId,
@@ -67,7 +79,7 @@ class TargetReadinessService {
 
     // When evaluating whole-target readiness for an authenticated user, prefer server-side
     // FSRS-calibrated RPC to prevent 1,000-row truncation (FIX-9).
-    if (userId.isNotEmpty && examPartKey == null) {
+    if (userId.isNotEmpty && examPartKey == null && _hasSession()) {
       final calibrated = await evaluateCalibratedReadiness(
         targetVersionId: targetVersionId,
         examDate: examDate,
