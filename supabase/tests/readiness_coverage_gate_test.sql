@@ -2,7 +2,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(16);
+select plan(18);
 
 -- All fixtures are fictional, transaction-local, and rolled back.
 insert into auth.users (id, email) values
@@ -92,6 +92,15 @@ begin
     public.get_target_readiness_coverage('d1400000-0000-4000-8000-000000000012'));
   reset role;
 end $$;
+
+-- 0. Activated by migration 20261124050000, with an audit row.
+select is((select enabled and release_ready from private.site_feature_controls
+           where feature_key = 'learning.readiness_coverage_gate'),
+  true, 'the activation migration switched the gate on');
+select ok(exists(select 1 from private.site_feature_change_audit
+                 where feature_key = 'learning.readiness_coverage_gate' and next_enabled
+                   and reason like '%20261124050000%'),
+  'the activation is recorded in the feature audit');
 
 -- 1. Switch off: nothing is computed.
 update private.site_feature_controls set enabled = false, release_ready = false
