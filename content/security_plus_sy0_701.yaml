@@ -13,6 +13,7 @@ source_release:
   license_name: "Proprietary Examination Blueprint"
   rights_note: "Referenced under fair use for educational curriculum architecture and objective alignment. CompTIA is a registered trademark of CompTIA Properties, LLC."
   metadata:
+    use: "reference"  # declared operation (plan v1.2 §6; slice 5)
     checksum_status: "unverified_remote_document"
     checksum_verification_note: "Online exam objectives page. No archived artifact is pinned; the earlier sha256 value was a placeholder and was removed (ingestion plan D-6, 2026-11-24)."
     total_domains: 5

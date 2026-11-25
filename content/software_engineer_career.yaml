@@ -14,6 +14,7 @@ source_releases:
     license_name: "Proprietary Educational Reference"
     rights_note: "Referenced for curriculum taxonomy and occupational competence structure under educational fair use."
     metadata:
+      use: "reference"  # declared operation (plan v1.2 §6; slice 5)
       checksum_status: "unverified_remote_document"
       checksum_verification_note: "Online guide page. No archived artifact is pinned; the earlier sha256 value was a placeholder and was removed (ingestion plan D-6, 2026-11-24)."
       standard: "ISO/IEC TR 19759:2015"
@@ -27,6 +28,7 @@ source_releases:
     license_name: "Public Domain"
     rights_note: "U.S. Government work under 17 U.S.C. 105; unrestricted public domain."
     metadata:
+      use: "reference"  # declared operation (plan v1.2 §6; slice 5)
       checksum_status: "unverified_remote_document"
       checksum_verification_note: "Online classification page. No archived artifact is pinned; the earlier sha256 value was a placeholder and was removed (ingestion plan D-6, 2026-11-24)."
       soc_code: "15-1252"

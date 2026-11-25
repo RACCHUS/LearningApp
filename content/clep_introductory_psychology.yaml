@@ -9,6 +9,7 @@ source_releases:
   license_name: Proprietary Examination Blueprint
   rights_note: Referenced under fair use for educational curriculum architecture and objective alignment. CLEP and College Board are registered trademarks of the College Board.
   metadata:
+    use: reference
     role: blueprint_authority
     bank: simulation_exam
     checksum_status: unverified_remote_document
@@ -32,7 +33,7 @@ source_releases:
   retrieved_at: '2026-11-20T00:00:00Z'
   license: Creative Commons Attribution 4.0 International (CC BY 4.0)
   license_name: CC BY 4.0
-  rights_note: Psychology (1st edition) by OpenStax, Rice University; credit authors as listed on the book's preface page. Instructional reference for concepts and section alignment. Re-pointed from Psychology 2e (CC BY-NC-SA 4.0) to the 1st edition by owner decision D-5 on 2026-11-24. Section citations keep their numbers; each cited 1e section was checked against its lesson topic, but lesson text was not re-verified line by line against 1e.
+  rights_note: 'Senior Contributing Authors: Rose M. Spielman (Content Lead), Kathryn Dumper, William Jenkins, Arlene Lacombe, Marilyn Lovett, Marion Perlmutter (OpenStax, Rice University; from the 1st-edition preface). Instructional reference for concepts and section alignment. Re-pointed from Psychology 2e (CC BY-NC-SA 4.0) to the 1st edition by owner decision D-5 on 2026-11-24. Section citations keep their numbers; each cited 1e section was checked against its lesson topic, but lesson text was not re-verified line by line against 1e.'
   metadata:
     role: instructional_reference
     edition: 1st Edition

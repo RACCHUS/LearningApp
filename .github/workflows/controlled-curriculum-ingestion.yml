@@ -147,6 +147,12 @@ jobs:
       - name: Check source licenses and approvals
         run: python3 tool/ci/verify_content_sources.py
 
+      - name: Refuse to publish a manifest with an open rights question
+        if: ${{ inputs.stop_after == 'published' }}
+        env:
+          MANIFEST: ${{ inputs.manifest }}
+        run: python3 tool/ci/verify_content_sources.py --publish-check "$MANIFEST"
+
       - name: Dry run (validation only, no writes)
         env:
           MANIFEST: ${{ inputs.manifest }}
