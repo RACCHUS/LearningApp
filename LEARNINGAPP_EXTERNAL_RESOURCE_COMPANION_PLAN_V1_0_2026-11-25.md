@@ -329,7 +329,7 @@ Three resource types, chosen to stress different parts of the design. All on goa
 
 | Pilot | Goal | Resource type | Tests |
 |---|---|---|---|
-| P1 | CLEP College Algebra | **Selected in EX-0:** Modern States "College Algebra" (`data/external_resources/modern-states-college-algebra.yaml`): free with an account, aligned to the same exam, and its voucher covers the exam fee. Link-only; record and map are not yet reviewed | Map quality, best free route, bookend and split-view modes |
+| P1 | CLEP College Algebra | **Selected in EX-0:** Modern States "College Algebra" (`data/external_resources/modern-states-college-algebra.yaml`): free with an account, aligned to the same exam, and its voucher covers the exam fee. Link-only; record and map are not yet reviewed. **Finding 2026-11-25 (start of EX-5):** the publisher's site refuses automated reading (HTTP 403 on the course page and the terms page), and that refusal is respected, not worked around. The module list needed for an objective map could therefore not be read. The record stays link-only, unreviewed and without a map, so it is not shown as a recommendation. A map needs the outline supplied by a person (the owner pastes the module list from a normal browser), or a different pilot resource whose outline is published in a form that may be read | Map quality, best free route, bookend and split-view modes |
 | P2 | Excel Fundamentals | A paid course the learner brings (no catalog entry, no embed) | Rungs 1–3, bookend and split-view modes, cost honesty |
 | P3 | Prealgebra | A printed or PDF textbook the learner already owns | A resource with no link at all; outline paste; phone bookend mode |
 
