@@ -202,3 +202,23 @@ To avoid conflating Monte Carlo simulation studies, adaptive Elo rating research
    - **Classification**: **Technical Implementation Reference** (documents the FSRS-6 memory scheduling state machine and parameter formulas used in `scheduler_version = 'v2_fsrs6'`; not cited as an empirical educational-outcome study).
    - **Effect Size ($d$/$g$), 95% CI & Heterogeneity ($I^2$)**: *Not applicable* (non-empirical software library and algorithm specification).
    - **Boundary Rule**: FSRS-6 estimates memory recall probability $R(t)$ for an individual review card based on card recall ratings (`Again`, `Hard`, `Good`, `Easy`); it does not measure multi-facet concept mastery or exam readiness (`06_MEASUREMENT_AND_SCHEDULING.md`).
+
+---
+
+## 7. Completion of Open Online Courses (External Resources)
+
+### ER-11: Completion Rates of Massive Open Online Courses (Descriptive)
+- **Citation**: Jordan, K. (2015). Massive open online course completion rates revisited: Assessment, length and attrition. *The International Review of Research in Open and Distributed Learning*, 16(3). `https://doi.org/10.19173/irrodl.v16i3.2112` (published 2015-06-19; page range not extracted).
+- **Evidence Grade**: **Grade C** (descriptive enrolment data, not an intervention study; `Implementation Hypothesis` for any claim that LearningApp's structure raises completion or readiness).
+- **Methodology**: Enrolment and completion data collected for **221 MOOCs**, with a multiple regression of factors that affect completion. Extends Jordan (2014).
+- **Measured Outcome**: Completion rate, defined as the percentage of enrolled students who completed the course: **median 12.6%, range 0.7% to 52.1%**. Completion varied significantly with course length (longer courses lower), start date (more recent courses higher) and assessment type (auto-graded-only courses higher). In a sub-sample with activity data, the first and second weeks were critical for engagement, after which the proportions of active students and of those submitting assessments levelled out with less than 3% difference between them.
+- **Effect Size ($d$/$g$), 95% CI & Heterogeneity ($I^2$)**: *Not applicable* (descriptive). **Regression coefficients, $R^2$ and $p$ values were not extracted**: only the abstract was read on 2026-11-25 (the full text was not machine-readable). Read the full text before citing any of them.
+- **Limitations**:
+  1. **Completion is not learning or readiness.** A learner can benefit without finishing, and can finish without being ready for an exam.
+  2. **Population boundary**: open-enrolment MOOCs from 2011 to 2015 on the large providers. It does not describe paid courses, video playlists, textbooks or today's course formats.
+  3. **Sub-sample size and sampling method were not extracted.**
+- **Applicability**: Companion to external resources (`LEARNINGAPP_EXTERNAL_RESOURCE_COMPANION_PLAN_V1_0_2026-11-25.md` §4): motivates placing an outside course inside a goal plan with early checkpoints. It supports no claim about LearningApp's effect.
+- **Recommended Implementation**: Put the first independent check within the first sections of an outside resource, and report readiness, not completion, as the outcome.
+- **Test Plan**: Companion plan §10 (descriptive only, consented, small groups withheld).
+
+**Not registered (2026-11-25).** Interpolated testing during video lectures (Szpunar, Khan & Schacter, 2013; Welhaf et al., 2022) is relevant to section-end checks, but neither primary source could be read (both hosts refused automated access), so no entry is made. Until they are read and registered, section-end checks in the companion rest on `ER-01` (retrieval practice) and the optional pre-study diagnostic on `ER-10` (no general prequestion spillover; diagnostic use is a separate measurement question).

@@ -1,0 +1,40 @@
+# Catalog resource (companion plan v1.0 §3.3). Link-only: this record grants
+# no reuse and is not a recommendation until its review is approved and a
+# map exists. Validate: python tool/verify_external_resources.py
+id: modern-states-college-algebra
+kind: course
+publisher: Modern States Education Alliance
+title: College Algebra
+canonical_url: https://modernstates.org/course/college_algebra/
+locale: en-US
+edition_or_published: null
+access: free_with_login
+price: null
+rights_posture: link_only
+embed:
+  allowed: false
+  reason: The course runs on the publisher's own course site behind an account. Its terms of service were not found on 2026-11-25, so nothing beyond a link is assumed.
+has_practice: null
+captions: null
+transcript: null
+stated_length_hours: null
+targets:
+- clep-college-algebra
+metadata_checked_at: '2026-11-25'
+facts:
+- claim: Free, self-paced course with no prerequisites, aligned to the CLEP College Algebra exam.
+  source_url: https://modernstates.org/course/college_algebra/
+- claim: Completing a course makes the learner eligible for a voucher that covers the CLEP exam fee. Vouchers are single-use and tied to the learner and the exam.
+  source_url: https://modernstates.org/faq/
+- claim: An account is needed, and learners must be at least 13 to create one.
+  source_url: https://modernstates.org/faq/
+- claim: A final exam score of 75% or higher is needed to request a voucher.
+  source_url: https://helpdesk.modernstates.org/support/solutions/articles/151000193384-glossary-of-key-terms
+unknown:
+- Terms of service and content license (not found; link-only until read).
+- Whether sections have practice questions, captions or transcripts.
+- Total length, and the module list needed for an objective map.
+authored_by: ai-drafted-by-claude
+review:
+  status: pending
+selection_note: 'Pilot P1 (EX-0, 2026-11-25). Chosen over other free candidates because it is aligned to the same exam blueprint as the target and its voucher removes the exam fee, which is a direct learner benefit. Facts were read from search results of the cited pages, not from a full read of each page; EX-5 re-reads them when the map is written.'

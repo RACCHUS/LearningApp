@@ -49,7 +49,7 @@ Earlier UI research (`docs/design/LEARNING_UI_RESEARCH.md`) synthesized useful g
 
 | File | Responsibility |
 |---|---|
-| **[`01_EVIDENCE_REGISTER.md`](01_EVIDENCE_REGISTER.md)** | Research and technical evidence register (`ER-01`–`ER-10`): peer-reviewed studies, research synthesis reports, explicit nonsignificant/negative moderator findings & statistical-power cautions, Monte Carlo simulation evidence (`Grade C`), and technical implementation references |
+| **[`01_EVIDENCE_REGISTER.md`](01_EVIDENCE_REGISTER.md)** | Research and technical evidence register (`ER-01`–`ER-11`): peer-reviewed studies, research synthesis reports, explicit nonsignificant/negative moderator findings & statistical-power cautions, Monte Carlo simulation evidence (`Grade C`), and technical implementation references |
 | **[`02_LEARNING_TASK_TAXONOMY.md`](02_LEARNING_TASK_TAXONOMY.md)** | Multidimensional `LearningTaskProfile` specification replacing mutually exclusive modalities |
 | **[`03_INSTRUCTIONAL_STRATEGIES.md`](03_INSTRUCTIONAL_STRATEGIES.md)** | Retrieval practice, spacing, interleaving, worked examples, feedback timing, and `FIX-1` option-shuffling rules on `main` (`a23cebb`) |
 | **[`04_TASK_SPECIFIC_DELIVERY.md`](04_TASK_SPECIFIC_DELIVERY.md)** | Delivery rules for literacy, open-book exams (`EXM`), concepts/vocabulary, calculations, oral production, visual classification, and critical-step checklists |
