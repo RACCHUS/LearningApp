@@ -27,6 +27,10 @@ abstract class LearnerResourceStore {
 
   Future<void> setStudied(String resourceId, String key, bool studied);
 
+  /// Replaces the resource's outline. The objectives of the sections are
+  /// also ticked as covered; nothing is unticked or marked studied.
+  Future<void> setSections(String resourceId, List<ResourceSection> sections);
+
   Future<void> delete(String resourceId);
 }
 
@@ -41,7 +45,10 @@ class SupabaseLearnerResourceStore implements LearnerResourceStore {
   Future<List<LearnerResource>> list(String targetId) async {
     final rows = await _client
         .from('learner_external_resources')
-        .select('id,target_id,title,kind,url,access,learner_resource_objectives(objective_key,studied_at)')
+        .select(
+          'id,target_id,title,kind,url,access,learner_resource_objectives(objective_key,studied_at),'
+          'learner_resource_sections(position,title,objective_keys,map_source)',
+        )
         .eq('target_id', targetId)
         .order('created_at');
     return [
@@ -82,6 +89,15 @@ class SupabaseLearnerResourceStore implements LearnerResourceStore {
   Future<void> setStudied(String resourceId, String key, bool studied) => _client.rpc(
     'set_learner_resource_objective_studied',
     params: {'p_resource_id': resourceId, 'p_objective_key': key, 'p_studied': studied},
+  );
+
+  @override
+  Future<void> setSections(String resourceId, List<ResourceSection> sections) => _client.rpc(
+    'set_learner_resource_sections',
+    params: {
+      'p_resource_id': resourceId,
+      'p_sections': [for (final s in sections) s.toRpcJson()],
+    },
   );
 
   @override
@@ -171,6 +187,29 @@ class LocalLearnerResourceStore implements LearnerResourceStore {
   });
 
   @override
+  Future<void> setSections(String resourceId, List<ResourceSection> sections) async {
+    if (sections.length > ResourceSection.maxSections) throw StateError('too_many_sections');
+    final clean = [
+      for (final s in sections)
+        ResourceSection(title: s.title.trim(), objectiveKeys: s.objectiveKeys, source: s.source),
+    ];
+    if (clean.any((s) => s.title.isEmpty || s.title.length > ResourceSection.maxTitleLength)) {
+      throw ArgumentError('title');
+    }
+    await _update(
+      resourceId,
+      (r) => r.copyWith(
+        sections: clean,
+        objectives: {
+          for (final s in clean)
+            for (final k in s.objectiveKeys) k: null,
+          ...r.objectives,
+        },
+      ),
+    );
+  }
+
+  @override
   Future<void> delete(String resourceId) async {
     final all = await _all();
     all.removeWhere((r) => r.id == resourceId);
@@ -197,6 +236,7 @@ Future<int> moveLocalResourcesToAccount(LocalLearnerResourceStore local, Learner
         if (e.value != null) await account.setStudied(id, e.key, true);
       }
     }
+    if (r.sections.isNotEmpty) await account.setSections(id, r.sections);
     await local.delete(r.id);
     moved++;
   }

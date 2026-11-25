@@ -25,6 +25,54 @@ enum LearnerResourceKind {
   }
 }
 
+/// How the objectives of a section were proposed before the learner
+/// confirmed them (companion plan v1.0 §3.4). None of these is a review.
+enum SectionMapSource {
+  learner('learner'),
+  outlineMatch('outline_match'),
+  ownAi('own_ai');
+
+  const SectionMapSource(this.wire);
+  final String wire;
+
+  static SectionMapSource fromWire(Object? v) {
+    for (final s in values) {
+      if (s.wire == v) return s;
+    }
+    return learner;
+  }
+}
+
+/// One part of the learner's outside resource (a chapter, unit or video),
+/// with the objectives the learner confirmed it covers.
+class ResourceSection {
+  const ResourceSection({required this.title, this.objectiveKeys = const {}, this.source = SectionMapSource.learner});
+
+  static const int maxTitleLength = 200;
+  static const int maxSections = 200;
+  static const int maxKeysPerSection = 50;
+
+  final String title;
+  final Set<String> objectiveKeys;
+  final SectionMapSource source;
+
+  factory ResourceSection.fromJson(Map<String, dynamic> json) => ResourceSection(
+    title: '${json['title'] ?? ''}',
+    objectiveKeys: {
+      for (final k in (json['objective_keys'] as List? ?? const []))
+        if (k is String && k.isNotEmpty) k,
+    },
+    source: SectionMapSource.fromWire(json['map_source'] ?? json['source']),
+  );
+
+  /// The shape `set_learner_resource_sections` takes.
+  Map<String, dynamic> toRpcJson() => {
+    'title': title,
+    'objective_keys': objectiveKeys.toList()..sort(),
+    'source': source.wire,
+  };
+}
+
 /// A learner's own outside resource for one goal. Private to the learner.
 /// [objectives] maps each objective key the learner says it covers to when
 /// they marked it studied (null: not yet). "Studied" is self-report and is
@@ -38,6 +86,7 @@ class LearnerResource {
     this.url,
     this.access,
     this.objectives = const {},
+    this.sections = const [],
   });
 
   static const int maxTitleLength = 200;
@@ -50,6 +99,15 @@ class LearnerResource {
   final ExternalAccess? access;
   final Map<String, DateTime?> objectives;
 
+  /// The resource's outline, in order. Empty until the learner adds one.
+  final List<ResourceSection> sections;
+
+  /// The titles of the sections that cover [key], in outline order.
+  List<String> sectionTitlesFor(String key) => [
+    for (final s in sections)
+      if (s.objectiveKeys.contains(key)) s.title,
+  ];
+
   int get studiedCount => objectives.values.where((v) => v != null).length;
 
   LearnerResource copyWith({
@@ -58,6 +116,7 @@ class LearnerResource {
     String? Function()? url,
     ExternalAccess? Function()? access,
     Map<String, DateTime?>? objectives,
+    List<ResourceSection>? sections,
   }) => LearnerResource(
     id: id,
     targetId: targetId,
@@ -66,6 +125,7 @@ class LearnerResource {
     url: url == null ? this.url : url(),
     access: access == null ? this.access : access(),
     objectives: objectives ?? this.objectives,
+    sections: sections ?? this.sections,
   );
 
   /// From a `learner_external_resources` row with its embedded
@@ -79,6 +139,10 @@ class LearnerResource {
       final at = o['studied_at'];
       objectives[key] = at is String ? DateTime.tryParse(at) : null;
     }
+    final rows = [
+      for (final s in (json['learner_resource_sections'] as List? ?? const []))
+        if (s is Map) Map<String, dynamic>.from(s),
+    ]..sort((a, b) => ((a['position'] as num?) ?? 0).compareTo((b['position'] as num?) ?? 0));
     final url = json['url'];
     return LearnerResource(
       id: '${json['id']}',
@@ -88,6 +152,10 @@ class LearnerResource {
       url: url is String && url.isNotEmpty ? url : null,
       access: ExternalAccess.fromWire(json['access']),
       objectives: Map.unmodifiable(objectives),
+      sections: List.unmodifiable([
+        for (final s in rows)
+          if ('${s['title'] ?? ''}'.trim().isNotEmpty) ResourceSection.fromJson(s),
+      ]),
     );
   }
 
@@ -101,6 +169,9 @@ class LearnerResource {
     'learner_resource_objectives': [
       for (final e in objectives.entries)
         {'objective_key': e.key, 'studied_at': e.value?.toUtc().toIso8601String()},
+    ],
+    'learner_resource_sections': [
+      for (final (i, s) in sections.indexed) {...s.toRpcJson(), 'position': i + 1},
     ],
   };
 }
