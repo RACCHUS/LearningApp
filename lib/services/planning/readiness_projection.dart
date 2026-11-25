@@ -91,12 +91,14 @@ ReadinessProjection? projectReadiness({
   var counted = 0;
   var unavailable = 0.0;
   for (final d in view.domains) {
-    if (d.status == ObjectiveReadinessStatus.notAvailable)
+    if (d.status == ObjectiveReadinessStatus.notAvailable) {
       unavailable += d.weightShare;
+    }
     for (final o in d.objectives) {
       final e = estimates[o.code];
-      if (e == null || o.status == ObjectiveReadinessStatus.notAvailable)
+      if (e == null || o.status == ObjectiveReadinessStatus.notAvailable) {
         continue;
+      }
       counted++;
       final share = switch (o.status) {
         ObjectiveReadinessStatus.strong => 0.0,
