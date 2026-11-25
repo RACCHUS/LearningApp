@@ -12,14 +12,14 @@ Columns are **static text signals**, not proof. Read a test before relying on it
 - **RLS checks**: assertions that row-level security is enabled (`relrowsecurity`).
 - A file has a **security signal** if it has any denial, privilege or RLS check, or at least two identity switches (cross-user tests often assert that another learner's rows count as zero).
 
-**Totals:** 105 test files, 2210 planned assertions, plus 4 files using `no_plan()` (counted only when run; pg_prove reports the full total in the database job).
+**Totals:** 105 test files, 2217 planned assertions, plus 4 files using `no_plan()` (counted only when run; pg_prove reports the full total in the database job).
 
 ## By area
 
 | Area | Files | Planned assertions | Files testing `anon` | Files with ≥2 identity switches | Denial checks | Privilege checks | RLS checks |
 |---|---|---|---|---|---|---|---|
 | Analytics, privacy & retention | 4 | 78 | 1 | 3 | 27 | 13 | 0 |
-| Learner progress & events | 10 | 247 | 8 | 7 | 85 | 28 | 0 |
+| Learner progress & events | 10 | 254 | 8 | 8 | 87 | 28 | 0 |
 | Assessment, grading & simulation | 21 | 547 | 5 | 13 | 211 | 71 | 5 |
 | Excel / software-learning uploads & storage | 4 | 0 + 4 no_plan | 1 | 4 | 20 | 17 | 2 |
 | Community, educators & moderation | 6 | 299 | 3 | 4 | 100 | 4 | 0 |
@@ -56,7 +56,7 @@ No denial, privilege or RLS check and fewer than two identity switches. These ma
 | `ana_001a_legacy_progress_repro_test.sql` | Learner progress & events | 7 | — | 0 | 7 | 0 | 0 |
 | `ana_001a_progress_contract_red_test.sql` | Learner progress & events | 8 | — | 0 | 1 | 2 | 0 |
 | `ana_001b_learner_progress_rpc_test.sql` | Learner progress & events | 28 | anon, authenticated | 3 | 10 | 6 | 0 |
-| `item_analytics_and_readiness_v2_test.sql` | Learner progress & events | 24 | anon, authenticated | 1 | 4 | 0 | 0 |
+| `item_analytics_and_readiness_v2_test.sql` | Learner progress & events | 31 | anon, authenticated | 3 | 6 | 0 | 0 |
 | `learning_events_and_server_scoring_test.sql` | Learner progress & events | 35 | anon, authenticated | 3 | 16 | 0 | 0 |
 | `learning_events_rpc_only_security_test.sql` | Learner progress & events | 20 | anon, authenticated | 2 | 9 | 7 | 0 |
 | `learning_events_strict_rules_test.sql` | Learner progress & events | 29 | anon, authenticated | 2 | 4 | 0 | 0 |

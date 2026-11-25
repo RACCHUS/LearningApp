@@ -5,7 +5,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(24);
+select plan(31);
 
 -- 1. Create synthetic test users in auth.users and public.users
 insert into auth.users (id, email) values
@@ -72,115 +72,137 @@ select throws_ok(
   'Anon cannot insert into item_analytics'
 );
 
--- 5. Seed synthetic learning_events to test psychometric calculations
 set local role postgres;
 
--- Establish learner overall proficiency disparity via benchmark question:
--- High performer gets all 10 correct; Low performer gets all 10 incorrect.
-insert into public.learning_events (user_id, event_type, item_type, item_id, score, response, latency_ms) values
- ('aa111111-0000-4000-8000-000000000001', 'question_response', 'question', 'bb333333-0000-4000-8000-000000000003', 1.0, '{"selected":"0"}'::jsonb, 3000),
- ('aa111111-0000-4000-8000-000000000001', 'question_response', 'question', 'bb333333-0000-4000-8000-000000000003', 1.0, '{"selected":"0"}'::jsonb, 3100),
- ('aa111111-0000-4000-8000-000000000001', 'question_response', 'question', 'bb333333-0000-4000-8000-000000000003', 1.0, '{"selected":"0"}'::jsonb, 3200),
- ('aa111111-0000-4000-8000-000000000001', 'question_response', 'question', 'bb333333-0000-4000-8000-000000000003', 1.0, '{"selected":"0"}'::jsonb, 3300),
- ('aa111111-0000-4000-8000-000000000001', 'question_response', 'question', 'bb333333-0000-4000-8000-000000000003', 1.0, '{"selected":"0"}'::jsonb, 3400),
- ('aa111111-0000-4000-8000-000000000001', 'question_response', 'question', 'bb333333-0000-4000-8000-000000000003', 1.0, '{"selected":"0"}'::jsonb, 3500),
- ('aa111111-0000-4000-8000-000000000001', 'question_response', 'question', 'bb333333-0000-4000-8000-000000000003', 1.0, '{"selected":"0"}'::jsonb, 3600),
- ('aa111111-0000-4000-8000-000000000001', 'question_response', 'question', 'bb333333-0000-4000-8000-000000000003', 1.0, '{"selected":"0"}'::jsonb, 3700),
- ('aa111111-0000-4000-8000-000000000001', 'question_response', 'question', 'bb333333-0000-4000-8000-000000000003', 1.0, '{"selected":"0"}'::jsonb, 3800),
- ('aa111111-0000-4000-8000-000000000001', 'question_response', 'question', 'bb333333-0000-4000-8000-000000000003', 1.0, '{"selected":"0"}'::jsonb, 3900),
- ('aa111111-0000-4000-8000-000000000002', 'question_response', 'question', 'bb333333-0000-4000-8000-000000000003', 0.0, '{"selected":"1"}'::jsonb, 4000),
- ('aa111111-0000-4000-8000-000000000002', 'question_response', 'question', 'bb333333-0000-4000-8000-000000000003', 0.0, '{"selected":"1"}'::jsonb, 4100),
- ('aa111111-0000-4000-8000-000000000002', 'question_response', 'question', 'bb333333-0000-4000-8000-000000000003', 0.0, '{"selected":"1"}'::jsonb, 4200),
- ('aa111111-0000-4000-8000-000000000002', 'question_response', 'question', 'bb333333-0000-4000-8000-000000000003', 0.0, '{"selected":"1"}'::jsonb, 4300),
- ('aa111111-0000-4000-8000-000000000002', 'question_response', 'question', 'bb333333-0000-4000-8000-000000000003', 0.0, '{"selected":"1"}'::jsonb, 4400),
- ('aa111111-0000-4000-8000-000000000002', 'question_response', 'question', 'bb333333-0000-4000-8000-000000000003', 0.0, '{"selected":"1"}'::jsonb, 4500),
- ('aa111111-0000-4000-8000-000000000002', 'question_response', 'question', 'bb333333-0000-4000-8000-000000000003', 0.0, '{"selected":"1"}'::jsonb, 4600),
- ('aa111111-0000-4000-8000-000000000002', 'question_response', 'question', 'bb333333-0000-4000-8000-000000000003', 0.0, '{"selected":"1"}'::jsonb, 4700),
- ('aa111111-0000-4000-8000-000000000002', 'question_response', 'question', 'bb333333-0000-4000-8000-000000000003', 0.0, '{"selected":"1"}'::jsonb, 4800),
- ('aa111111-0000-4000-8000-000000000002', 'question_response', 'question', 'bb333333-0000-4000-8000-000000000003', 0.0, '{"selected":"1"}'::jsonb, 4900);
+-- 5. Question statistics under plan v1.2 §16.4 (migration 20261124110000):
+-- only consenting learners count, once each (first response), items with
+-- fewer than 5 learners are suppressed, flags need 30+ learners.
+-- Consent needs an eligible, non-guest account and an approved analytics
+-- release policy (ANA-103); both are set up inside this rolled-back test.
+insert into analytics.product_release_gate (id, approved_policy_version, policy_approved_at, collection_enabled, reviewed_by)
+values (1, 'pgtap-fixture', now(), true, 'pgtap fixture')
+on conflict (id) do update set approved_policy_version = 'pgtap-fixture', policy_approved_at = now(),
+  collection_enabled = true, reviewed_by = 'pgtap fixture';
+insert into auth.users (id, email, is_anonymous, raw_app_meta_data)
+select ('aa220000-0000-4000-8000-' || lpad(g::text, 12, '0'))::uuid, 'stat-learner-' || g || '@example.invalid',
+       false, '{"product_analytics_eligible": "true"}'::jsonb
+from generate_series(1, 55) g
+on conflict (id) do nothing;
+insert into analytics.product_consents (user_id, consented)
+select ('aa220000-0000-4000-8000-' || lpad(g::text, 12, '0'))::uuid, true
+from generate_series(1, 55) g;
+insert into public.assessment_questions (id, assessment_id, question_text, options, correct_answer, explanation, order_index) values
+ ('bb333333-0000-4000-8000-000000000004', 'bb222222-0000-4000-8000-000000000001', 'Rare Item', '["A", "B"]'::jsonb, 0, 'A', 3)
+on conflict (id) do nothing;
 
--- Normal item responses (8 responses: 6 correct, 2 incorrect; high performer correct, low performer incorrect)
-insert into public.learning_events (user_id, event_type, item_type, item_id, score, response, latency_ms) values
- ('aa111111-0000-4000-8000-000000000001', 'question_response', 'question', 'bb333333-0000-4000-8000-000000000001', 1.0, '{"selected":"0"}'::jsonb, 4000),
- ('aa111111-0000-4000-8000-000000000001', 'question_response', 'question', 'bb333333-0000-4000-8000-000000000001', 1.0, '{"selected":"0"}'::jsonb, 4500),
- ('aa111111-0000-4000-8000-000000000001', 'question_response', 'question', 'bb333333-0000-4000-8000-000000000001', 1.0, '{"selected":"0"}'::jsonb, 5000),
- ('aa111111-0000-4000-8000-000000000001', 'question_response', 'question', 'bb333333-0000-4000-8000-000000000001', 1.0, '{"selected":"0"}'::jsonb, 4200),
- ('aa111111-0000-4000-8000-000000000002', 'question_response', 'question', 'bb333333-0000-4000-8000-000000000001', 1.0, '{"selected":"0"}'::jsonb, 6000),
- ('aa111111-0000-4000-8000-000000000002', 'question_response', 'question', 'bb333333-0000-4000-8000-000000000001', 1.0, '{"selected":"0"}'::jsonb, 5500),
- ('aa111111-0000-4000-8000-000000000002', 'question_response', 'question', 'bb333333-0000-4000-8000-000000000001', 0.0, '{"selected":"1"}'::jsonb, 7000),
- ('aa111111-0000-4000-8000-000000000002', 'question_response', 'question', 'bb333333-0000-4000-8000-000000000001', 0.0, '{"selected":"2"}'::jsonb, 8000);
+-- Benchmark: learners 1-20 answer correctly (stronger), 21-40 incorrectly.
+insert into public.learning_events (user_id, event_type, item_type, item_id, score, response, latency_ms, occurred_at, effective_occurred_at)
+select ('aa220000-0000-4000-8000-' || lpad(g::text, 12, '0'))::uuid, 'question_response', 'question',
+       'bb333333-0000-4000-8000-000000000003', case when g <= 20 then 1.0 else 0.0 end,
+       jsonb_build_object('selected', case when g <= 20 then '0' else '1' end), 4000, now() - interval '3 days', now() - interval '3 days'
+from generate_series(1, 40) g;
+-- Normal item: stronger learners and half the others correct (p = 0.75).
+insert into public.learning_events (user_id, event_type, item_type, item_id, score, response, latency_ms, occurred_at, effective_occurred_at)
+select ('aa220000-0000-4000-8000-' || lpad(g::text, 12, '0'))::uuid, 'question_response', 'question',
+       'bb333333-0000-4000-8000-000000000001', case when g <= 30 then 1.0 else 0.0 end,
+       jsonb_build_object('selected', case when g <= 30 then '0' else '1' end), 5000, now() - interval '2 days', now() - interval '2 days'
+from generate_series(1, 40) g;
+-- (effective_occurred_at is the canonical event time; record_events sets it
+-- from the client's clamped time, so the fixtures set it explicitly.)
+-- A later repeat by learner 1 (wrong) must not count, and neither may the two
+-- learners who have not consented.
+insert into public.learning_events (user_id, event_type, item_type, item_id, score, response, latency_ms, occurred_at, effective_occurred_at) values
+ ('aa220000-0000-4000-8000-000000000001', 'question_response', 'question', 'bb333333-0000-4000-8000-000000000001', 0.0, '{"selected":"2"}'::jsonb, 5000, now() - interval '1 day', now() - interval '1 day'),
+ ('aa111111-0000-4000-8000-000000000001', 'question_response', 'question', 'bb333333-0000-4000-8000-000000000001', 0.0, '{"selected":"3"}'::jsonb, 5000, now(), now()),
+ ('aa111111-0000-4000-8000-000000000002', 'question_response', 'question', 'bb333333-0000-4000-8000-000000000001', 0.0, '{"selected":"3"}'::jsonb, 5000, now(), now());
+-- Defective item: the stronger learners miss it, the others get it right.
+insert into public.learning_events (user_id, event_type, item_type, item_id, score, response, latency_ms, occurred_at, effective_occurred_at)
+select ('aa220000-0000-4000-8000-' || lpad(g::text, 12, '0'))::uuid, 'question_response', 'question',
+       'bb333333-0000-4000-8000-000000000002', case when g <= 20 then 0.0 else 1.0 end,
+       jsonb_build_object('selected', case when g <= 20 then '0' else '1' end), 6000, now() - interval '2 days', now() - interval '2 days'
+from generate_series(1, 40) g;
+-- Rare item: only 4 learners, so it is suppressed.
+insert into public.learning_events (user_id, event_type, item_type, item_id, score, response, latency_ms, occurred_at, effective_occurred_at)
+select ('aa220000-0000-4000-8000-' || lpad(g::text, 12, '0'))::uuid, 'question_response', 'question',
+       'bb333333-0000-4000-8000-000000000004', 1.0, '{"selected":"0"}'::jsonb, 5000, now() - interval '2 days', now() - interval '2 days'
+from generate_series(1, 4) g;
 
--- Defective item responses (8 responses: high performer scores 0.0, low performer scores 1.0 -> negative discrimination!)
-insert into public.learning_events (user_id, event_type, item_type, item_id, score, response, latency_ms) values
- ('aa111111-0000-4000-8000-000000000001', 'question_response', 'question', 'bb333333-0000-4000-8000-000000000002', 0.0, '{"selected":"0"}'::jsonb, 12000),
- ('aa111111-0000-4000-8000-000000000001', 'question_response', 'question', 'bb333333-0000-4000-8000-000000000002', 0.0, '{"selected":"0"}'::jsonb, 11000),
- ('aa111111-0000-4000-8000-000000000001', 'question_response', 'question', 'bb333333-0000-4000-8000-000000000002', 0.0, '{"selected":"2"}'::jsonb, 10500),
- ('aa111111-0000-4000-8000-000000000001', 'question_response', 'question', 'bb333333-0000-4000-8000-000000000002', 0.0, '{"selected":"2"}'::jsonb, 9500),
- ('aa111111-0000-4000-8000-000000000002', 'question_response', 'question', 'bb333333-0000-4000-8000-000000000002', 1.0, '{"selected":"1"}'::jsonb, 4000),
- ('aa111111-0000-4000-8000-000000000002', 'question_response', 'question', 'bb333333-0000-4000-8000-000000000002', 1.0, '{"selected":"1"}'::jsonb, 4200),
- ('aa111111-0000-4000-8000-000000000002', 'question_response', 'question', 'bb333333-0000-4000-8000-000000000002', 0.0, '{"selected":"3"}'::jsonb, 6000),
- ('aa111111-0000-4000-8000-000000000002', 'question_response', 'question', 'bb333333-0000-4000-8000-000000000002', 0.0, '{"selected":"3"}'::jsonb, 6500);
+-- Too easy: all 40 learners answer correctly.
+insert into public.assessment_questions (id, assessment_id, question_text, options, correct_answer, explanation, order_index) values
+ ('bb333333-0000-4000-8000-000000000005', 'bb222222-0000-4000-8000-000000000001', 'Easy Item', '["A", "B"]'::jsonb, 0, 'A', 4)
+on conflict (id) do nothing;
+insert into public.learning_events (user_id, event_type, item_type, item_id, score, response, latency_ms, occurred_at, effective_occurred_at)
+select ('aa220000-0000-4000-8000-' || lpad(g::text, 12, '0'))::uuid, 'question_response', 'question',
+       'bb333333-0000-4000-8000-000000000005', 1.0, '{"selected":"0"}'::jsonb, 5000, now() - interval '2 days', now() - interval '2 days'
+from generate_series(1, 40) g;
+-- A single-choice assessment item with four options; 55 learners choose only
+-- A (keyed) or B, so C and D are almost never chosen (counted as 0).
+insert into public.assessment_items (id, interaction_type, prompt, response_spec, scoring_spec) values
+ ('bb333333-0000-4000-8000-000000000006', 'single_choice', 'Distractor item',
+  '{"options": ["A", "B", "C", "D"]}'::jsonb, '{"correct_index": 0}'::jsonb);
+insert into public.learning_events (user_id, event_type, item_type, item_id, score, response, latency_ms, occurred_at, effective_occurred_at)
+select ('aa220000-0000-4000-8000-' || lpad(g::text, 12, '0'))::uuid, 'question_response', 'question',
+       'bb333333-0000-4000-8000-000000000006', case when g % 3 = 0 then 0.0 else 1.0 end,
+       jsonb_build_object('selected', case when g % 3 = 0 then '1' else '0' end), 5000, now() - interval '2 days', now() - interval '2 days'
+from generate_series(1, 55) g;
 
--- 6. TEST: Run compute_item_analytics
-select lives_ok(
-  $$ select compute_item_analytics(5) $$,
-  'compute_item_analytics executes successfully'
-);
+-- 6. TEST: Run compute_item_analytics (direct database session)
+select lives_ok($$ select compute_item_analytics(5) $$, 'compute_item_analytics executes successfully');
 
--- 7. TEST: Verify item analytics for Normal Item
-select is(
-  (select p_value from public.item_analytics where item_id = 'bb333333-0000-4000-8000-000000000001')::numeric,
-  0.750::numeric,
-  'Normal item p_value is 0.75 (6 / 8)'
-);
+-- 7. TEST: Normal item
+select is((select p_value from public.item_analytics where item_id = 'bb333333-0000-4000-8000-000000000001')::numeric,
+  0.750::numeric, 'Normal item p_value is 0.75: first responses only, consenting learners only');
+select is((select response_count from public.item_analytics where item_id = 'bb333333-0000-4000-8000-000000000001'),
+  40, 'Each consenting learner counts once');
+select ok((select point_biserial from public.item_analytics where item_id = 'bb333333-0000-4000-8000-000000000001') > 0.10,
+  'Normal item discriminates');
+select is((select auto_flagged from public.item_analytics where item_id = 'bb333333-0000-4000-8000-000000000001'),
+  false, 'Normal item is not flagged');
 
-select ok(
-  (select point_biserial from public.item_analytics where item_id = 'bb333333-0000-4000-8000-000000000001') > 0.0,
-  'Normal item point_biserial is positive'
-);
+-- 8. TEST: Defective item
+select ok((select 'low_discrimination' = any (flagged_reasons) and auto_flagged
+           from public.item_analytics where item_id = 'bb333333-0000-4000-8000-000000000002'),
+  'Defective item is flagged for low discrimination');
 
-select ok(
-  (select auto_flagged from public.item_analytics where item_id = 'bb333333-0000-4000-8000-000000000001') = false,
-  'Normal item is not auto-flagged'
-);
+-- 9. TEST: A revision item opens in the moderation queue; nothing else changes
+select ok(exists (select 1 from public.moderation_reports
+                  where target_type = 'question' and target_id = 'bb333333-0000-4000-8000-000000000002'
+                    and status = 'pending' and description like '[Item Analytics Auto-Flag] low_discrimination%'
+                    and description like '%Nothing has been changed automatically%'),
+  'A moderation report was created for the defective question');
+select is((select count(*)::int from public.item_analytics where item_id = 'bb333333-0000-4000-8000-000000000004'),
+  0, 'An item with fewer than 5 learners keeps no statistics');
 
--- 8. TEST: Verify item analytics and auto-flagging for Defective Item
-select is(
-  (select p_value from public.item_analytics where item_id = 'bb333333-0000-4000-8000-000000000002')::numeric,
-  0.250::numeric,
-  'Defective item p_value is 0.25 (2 / 8)'
-);
+select ok((select 'too_easy' = any (flagged_reasons) from public.item_analytics
+           where item_id = 'bb333333-0000-4000-8000-000000000005'),
+  'An item everyone gets right is flagged too easy');
+select ok((select 'rarely_chosen_distractor' = any (flagged_reasons)
+                  and (distractor_counts->>'2')::int = 0 and (distractor_counts->>'3')::int = 0
+           from public.item_analytics where item_id = 'bb333333-0000-4000-8000-000000000006'),
+  'Options nobody chose count as 0 and are flagged as rarely chosen');
+select ok((select not ('rarely_chosen_distractor' = any (flagged_reasons))
+           from public.item_analytics where item_id = 'bb333333-0000-4000-8000-000000000005'),
+  'The distractor rule needs an option list and 50+ learners');
 
-select ok(
-  (select point_biserial from public.item_analytics where item_id = 'bb333333-0000-4000-8000-000000000002') < 0.0,
-  'Defective item has negative point_biserial (discrimination defect)'
-);
+-- 10. TEST: get_item_analytics RPC returns the payload to a privileged session
+select is((get_item_analytics('bb333333-0000-4000-8000-000000000001'::uuid)->>'response_count')::integer,
+  40, 'get_item_analytics returns correct response_count');
 
-select is(
-  (select auto_flagged from public.item_analytics where item_id = 'bb333333-0000-4000-8000-000000000002'),
-  true,
-  'Defective item is auto-flagged'
-);
-
--- 9. TEST: Moderation report was created for defective item
-select ok(
-  exists (
-    select 1 from public.moderation_reports
-    where target_type = 'question'
-      AND target_id = 'bb333333-0000-4000-8000-000000000002'
-      AND reason = 'other'
-      AND status = 'pending'
-      AND description like '[Item Analytics Auto-Flag]%'
-  ),
-  'Moderation report was automatically created for defective question'
-);
-
--- 10. TEST: get_item_analytics RPC returns populated payload
-select is(
-  (get_item_analytics('bb333333-0000-4000-8000-000000000001'::uuid)->>'response_count')::integer,
-  8,
-  'get_item_analytics returns correct response_count'
-);
+-- 10b. TEST: an ordinary learner can neither compute nor read statistics; a moderator can read
+set local role authenticated;
+select set_config('request.jwt.claims', '{"sub":"aa220000-0000-4000-8000-000000000001","role":"authenticated"}', true);
+select throws_ok($$ select compute_item_analytics(5) $$, '42501', null, 'A learner cannot compute statistics');
+select throws_ok($$ select get_item_analytics('bb333333-0000-4000-8000-000000000001'::uuid) $$, '42501', null,
+  'A learner cannot read an item''s statistics');
+select is((select count(*)::int from public.item_analytics), 0, 'A learner sees no statistics rows');
+reset role;
+insert into public.moderation_roles (user_id, role) values ('aa220000-0000-4000-8000-000000000002', 'moderator');
+set local role authenticated;
+select set_config('request.jwt.claims', '{"sub":"aa220000-0000-4000-8000-000000000002","role":"authenticated"}', true);
+select is((get_item_analytics('bb333333-0000-4000-8000-000000000001'::uuid)->>'response_count')::integer,
+  40, 'A moderator can read an item''s statistics');
+reset role;
+select set_config('request.jwt.claims', '', true);
 
 -- 11. TEST: get_target_readiness_v2 setup and evaluation
 -- Create synthetic target version, nodes, and core concepts with valid constraints
