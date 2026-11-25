@@ -56,6 +56,13 @@ class ReadinessProjection {
   /// Share of the blueprint with nothing in LearningApp yet (0.0 to 1.0).
   final double unavailableShare;
 
+  /// The learner's recent pace (active study, last 4 weeks) in minutes a
+  /// week, and the finish range at that pace. Null without enough recent
+  /// study to say (signed-in learners only).
+  final int? recentMinutesPerWeek;
+  final DateTime? paceEarliest;
+  final DateTime? paceLatest;
+
   const ReadinessProjection({
     required this.remainingLow,
     required this.remainingHigh,
@@ -65,6 +72,9 @@ class ReadinessProjection {
     required this.minutesPerDayForExam,
     required this.examDate,
     required this.unavailableShare,
+    this.recentMinutesPerWeek,
+    this.paceEarliest,
+    this.paceLatest,
   });
 
   bool get nothingLeft => remainingHigh == 0;
@@ -85,6 +95,7 @@ ReadinessProjection? projectReadiness({
   required int dailyGoalMinutes,
   required DateTime now,
   DateTime? examDate,
+  int? recentMinutes28Days,
 }) {
   var low = 0;
   var high = 0;
@@ -122,6 +133,23 @@ ReadinessProjection? projectReadiness({
       Duration(days: math.max(1, (high / dailyGoalMinutes).ceil())),
     );
   }
+  // Recent pace: needs at least 30 minutes of study in the last 28 days, so
+  // one short session doesn't produce a wild date.
+  int? perWeek;
+  DateTime? paceEarliest;
+  DateTime? paceLatest;
+  if (recentMinutes28Days != null &&
+      recentMinutes28Days >= minRecentMinutes &&
+      high > 0) {
+    final perDayRecent = recentMinutes28Days / 28.0;
+    perWeek = (recentMinutes28Days / 4).round();
+    paceEarliest = today.add(
+      Duration(days: math.max(1, (low / perDayRecent).ceil())),
+    );
+    paceLatest = today.add(
+      Duration(days: math.max(1, (high / perDayRecent).ceil())),
+    );
+  }
   int? perDay;
   DateTime? exam;
   if (examDate != null) {
@@ -139,8 +167,14 @@ ReadinessProjection? projectReadiness({
     minutesPerDayForExam: perDay,
     examDate: exam,
     unavailableShare: unavailable.clamp(0.0, 1.0),
+    recentMinutesPerWeek: perWeek,
+    paceEarliest: paceEarliest,
+    paceLatest: paceLatest,
   );
 }
+
+/// Minimum active study in the last 28 days before a recent pace is shown.
+const minRecentMinutes = 30;
 
 /// "about 40 minutes", "about 3 hours", "about 3.5 hours".
 String formatStudyTime(int minutes) {

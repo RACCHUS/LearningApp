@@ -44,18 +44,24 @@ final readinessCoverageGateEnabledProvider = Provider<bool>((ref) {
 /// Null while the gate is off: readiness shows exactly as before and nothing
 /// is fetched. With the gate on, a failed read fails closed (readiness hidden).
 final readinessCoverageProvider =
-    FutureProvider.family<ReadinessCoverage?, String>((ref, targetVersionId) async {
-  if (!ref.watch(readinessCoverageGateEnabledProvider) || targetVersionId.isEmpty) {
-    return null;
-  }
-  try {
-    final json = await ref.watch(readinessCoverageApiProvider).fetch(targetVersionId);
-    if (json == null) return const ReadinessCoverage.unavailable();
-    return ReadinessCoverage.fromJson(json);
-  } catch (_) {
-    return const ReadinessCoverage.unavailable();
-  }
-});
+    FutureProvider.family<ReadinessCoverage?, String>((
+      ref,
+      targetVersionId,
+    ) async {
+      if (!ref.watch(readinessCoverageGateEnabledProvider) ||
+          targetVersionId.isEmpty) {
+        return null;
+      }
+      try {
+        final json = await ref
+            .watch(readinessCoverageApiProvider)
+            .fetch(targetVersionId);
+        if (json == null) return const ReadinessCoverage.unavailable();
+        return ReadinessCoverage.fromJson(json);
+      } catch (_) {
+        return const ReadinessCoverage.unavailable();
+      }
+    });
 
 /// Reads readiness by objective for a target version (plan v1.2 §8.7).
 abstract class ObjectiveReadinessApi {
@@ -89,17 +95,23 @@ final objectiveReadinessViewEnabledProvider = Provider<bool>((ref) {
 /// Null while the switch is off or when the view can't be read: the card is
 /// then simply not shown (it adds detail; nothing else depends on it).
 final objectiveReadinessProvider =
-    FutureProvider.family<TargetObjectiveReadiness?, String>((ref, targetVersionId) async {
-  if (!ref.watch(objectiveReadinessViewEnabledProvider) || targetVersionId.isEmpty) {
-    return null;
-  }
-  try {
-    final json = await ref.watch(objectiveReadinessApiProvider).fetch(targetVersionId);
-    return json == null ? null : TargetObjectiveReadiness.fromJson(json);
-  } catch (_) {
-    return null;
-  }
-});
+    FutureProvider.family<TargetObjectiveReadiness?, String>((
+      ref,
+      targetVersionId,
+    ) async {
+      if (!ref.watch(objectiveReadinessViewEnabledProvider) ||
+          targetVersionId.isEmpty) {
+        return null;
+      }
+      try {
+        final json = await ref
+            .watch(objectiveReadinessApiProvider)
+            .fetch(targetVersionId);
+        return json == null ? null : TargetObjectiveReadiness.fromJson(json);
+      } catch (_) {
+        return null;
+      }
+    });
 
 /// Reads per-objective study-time estimates (plan v1.2 §8.5 item 4, §8.7).
 abstract class StudyEstimatesApi {
@@ -130,44 +142,86 @@ final readinessProjectionEnabledProvider = Provider<bool>((ref) {
   );
 });
 
+/// Active study minutes in the last 28 days (UTC days), from the learner's
+/// own progress rows. Null for guests or when it can't be read.
+final recentStudyMinutesProvider = FutureProvider<int?>((ref) async {
+  final userId = Supabase.instance.client.auth.currentUser?.id;
+  if (userId == null) return null;
+  final since = DateTime.now().toUtc().subtract(const Duration(days: 27));
+  final from =
+      '${since.year.toString().padLeft(4, '0')}-'
+      '${since.month.toString().padLeft(2, '0')}-${since.day.toString().padLeft(2, '0')}';
+  try {
+    final rows = await Supabase.instance.client
+        .from('learner_activity_progress')
+        .select('active_seconds')
+        .eq('user_id', userId)
+        .gte('reporting_date_utc', from);
+    var seconds = 0;
+    for (final r in rows as List) {
+      final s = (r as Map)['active_seconds'];
+      if (s is num) seconds += s.toInt();
+    }
+    return seconds ~/ 60;
+  } catch (_) {
+    return null;
+  }
+});
+
 /// Projected finish for a target version. Null while the switch is off, when
 /// readiness by objective or the estimates can't be read, or when nothing in
 /// the target has an estimate: the section is then simply not shown.
 final readinessProjectionProvider =
-    FutureProvider.family<ReadinessProjection?, String>((ref, targetVersionId) async {
-  if (!ref.watch(readinessProjectionEnabledProvider) || targetVersionId.isEmpty) {
-    return null;
-  }
-  // Every dependency is watched before the first await, so a change to any
-  // of them (a new exam date, daily goal or status) recomputes the projection.
-  final viewFuture = ref.watch(objectiveReadinessProvider(targetVersionId).future);
-  final goalFuture = ref.watch(dailyGoalMinutesProvider.future);
-  final api = ref.watch(studyEstimatesApiProvider);
-  final context = ref.watch(activeLearningContextProvider);
-  DateTime? examDate;
-  if (context != null && context.targetVersionId == targetVersionId) {
-    final raw = context.scopeConfig['examDate'] ?? context.scopeConfig['targetDate'];
-    if (raw is String && raw.isNotEmpty) examDate = DateTime.tryParse(raw);
-  }
-  final view = await viewFuture;
-  if (view == null) return null;
-  Map<String, StudyEstimate>? estimates;
-  try {
-    final json = await api.fetch(targetVersionId);
-    estimates = json == null ? null : parseStudyEstimates(json);
-  } catch (_) {
-    return null;
-  }
-  if (estimates == null) return null;
-  final dailyGoal = await goalFuture;
-  return projectReadiness(
-    view: view,
-    estimates: estimates,
-    dailyGoalMinutes: dailyGoal,
-    now: DateTime.now(),
-    examDate: examDate,
-  );
-});
+    FutureProvider.family<ReadinessProjection?, String>((
+      ref,
+      targetVersionId,
+    ) async {
+      if (!ref.watch(readinessProjectionEnabledProvider) ||
+          targetVersionId.isEmpty) {
+        return null;
+      }
+      // Every dependency is watched before the first await, so a change to any
+      // of them (a new exam date, daily goal or status) recomputes the projection.
+      final viewFuture = ref.watch(
+        objectiveReadinessProvider(targetVersionId).future,
+      );
+      final goalFuture = ref.watch(dailyGoalMinutesProvider.future);
+      final recentFuture = ref.watch(recentStudyMinutesProvider.future);
+      final api = ref.watch(studyEstimatesApiProvider);
+      final context = ref.watch(activeLearningContextProvider);
+      DateTime? examDate;
+      if (context != null && context.targetVersionId == targetVersionId) {
+        final raw =
+            context.scopeConfig['examDate'] ??
+            context.scopeConfig['targetDate'];
+        if (raw is String && raw.isNotEmpty) examDate = DateTime.tryParse(raw);
+      }
+      final view = await viewFuture;
+      if (view == null) return null;
+      Map<String, StudyEstimate>? estimates;
+      try {
+        final json = await api.fetch(targetVersionId);
+        estimates = json == null ? null : parseStudyEstimates(json);
+      } catch (_) {
+        return null;
+      }
+      if (estimates == null) return null;
+      final dailyGoal = await goalFuture;
+      int? recent;
+      try {
+        recent = await recentFuture;
+      } catch (_) {
+        recent = null;
+      }
+      return projectReadiness(
+        view: view,
+        estimates: estimates,
+        dailyGoalMinutes: dailyGoal,
+        now: DateTime.now(),
+        examDate: examDate,
+        recentMinutes28Days: recent,
+      );
+    });
 
 final conceptEvidenceServiceProvider = Provider<ConceptEvidenceService>((ref) {
   return ConceptEvidenceService();
@@ -182,15 +236,18 @@ final targetReadinessServiceProvider = Provider<TargetReadinessService>((ref) {
 });
 
 /// Computes qualitative TargetReadiness for a given targetVersionId.
-final targetReadinessProvider =
-    FutureProvider.family<TargetReadiness, String>((ref, targetVersionId) async {
+final targetReadinessProvider = FutureProvider.family<TargetReadiness, String>((
+  ref,
+  targetVersionId,
+) async {
   final userId = ref.watch(learnerIdProvider);
   final service = ref.watch(targetReadinessServiceProvider);
   final activeContext = ref.watch(activeLearningContextProvider);
 
   DateTime? examDate;
   if (activeContext != null) {
-    final rawDate = activeContext.scopeConfig['examDate'] ??
+    final rawDate =
+        activeContext.scopeConfig['examDate'] ??
         activeContext.scopeConfig['targetDate'];
     if (rawDate is String && rawDate.isNotEmpty) {
       examDate = DateTime.tryParse(rawDate);
@@ -210,11 +267,11 @@ typedef ExamPartReadinessKey = ({String targetVersionId, String examPartKey});
 
 final examPartReadinessProvider = FutureProvider.autoDispose
     .family<TargetReadiness, ExamPartReadinessKey>((ref, key) async {
-  final userId = ref.watch(learnerIdProvider);
-  final service = ref.watch(targetReadinessServiceProvider);
-  return service.evaluateTargetReadiness(
-    userId: userId,
-    targetVersionId: key.targetVersionId,
-    examPartKey: key.examPartKey,
-  );
-});
+      final userId = ref.watch(learnerIdProvider);
+      final service = ref.watch(targetReadinessServiceProvider);
+      return service.evaluateTargetReadiness(
+        userId: userId,
+        targetVersionId: key.targetVersionId,
+        examPartKey: key.examPartKey,
+      );
+    });

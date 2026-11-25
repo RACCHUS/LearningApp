@@ -110,6 +110,28 @@ void main() {
     expect(p.finishEarliest, isNull);
   });
 
+  test('recent pace adds a second range once there is enough recent study', () {
+    final p = projectReadiness(
+      view: view([('a', 'not_started')]),
+      estimates: estimates,
+      dailyGoalMinutes: 30,
+      now: now,
+      recentMinutes28Days: 280, // 10 minutes a day, 70 a week
+    )!;
+    expect(p.recentMinutesPerWeek, 70);
+    expect(p.paceEarliest, DateTime(2026, 11, 30)); // 60 / 10 = 6 days
+    expect(p.paceLatest, DateTime(2026, 12, 6)); // 120 / 10 = 12 days
+    final thin = projectReadiness(
+      view: view([('a', 'not_started')]),
+      estimates: estimates,
+      dailyGoalMinutes: 30,
+      now: now,
+      recentMinutes28Days: minRecentMinutes - 1,
+    )!;
+    expect(thin.paceLatest, isNull, reason: 'under 30 minutes is too little to project from');
+    expect(thin.recentMinutesPerWeek, isNull);
+  });
+
   test('study time reads naturally', () {
     expect(formatStudyTime(45), 'about 45 minutes');
     expect(formatStudyTime(180), 'about 3 hours');

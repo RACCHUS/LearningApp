@@ -64,6 +64,31 @@ void main() {
     expect(find.textContaining("That's before your exam"), findsOneWidget);
   });
 
+  testWidgets('no recent pace line without a recent pace', (tester) async {
+    await pump(tester, projection());
+    expect(find.byKey(const Key('projection_recent_pace')), findsNothing);
+  });
+
+  testWidgets('a recent pace line appears when there is one', (tester) async {
+    await pump(
+      tester,
+      ReadinessProjection(
+        remainingLow: 300,
+        remainingHigh: 600,
+        finishEarliest: DateTime(2026, 12, 9),
+        finishLatest: DateTime(2026, 12, 24),
+        dailyGoalMinutes: 20,
+        minutesPerDayForExam: null,
+        examDate: null,
+        unavailableShare: 0,
+        recentMinutesPerWeek: 70,
+        paceEarliest: DateTime(2027, 1, 10),
+        paceLatest: DateTime(2027, 2, 20),
+      ),
+    );
+    expect(find.textContaining('At your recent pace (about 70 minutes a week'), findsOneWidget);
+  });
+
   testWidgets('nothing left says so, with no dates', (tester) async {
     await pump(tester, projection(low: 0, high: 0));
     expect(find.byKey(const Key('projection_done')), findsOneWidget);
