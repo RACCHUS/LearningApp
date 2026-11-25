@@ -18,7 +18,7 @@ source_releases:
 target:
   slug: open-openstax-college-algebra-1e
   title: College Algebra (open textbook)
-  version_code: OPENSTAX-EBC5BEB-R7
+  version_code: OPENSTAX-EBC5BEB-R8
   version_title: College Algebra by OpenStax, CC BY 4.0
   version_description: Open textbook sections imported as LearningApp lessons.
   volatility_class: V0
@@ -869,46 +869,3 @@ domains:
         - open-openstax-college-algebra-1e-1-3
       concept_slugs:
       - open-openstax-college-algebra-1e-1-3
-    flashcards:
-    - front: What does “index” mean?
-      back: The number above the radical sign indicating the nth root
-      concept_slugs:
-      - open-openstax-college-algebra-1e-1-3
-      citation: College Algebra (OpenStax), Section 1.3, https://openstax.org/books/college-algebra/pages/1-3-radicals-and-rational-exponents, CC BY 4.0
-      source_release_id: openstax-college-algebra-1e
-    - front: What does “radical” mean?
-      back: The symbol used to indicate a root
-      concept_slugs:
-      - open-openstax-college-algebra-1e-1-3
-      citation: College Algebra (OpenStax), Section 1.3, https://openstax.org/books/college-algebra/pages/1-3-radicals-and-rational-exponents, CC BY 4.0
-      source_release_id: openstax-college-algebra-1e
-    - front: What does “radical expression” mean?
-      back: An expression containing a radical symbol
-      concept_slugs:
-      - open-openstax-college-algebra-1e-1-3
-      citation: College Algebra (OpenStax), Section 1.3, https://openstax.org/books/college-algebra/pages/1-3-radicals-and-rational-exponents, CC BY 4.0
-      source_release_id: openstax-college-algebra-1e
-    - front: What does “radicand” mean?
-      back: The number under the radical symbol
-      concept_slugs:
-      - open-openstax-college-algebra-1e-1-3
-      citation: College Algebra (OpenStax), Section 1.3, https://openstax.org/books/college-algebra/pages/1-3-radicals-and-rational-exponents, CC BY 4.0
-      source_release_id: openstax-college-algebra-1e
-    - front: What does “base” mean?
-      back: In exponential notation, the expression that is being multiplied
-      concept_slugs:
-      - open-openstax-college-algebra-1e-1-3
-      citation: College Algebra (OpenStax), Section 1.3, https://openstax.org/books/college-algebra/pages/1-3-radicals-and-rational-exponents, CC BY 4.0
-      source_release_id: openstax-college-algebra-1e
-    - front: What does “exponent” mean?
-      back: In exponential notation, the raised number or variable that indicates how many times the base is being multiplied
-      concept_slugs:
-      - open-openstax-college-algebra-1e-1-3
-      citation: College Algebra (OpenStax), Section 1.3, https://openstax.org/books/college-algebra/pages/1-3-radicals-and-rational-exponents, CC BY 4.0
-      source_release_id: openstax-college-algebra-1e
-    - front: What does “order of operations” mean?
-      back: A set of rules governing how mathematical expressions are to be evaluated, assigning priorities to operations
-      concept_slugs:
-      - open-openstax-college-algebra-1e-1-3
-      citation: College Algebra (OpenStax), Section 1.3, https://openstax.org/books/college-algebra/pages/1-3-radicals-and-rational-exponents, CC BY 4.0
-      source_release_id: openstax-college-algebra-1e

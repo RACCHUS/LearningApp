@@ -6,6 +6,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import import_open_textbook as t  # noqa: E402
 
+REPO = Path(__file__).resolve().parents[2]
+
 M = 'xmlns="http://www.w3.org/1998/Math/MathML"'
 X = 'xmlns="http://www.w3.org/1999/xhtml"'
 
@@ -310,39 +312,25 @@ class AdapterFixtureTests(unittest.TestCase):
         self.assertNotEqual(a["import_key"], key_all)
 
 
-class TermFlashcardTests(unittest.TestCase):
-    """Plan v1.2 §8.5 item 2: glossary terms reach the review queue."""
+class NoTermFlashcardTests(unittest.TestCase):
+    """Revision 8: glossary terms are not duplicated as flashcards. Terms reach
+    the review queue on lesson completion and map to the objective through
+    the lesson's concept; concept-linked duplicate cards made the
+    reinforcement list skip that lesson fallback (2026-11-25)."""
 
-    LESSON = {"citation": "Book (OpenStax), Section 1.2, https://x, CC BY 4.0",
-              "terms": [{"term": "base", "definition": "in exponential notation, the expression multiplied"},
-                        {"term": "Base", "definition": "duplicate with other casing"},
-                        {"term": "exponent", "definition": ""},
-                        {"term": "radicand", "definition": "The number under the radical symbol"}]}
-
-    def test_one_concept_tagged_cited_card_per_term(self):
-        cards = t.term_flashcards(self.LESSON, "concept-1-2", "src")
-        self.assertEqual([c["front"] for c in cards],
-                         ["What does “base” mean?", "What does “radicand” mean?"])
-        self.assertEqual(cards[0]["back"], "In exponential notation, the expression multiplied")
-        for c in cards:
-            self.assertEqual(c["concept_slugs"], ["concept-1-2"])
-            self.assertEqual(c["citation"], self.LESSON["citation"])
-            self.assertEqual(c["source_release_id"], "src")
-
-    def test_a_term_is_carded_once_across_sections(self):
-        seen: set[str] = set()
-        first = t.term_flashcards(self.LESSON, "c1", "src", seen)
-        again = t.term_flashcards({"citation": "c", "terms": [{"term": "base", "definition": "again"},
-                                                              {"term": "index", "definition": "root number"}]},
-                                  "c2", "src", seen)
-        self.assertEqual(len(first), 2)
-        self.assertEqual([c["front"] for c in again], ["What does “index” mean?"])
-
-    def test_imported_objectives_carry_their_cards(self):
+    def test_imported_objectives_carry_no_flashcards(self):
         manifest = AdapterFixtureTests().replay("college_algebra", "openstax-college-algebra-1e", 1, "1.3")[0]
-        obj = manifest["domains"][0]["objectives"][0]
-        self.assertEqual(len(obj["flashcards"]), len(obj["lessons"][0]["terms"]))
-        self.assertTrue(all(c["concept_slugs"] == obj["lessons"][0]["concept_slugs"] for c in obj["flashcards"]))
+        for dom in manifest["domains"]:
+            for obj in dom["objectives"]:
+                self.assertNotIn("flashcards", obj)
+                self.assertTrue(obj["lessons"][0]["terms"], "terms stay on the lesson")
+                self.assertEqual(obj["lessons"][0]["concept_slugs"], [obj["concepts"][0]["slug"]])
+
+    def test_the_real_manifests_carry_no_term_flashcards(self):
+        import yaml
+        for name in ("open_openstax_college_algebra_1e.yaml", "open_openstax_prealgebra_1e.yaml"):
+            m = yaml.safe_load((REPO / "content" / name).read_text(encoding="utf-8"))
+            self.assertFalse(any("flashcards" in o for d in m["domains"] for o in d["objectives"]), name)
 
 
 class SourceGateTests(unittest.TestCase):
