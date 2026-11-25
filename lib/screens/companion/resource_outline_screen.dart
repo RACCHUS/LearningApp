@@ -30,6 +30,9 @@ class _Draft {
 
   /// The learner's own estimate for this part, if any.
   int? minutes;
+
+  /// Where this part begins in a video, when the pasted line said so.
+  int? startSeconds;
 }
 
 /// The outline of one outside resource (companion plan v1.0 §3.4, EX-3):
@@ -91,7 +94,7 @@ class _ResourceOutlineScreenState extends ConsumerState<ResourceOutlineScreen> {
                 ? SectionMapSource.learner
                 : SectionMapSource.outlineMatch,
             minutes: parsed.minutes[i],
-          ),
+          )..startSeconds = parsed.starts[i],
       ];
       _generation++;
       _pasteNote = parsed.truncated
@@ -273,7 +276,7 @@ class _ResourceOutlineScreenState extends ConsumerState<ResourceOutlineScreen> {
           keys: s.objectiveKeys.where(known.contains).toSet(),
           source: s.source,
           minutes: s.minutes,
-        ),
+        )..startSeconds = s.startSeconds,
     ];
     final mapped = drafts.where((d) => d.keys.isNotEmpty).length;
 
@@ -356,7 +359,9 @@ class _ResourceOutlineScreenState extends ConsumerState<ResourceOutlineScreen> {
                         ),
                         child: Text(
                           // A pasted line that brings its own number keeps it.
-                          RegExp(r'^\d').hasMatch(d.title) ? d.title : '${i + 1}. ${d.title}',
+                          RegExp(r'^\d').hasMatch(d.title)
+                              ? d.title
+                              : '${i + 1}. ${d.title}',
                           style: theme.textTheme.bodyLarge?.copyWith(
                             fontWeight: FontWeight.w600,
                           ),
@@ -550,6 +555,7 @@ class _ResourceOutlineScreenState extends ConsumerState<ResourceOutlineScreen> {
                                   ? SectionMapSource.learner
                                   : d.source,
                               minutes: d.minutes,
+                              startSeconds: d.startSeconds,
                             ),
                         ], done: 'Outline saved.'),
                   icon: const Icon(Icons.check),

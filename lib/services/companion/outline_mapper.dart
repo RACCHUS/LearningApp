@@ -9,8 +9,13 @@ class ParsedOutline {
     this.titles, {
     this.truncated = false,
     this.minutes = const [],
+    this.starts = const [],
   });
   final List<String> titles;
+
+  /// For each title, where it begins in a video when its line opened with a
+  /// timestamp ("2:15 Exponents"), in seconds; null otherwise.
+  final List<int?> starts;
 
   /// For each title, the length stated on its line ("12:30", "25 min",
   /// "1 h 20 min"), in whole minutes; null where the line gave none.
@@ -122,13 +127,18 @@ class OutlineMapper {
     final text = truncated ? pasted.substring(0, maxPasteLength) : pasted;
     final titles = <String>[];
     final minutes = <int?>[];
+    final starts = <int?>[];
     final seen = <String>{};
     for (final raw in const LineSplitter().convert(text)) {
       var line = raw
           .trimRight()
           .replaceFirst(_tailPage, '')
           .replaceFirst(_leadBullet, '');
-      final (rest, length) = _takeLength(line.replaceFirst(_leadTime, ''));
+      final lead = _leadTime.firstMatch(line);
+      final start = lead == null ? null : _seconds(lead.group(0)!);
+      final (rest, length) = _takeLength(
+        lead == null ? line : line.substring(lead.end),
+      );
       line = rest;
       line = line.replaceAll(RegExp(r'\s+'), ' ').trim();
       if (!_letter.hasMatch(line)) continue;
@@ -142,8 +152,36 @@ class OutlineMapper {
       }
       titles.add(line);
       minutes.add(length);
+      starts.add(
+        start != null && start <= ResourceSection.maxStartSeconds
+            ? start
+            : null,
+      );
     }
-    return ParsedOutline(titles, truncated: truncated, minutes: minutes);
+    // A video chapter list gives start times, not lengths: a part runs until
+    // the next one starts. The last part's length stays unknown.
+    for (var i = 0; i + 1 < titles.length; i++) {
+      final a = starts[i], b = starts[i + 1];
+      if (minutes[i] == null && a != null && b != null && b > a) {
+        minutes[i] = _clampMinutes(((b - a) / 60).ceil());
+      }
+    }
+    return ParsedOutline(
+      titles,
+      truncated: truncated,
+      minutes: minutes,
+      starts: starts,
+    );
+  }
+
+  /// "2:15" is 135 and "1:02:33" is 3753. A two-part time is minutes:seconds.
+  static int _seconds(String text) {
+    final parts = RegExp(
+      r'\d+',
+    ).allMatches(text).map((m) => int.parse(m.group(0)!)).toList();
+    return parts.length == 3
+        ? parts[0] * 3600 + parts[1] * 60 + parts[2]
+        : parts[0] * 60 + parts[1];
   }
 
   static Set<String> _words(String text) => {

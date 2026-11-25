@@ -35,6 +35,18 @@ final companionCaptureEnabledProvider = Provider<bool>((ref) {
       );
 });
 
+/// Switch `content.companion_embeds` (default OFF): playing an embeddable
+/// video from its provider inside the companion screen (companion plan
+/// v1.0, EX-7). A client feature; the player writes nothing to LearningApp.
+final companionEmbedsEnabledProvider = Provider<bool>((ref) {
+  return ref.watch(learnerResourcesEnabledProvider) &&
+      isSiteFeatureEnabled(
+        ref.watch(siteFeatureSnapshotProvider).valueOrNull,
+        SiteFeatureKeys.contentCompanionEmbeds,
+        runtimeReady: SiteFeatureRuntime.snapshotEnabled,
+      );
+});
+
 /// A goal the learner already has, to attach a captured resource to.
 typedef CaptureGoal = ({String targetId, String label});
 

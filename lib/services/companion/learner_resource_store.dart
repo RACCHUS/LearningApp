@@ -53,7 +53,7 @@ class SupabaseLearnerResourceStore implements LearnerResourceStore {
         .from('learner_external_resources')
         .select(
           'id,target_id,title,kind,url,access,learner_resource_objectives(objective_key,studied_at),'
-          'learner_resource_sections(position,title,objective_keys,map_source,est_minutes,studied_at)',
+          'learner_resource_sections(position,title,objective_keys,map_source,est_minutes,start_seconds,studied_at)',
         )
         .eq('target_id', targetId)
         .order('created_at');
@@ -208,6 +208,7 @@ class LocalLearnerResourceStore implements LearnerResourceStore {
           objectiveKeys: s.objectiveKeys,
           source: s.source,
           minutes: s.minutes,
+          startSeconds: s.startSeconds,
         ),
     ];
     if (clean.any((s) => s.title.isEmpty || s.title.length > ResourceSection.maxTitleLength)) {

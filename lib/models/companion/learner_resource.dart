@@ -51,6 +51,7 @@ class ResourceSection {
     this.objectiveKeys = const {},
     this.source = SectionMapSource.learner,
     this.minutes,
+    this.startSeconds,
     this.studiedAt,
   });
 
@@ -67,6 +68,11 @@ class ResourceSection {
   /// The learner's own estimate of how long this part takes, if they gave one.
   final int? minutes;
 
+  static const int maxStartSeconds = 86400;
+
+  /// Where this part begins in a video, in seconds, if the learner gave it.
+  final int? startSeconds;
+
   /// When the learner marked this part studied. Self-report, never evidence.
   final DateTime? studiedAt;
 
@@ -77,6 +83,7 @@ class ResourceSection {
     objectiveKeys: objectiveKeys,
     source: source,
     minutes: minutes,
+    startSeconds: startSeconds,
     studiedAt: studiedAt == null ? this.studiedAt : studiedAt(),
   );
 
@@ -88,8 +95,14 @@ class ResourceSection {
     },
     source: SectionMapSource.fromWire(json['map_source'] ?? json['source']),
     minutes: _minutes(json['est_minutes'] ?? json['minutes']),
+    startSeconds: _start(json['start_seconds'] ?? json['start']),
     studiedAt: json['studied_at'] is String ? DateTime.tryParse(json['studied_at'] as String) : null,
   );
+
+  static int? _start(Object? v) {
+    final n = v is num ? v.round() : null;
+    return n != null && n >= 0 && n <= maxStartSeconds ? n : null;
+  }
 
   static int? _minutes(Object? v) {
     final n = v is num ? v.round() : null;
@@ -102,6 +115,7 @@ class ResourceSection {
     'objective_keys': objectiveKeys.toList()..sort(),
     'source': source.wire,
     if (minutes != null) 'minutes': minutes,
+    if (startSeconds != null) 'start': startSeconds,
   };
 
   /// Device storage: the RPC shape plus the studied mark.
