@@ -7,24 +7,52 @@ lane: underserved
 intended_learner: Adult learners rebuilding everyday numeracy (percents, tax, discounts, interest)
 locale: en-US
 outcome: Solving percent, tax, commission, discount and simple-interest problems, measured by held-out checks
-demand_status: unmeasured
-observations: []
+demand_status: research_in_progress
+observations:
+- evidence_class: education
+  metric: First-year undergraduates who took remedial mathematics in 2019-20
+  state: observed
+  value: 10.1
+  unit: percent
+  period: 2019-20
+  geography: United States, all institutions
+  publisher: NCES Digest of Education Statistics, Table 311.40 (NPSAS:20)
+  source_locator: https://nces.ed.gov/programs/digest/d22/tables/dt22_311.40.asp
+  directness: indirect
+  checked_on: '2026-11-25'
+  note: Standard error 0.27; student self-reports. A need for foundational algebra, not demand for this course.
+  cohort: nces-311.40-2019-20
+- evidence_class: education
+  metric: First-year undergraduates who took remedial mathematics in 2019-20
+  state: observed
+  value: 13.0
+  unit: percent
+  period: 2019-20
+  geography: United States, public 2-year institutions
+  publisher: NCES Digest of Education Statistics, Table 311.40 (NPSAS:20)
+  source_locator: https://nces.ed.gov/programs/digest/d22/tables/dt22_311.40.asp
+  directness: indirect
+  checked_on: '2026-11-25'
+  note: Standard error 0.49; student self-reports.
+  cohort: nces-311.40-2019-20
 factors:
   demand:
     score: null
-    evidence: &id001 []
+    evidence: []
     rated_by: null
   underserved_need:
-    score: null
-    evidence: *id001
-    rated_by: null
+    score: 3
+    evidence:
+    - 13.0% of first-year students at public 2-year colleges (10.1% overall) took remedial mathematics in 2019-20
+      (NCES Table 311.40)
+    rated_by: 'ai-drafted-by-claude (method: plan v1.2 §4.3 anchors from the cited observation)'
   outcome_value:
     score: null
-    evidence: *id001
+    evidence: []
     rated_by: null
   cross_goal_reuse:
     score: null
-    evidence: *id001
+    evidence: []
     rated_by: null
   source_feasibility:
     score: 5
@@ -33,7 +61,7 @@ factors:
     rated_by: 'ai-drafted-by-claude (method: registry status and allowed uses)'
   improvement_potential:
     score: null
-    evidence: *id001
+    evidence: []
     rated_by: null
 gates:
   permitted_operation: true
@@ -47,4 +75,4 @@ effort:
   reason: 'Live (R6): improvements only'
   operator_minutes: null
 recommendation: improve
-notes: The underserved lane is editorial until need is documented with evidence.
+notes: Need is documented (remedial mathematics rates); demand for this course is not measured, so no demand score.
