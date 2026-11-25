@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:learning_pwa/models/companion/goal_coverage.dart';
 import 'package:learning_pwa/models/companion/learner_resource.dart';
 import 'package:learning_pwa/models/objective_readiness.dart';
 import 'package:learning_pwa/providers/learner_resource_provider.dart';
@@ -9,6 +10,7 @@ import 'package:learning_pwa/providers/learning_support_controller_provider.dart
 import 'package:learning_pwa/providers/learning_target_provider.dart';
 import 'package:learning_pwa/providers/target_readiness_provider.dart';
 import 'package:learning_pwa/theme/design_tokens.dart';
+import 'package:learning_pwa/screens/companion/goal_gaps_screen.dart';
 import 'package:learning_pwa/widgets/companion/learner_resources_card.dart';
 
 /// One outside resource beside its goal (companion plan v1.0, EX-1): the
@@ -16,16 +18,13 @@ import 'package:learning_pwa/widgets/companion/learner_resources_card.dart';
 /// "studied" mark is the learner's own note. Only LearningApp's checks move
 /// readiness, which is shown here read-only next to each objective.
 class LearnerResourceScreen extends ConsumerWidget {
-  const LearnerResourceScreen({
-    super.key,
-    required this.targetId,
-    required this.targetVersionId,
-    required this.resourceId,
-  });
+  const LearnerResourceScreen({super.key, required this.goal, required this.resourceId});
 
-  final String targetId;
-  final String targetVersionId;
+  final GoalRef goal;
   final String resourceId;
+
+  String get targetId => goal.targetId;
+  String get targetVersionId => goal.targetVersionId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -34,6 +33,11 @@ class LearnerResourceScreen extends ConsumerWidget {
     final nodes = ref.watch(targetCurriculumNodesProvider(targetVersionId));
     final readiness = ref.watch(objectiveReadinessProvider(targetVersionId)).valueOrNull;
     final resource = resources.valueOrNull?.where((r) => r.id == resourceId).firstOrNull;
+    // LearningApp's own content per objective, for the per-objective check.
+    final entryByKey = {
+      for (final e in ref.watch(goalCoverageProvider(goal)).valueOrNull?.entries ?? const <GoalCoverageEntry>[])
+        e.item.key: e,
+    };
 
     if (resource == null) {
       return Scaffold(
@@ -206,15 +210,34 @@ class LearnerResourceScreen extends ConsumerWidget {
                   () => store.setObjectives(resource.id, v ? {...covered, item.key} : ({...covered}..remove(item.key))),
                 ),
                 onStudied: (v) => run(() => store.setStudied(resource.id, item.key, v)),
+                hasIndependentChecks: entryByKey[item.key]?.appHasChecks == true,
+                onCheck: entryByKey[item.key]?.appHasLessons == true
+                    ? () => openObjectiveInLearningApp(
+                        context,
+                        ref,
+                        targetId: targetId,
+                        objectiveId: entryByKey[item.key]!.row!.objectiveId,
+                      )
+                    : null,
               ),
           ],
           if (outline.itemCount > coveredHere && coveredHere > 0) ...[
             const SizedBox(height: DesignTokens.space4),
             Text(
-              '${outline.itemCount - coveredHere} objectives are not covered by this. '
-              'Look for LearningApp lessons on them in the outline.',
+              '${outline.itemCount - coveredHere} objectives are not covered by this.',
               key: const Key('learner_resource_uncovered_note'),
               style: muted,
+            ),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                key: const Key('learner_resource_gaps'),
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(builder: (_) => GoalGapsScreen(goal: goal)),
+                ),
+                icon: const Icon(Icons.checklist_rtl, size: 18),
+                label: const Text('See the gaps for this goal'),
+              ),
             ),
           ],
         ],
@@ -231,6 +254,8 @@ class _ObjectiveRow extends StatelessWidget {
     required this.status,
     required this.onCovers,
     required this.onStudied,
+    required this.onCheck,
+    required this.hasIndependentChecks,
   });
 
   final ResourceOutlineItem item;
@@ -239,6 +264,13 @@ class _ObjectiveRow extends StatelessWidget {
   final ObjectiveReadinessStatus? status;
   final ValueChanged<bool> onCovers;
   final ValueChanged<bool> onStudied;
+
+  /// Opens LearningApp's lesson for this objective; null when it has none.
+  final VoidCallback? onCheck;
+
+  /// False when LearningApp has lessons but no independent checks for it:
+  /// the lesson then offers practice, which is not called a check.
+  final bool hasIndependentChecks;
 
   @override
   Widget build(BuildContext context) {
@@ -264,6 +296,15 @@ class _ObjectiveRow extends StatelessWidget {
                     'LearningApp checks: ${status!.label}',
                     key: Key('readiness_${item.key}'),
                     style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                  ),
+                if (covered && onCheck != null)
+                  TextButton.icon(
+                    key: Key('check_${item.key}'),
+                    onPressed: onCheck,
+                    icon: const Icon(Icons.fact_check_outlined, size: 18),
+                    label: Text(
+                      hasIndependentChecks ? 'Check this in LearningApp' : 'Practise this in LearningApp',
+                    ),
                   ),
               ],
             ),

@@ -1,8 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:learning_pwa/models/companion/goal_coverage.dart';
 import 'package:learning_pwa/models/companion/learner_resource.dart';
+import 'package:learning_pwa/models/content_generation/coverage_matrix.dart';
 import 'package:learning_pwa/models/governance/site_feature_keys.dart';
 import 'package:learning_pwa/providers/learning_context_provider.dart';
+import 'package:learning_pwa/providers/learning_target_provider.dart';
 import 'package:learning_pwa/providers/site_feature_provider.dart';
+import 'package:learning_pwa/providers/target_coverage_provider.dart';
 import 'package:learning_pwa/services/companion/learner_resource_store.dart';
 import 'package:learning_pwa/services/governance/site_feature_service.dart';
 
@@ -46,4 +50,31 @@ final strandedLocalResourcesProvider = FutureProvider<int>((ref) async {
     return 0;
   }
   return (await ref.watch(localLearnerResourceStoreProvider).listAll()).length;
+});
+
+/// The three ways the app names one goal: its id, its current version and
+/// its slug (the Coverage Matrix is read by slug).
+typedef GoalRef = ({String targetId, String targetVersionId, String targetSlug});
+
+/// A goal's objectives placed against the learner's outside resources and
+/// LearningApp's own content (companion plan v1.0 EX-2). LearningApp's side
+/// is optional: if its Coverage Matrix can't be read, only the outside half
+/// is known and the view says so.
+final goalCoverageProvider = FutureProvider.family<GoalCoverage, GoalRef>((ref, goal) async {
+  final resourcesFuture = ref.watch(learnerResourcesProvider(goal.targetId).future);
+  final nodesFuture = ref.watch(targetCurriculumNodesProvider(goal.targetVersionId).future);
+  final matrixFuture = ref.watch(targetCoverageProvider(goal.targetSlug).future);
+  final resources = await resourcesFuture;
+  final nodes = await nodesFuture;
+  List<CoverageRow>? rows;
+  try {
+    rows = (await matrixFuture).rows;
+  } catch (_) {
+    rows = null;
+  }
+  return GoalCoverage.build(
+    outline: ResourceOutline.fromNodes(nodes),
+    resources: resources,
+    coverageRows: rows,
+  );
 });
