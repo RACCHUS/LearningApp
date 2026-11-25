@@ -355,7 +355,8 @@ class _ResourceOutlineScreenState extends ConsumerState<ResourceOutlineScreen> {
                           horizontal: DesignTokens.space2,
                         ),
                         child: Text(
-                          '${i + 1}. ${d.title}',
+                          // A pasted line that brings its own number keeps it.
+                          RegExp(r'^\d').hasMatch(d.title) ? d.title : '${i + 1}. ${d.title}',
                           style: theme.textTheme.bodyLarge?.copyWith(
                             fontWeight: FontWeight.w600,
                           ),
