@@ -25,21 +25,21 @@ DOMAIN_02 = {
             "description": "Solve multi-step linear equations in one variable, apply slope-intercept models to practical scenarios, and express linear inequality solutions in interval notation.",
             "sort_order": 1,
             "importance": "core",
-            "citation": "OpenStax College Algebra 1e, Section 2.1: Linear Equations; Section 2.2: Linear Models; Section 2.7: Linear Inequalities",
+            "citation": "OpenStax College Algebra 1e, Section 2.2: Linear Equations in One Variable; Section 2.3: Models and Applications; Section 2.7: Linear Inequalities and Absolute Value Inequalities",
             "concepts": [
                 {
                     "slug": "alg-linear-equations",
                     "name": "Solving Linear Equations in One Variable",
                     "short_definition": "Algebraic methods for solving equations of the form ax + b = c using inverse operations.",
                     "description": "Clearing denominators with the LCD, expanding parentheses with the distributive property, collecting like terms, and isolating the variable.",
-                    "citation": "OpenStax College Algebra 1e, Section 2.1",
+                    "citation": "OpenStax College Algebra 1e, Section 2.2",
                 },
                 {
                     "slug": "alg-linear-models",
                     "name": "Linear Applications and Rate Models",
                     "short_definition": "Translating verbal descriptions into linear equations y = mx + b where m represents constant rate of change and b represents initial value.",
                     "description": "Formulating models for cost, revenue, distance-rate-time, and mixture problems.",
-                    "citation": "OpenStax College Algebra 1e, Section 2.2",
+                    "citation": "OpenStax College Algebra 1e, Section 2.3",
                     "prerequisites": ["alg-linear-equations"],
                 },
                 {
@@ -62,7 +62,7 @@ DOMAIN_02 = {
                         "alg-linear-models",
                         "alg-linear-inequalities",
                     ],
-                    "citation": "OpenStax College Algebra 1e, Sections 2.1, 2.2, & 2.7",
+                    "citation": "OpenStax College Algebra 1e, Sections 2.2, 2.3, & 2.7",
                     "terms": [
                         {"term": "Linear Equation", "definition": "An equation in which the highest power of the variable is 1, in standard form ax + b = 0 with a != 0."},
                         {"term": "Identity Equation", "definition": "An equation that is true for all values in the domain, having infinitely many real solutions."},
@@ -160,7 +160,7 @@ DOMAIN_02 = {
                             "explanation": "Multiply the entire equation by the LCD of 4 and 6, which is 12: 12 * [(2x - 3)/4] - 12 * [(x + 1)/6] = 12 * 2. This simplifies to 3(2x - 3) - 2(x + 1) = 24. Distribute: 6x - 9 - 2x - 2 = 24. Combine like terms: 4x - 11 = 24. Add 11 to both sides: 4x = 35. Divide by 4: x = 35/4.",
                             "difficulty": "intermediate",
                             "cognitive_level": "application",
-                            "citation": "OpenStax College Algebra 1e, Section 2.1",
+                            "citation": "OpenStax College Algebra 1e, Section 2.2",
                             "concept_slugs": ["alg-linear-equations"],
                         },
                         {
@@ -198,7 +198,7 @@ DOMAIN_02 = {
                             "explanation": "Let m be the number of miles. The linear cost model is C(m) = 3.50 + 2.25m <= 26.00. Subtract 3.50 from both sides: 2.25m <= 22.50. Divide by 2.25: m <= 10. Thus, the traveler can travel a maximum of 10 whole miles without exceeding the budget.",
                             "difficulty": "intermediate",
                             "cognitive_level": "application",
-                            "citation": "OpenStax College Algebra 1e, Section 2.2",
+                            "citation": "OpenStax College Algebra 1e, Section 2.3",
                             "concept_slugs": ["alg-linear-models", "alg-linear-inequalities"],
                         },
                     ],
@@ -228,7 +228,7 @@ DOMAIN_02 = {
             "description": "Solve quadratic equations by factoring, completing the square, and the quadratic formula, and determine the nature of solutions using the discriminant Delta = b^2 - 4ac.",
             "sort_order": 2,
             "importance": "core",
-            "citation": "OpenStax College Algebra 1e, Section 2.5: Quadratic Equations",
+            "citation": "OpenStax College Algebra 1e, Section 2.5: Quadratic Equations; Section 5.1: Quadratic Functions",
             "concepts": [
                 {
                     "slug": "alg-quadratic-methods",
@@ -250,7 +250,7 @@ DOMAIN_02 = {
                     "name": "Quadratic Applications and Projectile Motion",
                     "short_definition": "Kinematic projectile height models h(t) = -1/2 g t^2 + v_0 t + h_0 and parabolic optimization.",
                     "description": "Solving for time of flight (roots), maximum height (vertex), and ground impact.",
-                    "citation": "OpenStax College Algebra 1e, Section 2.5",
+                    "citation": "OpenStax College Algebra 1e, Section 5.1",
                     "prerequisites": ["alg-quadratic-methods"],
                 },
             ],
@@ -397,7 +397,7 @@ DOMAIN_02 = {
                             "explanation": "Set the height equal to 0 for ground level: -16t^2 + 80t = 0. Factor out -16t: -16t(t - 5) = 0. The solutions are t = 0 (launch) and t = 5 (landing). Thus, the rocket returns to the ground at t = 5 seconds.",
                             "difficulty": "intermediate",
                             "cognitive_level": "application",
-                            "citation": "OpenStax College Algebra 1e, Section 2.5",
+                            "citation": "OpenStax College Algebra 1e, Section 5.1",
                             "concept_slugs": ["alg-quadratic-projectile-model"],
                         },
                     ],
@@ -427,7 +427,7 @@ DOMAIN_02 = {
             "description": "Isolate radicals and powers, clear rational denominators with LCD, branch absolute value equations, and rigorously verify candidate roots against domain restrictions.",
             "sort_order": 3,
             "importance": "core",
-            "citation": "OpenStax College Algebra 1e, Section 2.6: Other Types of Equations",
+            "citation": "OpenStax College Algebra 1e, Section 2.2: Linear Equations in One Variable; Section 2.6: Other Types of Equations",
             "concepts": [
                 {
                     "slug": "alg-radical-equations",
@@ -441,7 +441,7 @@ DOMAIN_02 = {
                     "name": "Solving Rational Equations",
                     "short_definition": "Multiplying by the LCD to convert rational equations to polynomial equations.",
                     "description": "Any candidate root that makes an original denominator zero is an extraneous solution and must be discarded.",
-                    "citation": "OpenStax College Algebra 1e, Section 2.6",
+                    "citation": "OpenStax College Algebra 1e, Section 2.2",
                     "prerequisites": ["alg-radical-equations"],
                 },
                 {
@@ -578,7 +578,7 @@ DOMAIN_02 = {
                             "explanation": "Domain restrictions are x != 2 and x != 4 to prevent division by zero. Multiply both sides by the LCD (x - 2)(x - 4): x(x - 4) + 1(x - 2) = 2. Expand and simplify: x^2 - 4x + x - 2 = 2 => x^2 - 3x - 4 = 0. Factor: (x - 4)(x + 1) = 0, giving candidate roots x = 4 and x = -1. Because x = 4 makes denominators zero in the original equation, it is extraneous. Substituting x = -1: (-1)/(-3) + 1/(-5) = 1/3 - 1/5 = 2/15, and 2/[(-3)(-5)] = 2/15. Therefore, x = -1 is the unique valid real solution.",
                             "difficulty": "intermediate",
                             "cognitive_level": "application",
-                            "citation": "OpenStax College Algebra 1e, Section 2.6",
+                            "citation": "OpenStax College Algebra 1e, Section 2.2",
                             "concept_slugs": ["alg-rational-equations"],
                         },
                         {
@@ -627,7 +627,7 @@ DOMAIN_02 = {
             "description": "Apply substitution and elimination methods to linear systems, classify systems by consistency and dependence, and solve non-linear systems.",
             "sort_order": 4,
             "importance": "core",
-            "citation": "OpenStax College Algebra 1e, Section 7.1: Systems of Linear Equations (Two Variables); Section 7.3: Systems of Nonlinear Equations",
+            "citation": "OpenStax College Algebra 1e, Section 7.1: Systems of Linear Equations: Two Variables; Section 7.3: Systems of Nonlinear Equations and Inequalities: Two Variables",
             "concepts": [
                 {
                     "slug": "alg-linear-systems",

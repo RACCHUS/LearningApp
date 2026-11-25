@@ -164,7 +164,7 @@ DOMAIN_01 = {
                         },
                         {
                             "id": "alg-sim-simplify-radical-72x5y6",
-                            "prompt": "Which expression represents the fully simplified radical form of \\sqrt{72x^5 y^6} where $x > 0$ and $y > 0$?",
+                            "prompt": "Which expression represents the fully simplified radical form of $\\sqrt{72x^5 y^6}$ where $x > 0$ and $y > 0$?",
                             "interaction_type": "single_choice",
                             "response_spec": {
                                 "options": [
@@ -183,7 +183,7 @@ DOMAIN_01 = {
                         },
                         {
                             "id": "alg-sim-scientific-notation-quotient",
-                            "prompt": "Evaluate the quotient \\frac{4.8 \\times 10^8}{1.2 \\times 10^{-4}} and express the result in proper scientific notation.",
+                            "prompt": "Evaluate the quotient $\\frac{4.8 \\times 10^8}{1.2 \\times 10^{-4}}$ and express the result in proper scientific notation.",
                             "interaction_type": "single_choice",
                             "response_spec": {
                                 "options": [
@@ -424,14 +424,14 @@ DOMAIN_01 = {
             "description": "Determine excluded values, multiply, divide, add, and subtract rational expressions with unlike denominators, and simplify complex fractions.",
             "sort_order": 3,
             "importance": "core",
-            "citation": "OpenStax College Algebra 1e, Section 1.6: Rational Expressions",
+            "citation": "OpenStax College Algebra 1e, Section 1.6: Rational Expressions; Section 3.2: Domain and Range",
             "concepts": [
                 {
                     "slug": "alg-domain-restrictions",
                     "name": "Domain Restrictions of Rational Expressions",
                     "short_definition": "Identification of real values that cause denominators to equal zero.",
                     "description": "Division by zero is undefined. The domain of a rational expression P(x)/Q(x) consists of all real numbers except values where Q(x) = 0.",
-                    "citation": "OpenStax College Algebra 1e, Section 1.6",
+                    "citation": "OpenStax College Algebra 1e, Sections 1.6 and 3.2",
                 },
                 {
                     "slug": "alg-rational-operations",
@@ -551,7 +551,7 @@ DOMAIN_01 = {
                             "explanation": "Domain exclusions occur where the denominator equals zero: x^2 - 9 = 0. Factoring gives (x - 3)(x + 3) = 0, which yields x = 3 and x = -3. The numerator root x = 4 is in the domain (it simply makes the expression 0).",
                             "difficulty": "beginner",
                             "cognitive_level": "comprehension",
-                            "citation": "OpenStax College Algebra 1e, Section 1.6",
+                            "citation": "OpenStax College Algebra 1e, Sections 1.6 and 3.2",
                             "concept_slugs": ["alg-domain-restrictions"],
                         },
                         {
@@ -567,7 +567,7 @@ DOMAIN_01 = {
                                 ]
                             },
                             "scoring_spec": {"correct_index": 3},
-                            "explanation": "Multiply numerator and denominator by the LCD of all inner fractions, which is x^2 y^2 (valid for all non-zero x, y with x != \\pm y): Numerator becomes (1/x - 1/y) * x^2 y^2 = xy^2 - x^2 y = xy(y - x). Denominator becomes (1/x^2 - 1/y^2) * x^2 y^2 = y^2 - x^2 = (y - x)(y + x). Dividing gives [xy(y - x)] / [(y - x)(y + x)] = xy / (x + y). Note that x != \\pm y ensures that neither (y - x) nor (y + x) equals zero.",
+                            "explanation": "Multiply numerator and denominator by the LCD of all inner fractions, which is x^2 y^2 (valid for all non-zero x, y with $x \\neq \\pm y$): Numerator becomes (1/x - 1/y) * x^2 y^2 = xy^2 - x^2 y = xy(y - x). Denominator becomes (1/x^2 - 1/y^2) * x^2 y^2 = y^2 - x^2 = (y - x)(y + x). Dividing gives [xy(y - x)] / [(y - x)(y + x)] = xy / (x + y). Note that $x \\neq \\pm y$ ensures that neither (y - x) nor (y + x) equals zero.",
                             "difficulty": "intermediate",
                             "cognitive_level": "analysis",
                             "citation": "OpenStax College Algebra 1e, Section 1.6",
@@ -619,7 +619,7 @@ DOMAIN_01 = {
             "description": "Apply the piecewise definition of absolute value, calculate algebraic distance between real numbers, and simplify expressions with nested absolute values.",
             "sort_order": 4,
             "importance": "core",
-            "citation": "OpenStax College Algebra 1e, Section 1.1: Real Numbers; Section 2.6: Absolute Value",
+            "citation": "OpenStax College Algebra 1e, Section 1.1: Real Numbers: Algebra Essentials; Section 2.6: Other Types of Equations; Section 2.7: Linear Inequalities and Absolute Value Inequalities",
             "concepts": [
                 {
                     "slug": "alg-absolute-value-definition",
@@ -633,7 +633,7 @@ DOMAIN_01 = {
                     "name": "Distance on the Real Number Line",
                     "short_definition": "The distance between any two points a and b on the real line is given by d(a, b) = |a - b| = |b - a|.",
                     "description": "Allows geometric inequalities and intervals to be represented compactly using absolute value notation.",
-                    "citation": "OpenStax College Algebra 1e, Section 1.1",
+                    "citation": "OpenStax College Algebra 1e, Section 2.7",
                     "prerequisites": ["alg-absolute-value-definition"],
                 },
                 {
@@ -767,7 +767,7 @@ DOMAIN_01 = {
                             "explanation": "The distance between two numbers a and b on the real line is |a - b|. The distance between x and -4 is |x - (-4)| = |x + 4|. Requiring this distance to be strictly less than 7 gives |x + 4| < 7.",
                             "difficulty": "intermediate",
                             "cognitive_level": "application",
-                            "citation": "OpenStax College Algebra 1e, Section 1.1",
+                            "citation": "OpenStax College Algebra 1e, Section 2.7",
                             "concept_slugs": ["alg-distance-real-line"],
                         },
                         {

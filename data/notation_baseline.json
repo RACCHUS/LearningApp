@@ -1,0 +1,8 @@
+{
+  "about": "Frozen notation findings per manifest (plan v1.2 \u00a78.9; tool/check_notation.py). Counts may only fall.",
+  "counts": {
+    "clep_college_algebra.yaml": {
+      "plain_math": 398
+    }
+  }
+}

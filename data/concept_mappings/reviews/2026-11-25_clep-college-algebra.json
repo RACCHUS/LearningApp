@@ -1,0 +1,316 @@
+{
+  "reviewer_model": "claude-sonnet-5-5",
+  "verdict": "approved",
+  "entries": [
+    {
+      "objective": "1.1",
+      "section": "1.2",
+      "ok": true,
+      "issue": null,
+      "suggested": null
+    },
+    {
+      "objective": "1.1",
+      "section": "1.3",
+      "ok": true,
+      "issue": null,
+      "suggested": null
+    },
+    {
+      "objective": "1.2",
+      "section": "1.4",
+      "ok": true,
+      "issue": null,
+      "suggested": null
+    },
+    {
+      "objective": "1.2",
+      "section": "1.5",
+      "ok": true,
+      "issue": null,
+      "suggested": null
+    },
+    {
+      "objective": "1.2",
+      "section": "5.4",
+      "ok": true,
+      "issue": null,
+      "suggested": null
+    },
+    {
+      "objective": "1.3",
+      "section": "1.6",
+      "ok": true,
+      "issue": null,
+      "suggested": null
+    },
+    {
+      "objective": "1.3",
+      "section": "3.2",
+      "ok": true,
+      "issue": null,
+      "suggested": null
+    },
+    {
+      "objective": "1.4",
+      "section": "1.1",
+      "ok": true,
+      "issue": null,
+      "suggested": null
+    },
+    {
+      "objective": "1.4",
+      "section": "2.6",
+      "ok": true,
+      "issue": null,
+      "suggested": null
+    },
+    {
+      "objective": "1.4",
+      "section": "2.7",
+      "ok": true,
+      "issue": null,
+      "suggested": null
+    },
+    {
+      "objective": "1.4",
+      "section": "3.6",
+      "ok": true,
+      "issue": null,
+      "suggested": null
+    },
+    {
+      "objective": "1.5",
+      "section": "6.3",
+      "ok": true,
+      "issue": null,
+      "suggested": null
+    },
+    {
+      "objective": "1.5",
+      "section": "6.5",
+      "ok": true,
+      "issue": null,
+      "suggested": null
+    },
+    {
+      "objective": "2.1",
+      "section": "2.2",
+      "ok": true,
+      "issue": null,
+      "suggested": null
+    },
+    {
+      "objective": "2.1",
+      "section": "2.3",
+      "ok": true,
+      "issue": null,
+      "suggested": null
+    },
+    {
+      "objective": "2.1",
+      "section": "2.7",
+      "ok": true,
+      "issue": null,
+      "suggested": null
+    },
+    {
+      "objective": "2.1",
+      "section": "4.1",
+      "ok": true,
+      "issue": null,
+      "suggested": null
+    },
+    {
+      "objective": "2.1",
+      "section": "4.2",
+      "ok": true,
+      "issue": null,
+      "suggested": null
+    },
+    {
+      "objective": "2.2",
+      "section": "2.5",
+      "ok": true,
+      "issue": null,
+      "suggested": null
+    },
+    {
+      "objective": "2.2",
+      "section": "5.1",
+      "ok": true,
+      "issue": null,
+      "suggested": null
+    },
+    {
+      "objective": "2.3",
+      "section": "2.2",
+      "ok": true,
+      "issue": null,
+      "suggested": null
+    },
+    {
+      "objective": "2.3",
+      "section": "2.6",
+      "ok": true,
+      "issue": null,
+      "suggested": null
+    },
+    {
+      "objective": "2.4",
+      "section": "7.1",
+      "ok": true,
+      "issue": null,
+      "suggested": null
+    },
+    {
+      "objective": "2.4",
+      "section": "7.3",
+      "ok": true,
+      "issue": null,
+      "suggested": null
+    },
+    {
+      "objective": "2.5",
+      "section": "6.1",
+      "ok": true,
+      "issue": null,
+      "suggested": null
+    },
+    {
+      "objective": "2.5",
+      "section": "6.6",
+      "ok": true,
+      "issue": null,
+      "suggested": null
+    },
+    {
+      "objective": "2.5",
+      "section": "6.7",
+      "ok": true,
+      "issue": null,
+      "suggested": null
+    },
+    {
+      "objective": "3.1",
+      "section": "3.1",
+      "ok": true,
+      "issue": null,
+      "suggested": null
+    },
+    {
+      "objective": "3.1",
+      "section": "3.2",
+      "ok": true,
+      "issue": null,
+      "suggested": null
+    },
+    {
+      "objective": "3.2",
+      "section": "3.4",
+      "ok": true,
+      "issue": null,
+      "suggested": null
+    },
+    {
+      "objective": "3.3",
+      "section": "2.1",
+      "ok": true,
+      "issue": null,
+      "suggested": null
+    },
+    {
+      "objective": "3.3",
+      "section": "3.3",
+      "ok": true,
+      "issue": null,
+      "suggested": null
+    },
+    {
+      "objective": "3.3",
+      "section": "3.5",
+      "ok": true,
+      "issue": null,
+      "suggested": null
+    },
+    {
+      "objective": "3.4",
+      "section": "3.5",
+      "ok": true,
+      "issue": null,
+      "suggested": null
+    },
+    {
+      "objective": "3.5",
+      "section": "3.7",
+      "ok": true,
+      "issue": null,
+      "suggested": null
+    },
+    {
+      "objective": "3.6",
+      "section": "5.6",
+      "ok": true,
+      "issue": null,
+      "suggested": null
+    },
+    {
+      "objective": "4.1",
+      "section": "1.1",
+      "ok": true,
+      "issue": null,
+      "suggested": null
+    },
+    {
+      "objective": "4.2",
+      "section": "2.4",
+      "ok": true,
+      "issue": null,
+      "suggested": null
+    },
+    {
+      "objective": "4.3",
+      "section": "9.1",
+      "ok": true,
+      "issue": null,
+      "suggested": null
+    },
+    {
+      "objective": "4.3",
+      "section": "9.2",
+      "ok": true,
+      "issue": null,
+      "suggested": null
+    },
+    {
+      "objective": "4.3",
+      "section": "9.3",
+      "ok": true,
+      "issue": null,
+      "suggested": null
+    },
+    {
+      "objective": "4.3",
+      "section": "9.4",
+      "ok": true,
+      "issue": null,
+      "suggested": null
+    },
+    {
+      "objective": "4.4",
+      "section": "9.5",
+      "ok": true,
+      "issue": null,
+      "suggested": null
+    },
+    {
+      "objective": "4.4",
+      "section": "9.6",
+      "ok": true,
+      "issue": null,
+      "suggested": null
+    }
+  ],
+  "missing_sections": [],
+  "summary": "Re-review of 44 entries. All eight earlier fixes are applied and correct (1.4 partial and 5.4 added; 1.1 note corrected with low confidence and 3.6 added; 2.3 note corrected and 4.2 added; 6.7 note corrected and 6.1 added; 2.4 partial with modulus note; 9.2, 9.3, 9.5 partial; 9.4 note expanded). New sections verified: 5.4 (15 long division, 24 synthetic hits, exercises present), 3.6 (absolute value function graphing and equations; piecewise only 1 hit, matching the note), 4.2 (build linear models from verbal descriptions, rate and initial value, exercises present), 6.1 (62 compound, continuous interest formulas, 12 Try It). Titles match the table of contents throughout. Minor non-blocking remarks: 3.6 could also list practice since it has Section Exercises; 1.4/3.6 depth source_deeper is acceptable. The not-covered claims (divisibility and primes, rational-expression domain restrictions, modulus) remain correct."
+}

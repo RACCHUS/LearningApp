@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_math_fork/flutter_math.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:learning_pwa/models/content_types.dart';
 import 'package:learning_pwa/providers/audio_provider.dart';
@@ -7,6 +8,23 @@ import 'package:learning_pwa/widgets/mcq_options.dart';
 import 'package:learning_pwa/widgets/question_widgets/mcq_question_widget.dart';
 
 void main() {
+  testWidgets('math options render as math, not raw LaTeX (plan v1.2 §8.9)',
+      (tester) async {
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: McqOptions(
+          options: const [r'$2\sqrt{12}$', r'$4\sqrt{3}$', 'Plain text'],
+          selectedIndex: null,
+          onChanged: (_) {},
+        ),
+      ),
+    ));
+    await tester.pumpAndSettle();
+    expect(find.byType(Math), findsNWidgets(2));
+    expect(find.textContaining(r'$2\sqrt'), findsNothing);
+    expect(find.text('Plain text'), findsOneWidget);
+  });
+
   group('McqOptions & McqQuestionWidget', () {
     final options = [
       'First Option',

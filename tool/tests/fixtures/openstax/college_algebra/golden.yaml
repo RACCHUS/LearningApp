@@ -18,7 +18,7 @@ source_releases:
 target:
   slug: open-openstax-college-algebra-1e
   title: College Algebra (open textbook)
-  version_code: OPENSTAX-EBC5BEB-R8
+  version_code: OPENSTAX-EBC5BEB-R9
   version_title: College Algebra by OpenStax, CC BY 4.0
   version_description: Open textbook sections imported as LearningApp lessons.
   volatility_class: V0
