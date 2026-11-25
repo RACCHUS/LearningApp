@@ -10,6 +10,8 @@ import 'package:learning_pwa/providers/target_readiness_provider.dart';
 import 'package:learning_pwa/screens/companion/goal_gaps_screen.dart';
 import 'package:learning_pwa/screens/companion/resource_outline_screen.dart';
 import 'package:learning_pwa/theme/design_tokens.dart';
+import 'package:learning_pwa/models/companion/video_embed.dart';
+import 'package:learning_pwa/widgets/companion/companion_player.dart';
 import 'package:learning_pwa/widgets/help/help_action.dart';
 
 /// Opens the companion for a resource from a link that carries only ids
@@ -121,6 +123,7 @@ class CompanionScreen extends ConsumerWidget {
     final sections = resource.sections;
     final next = resource.nextSectionIndex;
     final store = ref.read(learnerResourceStoreProvider);
+    final videoId = embeddableVideoId(ref, resource);
 
     Future<void> mark(int index, bool studied) async {
       final messenger = ScaffoldMessenger.of(context);
@@ -194,131 +197,166 @@ class CompanionScreen extends ConsumerWidget {
           const HelpAction(),
         ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(DesignTokens.space3),
+      body: Column(
         children: [
-          Text(
-            summary,
-            key: const Key('companion_summary'),
-            style: theme.textTheme.titleSmall,
-          ),
-          const SizedBox(height: DesignTokens.space2),
-          Wrap(
-            spacing: DesignTokens.space2,
-            runSpacing: DesignTokens.space2,
-            children: [
-              if (resource.url != null)
-                FilledButton.tonalIcon(
-                  key: const Key('companion_open'),
-                  onPressed: open,
-                  icon: const Icon(Icons.open_in_new),
-                  label: const Text('Open (leaves LearningApp)'),
+          // An open player stays in view above the parts; nothing covers it.
+          CompanionPlayer(resource: resource),
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.all(DesignTokens.space3),
+              children: [
+                Text(
+                  summary,
+                  key: const Key('companion_summary'),
+                  style: theme.textTheme.titleSmall,
                 ),
-              if (sections.isEmpty)
-                OutlinedButton.icon(
-                  key: const Key('companion_add_outline'),
-                  onPressed: editOutline,
-                  icon: const Icon(Icons.format_list_numbered),
-                  label: const Text('Paste its outline'),
+                const SizedBox(height: DesignTokens.space2),
+                Wrap(
+                  spacing: DesignTokens.space2,
+                  runSpacing: DesignTokens.space2,
+                  children: [
+                    if (resource.url != null)
+                      FilledButton.tonalIcon(
+                        key: const Key('companion_open'),
+                        onPressed: open,
+                        icon: const Icon(Icons.open_in_new),
+                        label: const Text('Open (leaves LearningApp)'),
+                      ),
+                    if (sections.isEmpty)
+                      OutlinedButton.icon(
+                        key: const Key('companion_add_outline'),
+                        onPressed: editOutline,
+                        icon: const Icon(Icons.format_list_numbered),
+                        label: const Text('Paste its outline'),
+                      ),
+                  ],
                 ),
-            ],
-          ),
-          for (final (i, s) in sections.indexed)
-            Card(
-              // The key changes when the resume point moves, so the new
-              // current part opens and the one just finished closes.
-              key: ValueKey('companion_step_${i}_${i == next}'),
-              margin: const EdgeInsets.only(top: DesignTokens.space2),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
-                side: BorderSide(
-                  color: i == next
-                      ? theme.colorScheme.primary
-                      : theme.colorScheme.outlineVariant,
-                  width: i == next ? 2 : 1,
-                ),
-              ),
-              clipBehavior: Clip.antiAlias,
-              child: ExpansionTile(
-                key: Key('companion_tile_$i'),
-                initiallyExpanded: i == next,
-                shape: const Border(),
-                collapsedShape: const Border(),
-                leading: Icon(
-                  s.studied ? Icons.check_circle : Icons.radio_button_unchecked,
-                  color: s.studied
-                      ? theme.colorScheme.primary
-                      : theme.colorScheme.onSurfaceVariant,
-                ),
-                title: Text(s.title),
-                subtitle: Text(
-                  [
-                    if (i == next) 'Next',
-                    if (s.studied) 'Studied',
-                    if (s.minutes != null)
-                      'about ${formatStudyMinutes(s.minutes!)}',
-                  ].join(' · '),
-                  key: Key('companion_state_$i'),
-                ),
-                childrenPadding: const EdgeInsets.fromLTRB(
-                  DesignTokens.space3,
-                  0,
-                  DesignTokens.space3,
-                  DesignTokens.space3,
-                ),
-                expandedCrossAxisAlignment: CrossAxisAlignment.start,
-                expandedAlignment: Alignment.centerLeft,
-                children: [
-                  Text(
-                    s.objectiveKeys.any(labelByKey.containsKey)
-                        ? 'In this part, look for:'
-                        : 'No objectives are matched to this part.',
-                    style: muted,
+                CompanionPlayerOffer(resource: resource),
+                for (final (i, s) in sections.indexed)
+                  Card(
+                    // The key changes when the resume point moves, so the new
+                    // current part opens and the one just finished closes.
+                    key: ValueKey('companion_step_${i}_${i == next}'),
+                    margin: const EdgeInsets.only(top: DesignTokens.space2),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(
+                        DesignTokens.radiusMd,
+                      ),
+                      side: BorderSide(
+                        color: i == next
+                            ? theme.colorScheme.primary
+                            : theme.colorScheme.outlineVariant,
+                        width: i == next ? 2 : 1,
+                      ),
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: ExpansionTile(
+                      key: Key('companion_tile_$i'),
+                      initiallyExpanded: i == next,
+                      shape: const Border(),
+                      collapsedShape: const Border(),
+                      leading: Icon(
+                        s.studied
+                            ? Icons.check_circle
+                            : Icons.radio_button_unchecked,
+                        color: s.studied
+                            ? theme.colorScheme.primary
+                            : theme.colorScheme.onSurfaceVariant,
+                      ),
+                      title: Text(s.title),
+                      subtitle: Text(
+                        [
+                          if (i == next) 'Next',
+                          if (s.studied) 'Studied',
+                          if (s.minutes != null)
+                            'about ${formatStudyMinutes(s.minutes!)}',
+                        ].join(' · '),
+                        key: Key('companion_state_$i'),
+                      ),
+                      childrenPadding: const EdgeInsets.fromLTRB(
+                        DesignTokens.space3,
+                        0,
+                        DesignTokens.space3,
+                        DesignTokens.space3,
+                      ),
+                      expandedCrossAxisAlignment: CrossAxisAlignment.start,
+                      expandedAlignment: Alignment.centerLeft,
+                      children: [
+                        Text(
+                          s.objectiveKeys.any(labelByKey.containsKey)
+                              ? 'In this part, look for:'
+                              : 'No objectives are matched to this part.',
+                          style: muted,
+                        ),
+                        for (final key in labelByKey.keys.where(
+                          s.objectiveKeys.contains,
+                        ))
+                          _CompanionObjective(
+                            stepIndex: i,
+                            objectiveKey: key,
+                            label: labelByKey[key]!,
+                            status: codeByKey[key] == null
+                                ? null
+                                : statusByCode[codeByKey[key]],
+                            hasIndependentChecks:
+                                entryByKey[key]?.appHasChecks == true,
+                            onCheck: entryByKey[key]?.appHasLessons == true
+                                ? () => openObjectiveInLearningApp(
+                                    context,
+                                    ref,
+                                    targetId: goal.targetId,
+                                    objectiveId:
+                                        entryByKey[key]!.row!.objectiveId,
+                                  )
+                                : null,
+                          ),
+                        if (videoId != null && s.startSeconds != null)
+                          TextButton.icon(
+                            key: Key('companion_play_part_$i'),
+                            onPressed: () =>
+                                ref
+                                    .read(
+                                      companionPlayerProvider(
+                                        resource.id,
+                                      ).notifier,
+                                    )
+                                    .state = CompanionPlayback(
+                                  startSeconds: s.startSeconds,
+                                ),
+                            icon: const Icon(
+                              Icons.play_circle_outline,
+                              size: 18,
+                            ),
+                            label: Text(
+                              'Play this part here, from ${VideoEmbed.clock(s.startSeconds!)} (loads YouTube)',
+                            ),
+                          ),
+                        const SizedBox(height: DesignTokens.space2),
+                        if (s.studied)
+                          TextButton(
+                            key: Key('companion_undo_$i'),
+                            onPressed: () => mark(i, false),
+                            child: const Text('Not studied yet'),
+                          )
+                        else
+                          FilledButton.icon(
+                            key: Key('companion_done_$i'),
+                            onPressed: () => mark(i, true),
+                            icon: const Icon(Icons.check),
+                            label: const Text('Done studying this part'),
+                          ),
+                      ],
+                    ),
                   ),
-                  for (final key in labelByKey.keys.where(
-                    s.objectiveKeys.contains,
-                  ))
-                    _CompanionObjective(
-                      stepIndex: i,
-                      objectiveKey: key,
-                      label: labelByKey[key]!,
-                      status: codeByKey[key] == null
-                          ? null
-                          : statusByCode[codeByKey[key]],
-                      hasIndependentChecks:
-                          entryByKey[key]?.appHasChecks == true,
-                      onCheck: entryByKey[key]?.appHasLessons == true
-                          ? () => openObjectiveInLearningApp(
-                              context,
-                              ref,
-                              targetId: goal.targetId,
-                              objectiveId: entryByKey[key]!.row!.objectiveId,
-                            )
-                          : null,
-                    ),
-                  const SizedBox(height: DesignTokens.space2),
-                  if (s.studied)
-                    TextButton(
-                      key: Key('companion_undo_$i'),
-                      onPressed: () => mark(i, false),
-                      child: const Text('Not studied yet'),
-                    )
-                  else
-                    FilledButton.icon(
-                      key: Key('companion_done_$i'),
-                      onPressed: () => mark(i, true),
-                      icon: const Icon(Icons.check),
-                      label: const Text('Done studying this part'),
-                    ),
-                ],
-              ),
+                const SizedBox(height: DesignTokens.space3),
+                Text(
+                  'Studied is your own note. LearningApp cannot see what you do outside it, '
+                  "so only LearningApp's checks count toward readiness.",
+                  key: const Key('companion_self_report_note'),
+                  style: muted,
+                ),
+              ],
             ),
-          const SizedBox(height: DesignTokens.space3),
-          Text(
-            'Studied is your own note. LearningApp cannot see what you do outside it, '
-            "so only LearningApp's checks count toward readiness.",
-            key: const Key('companion_self_report_note'),
-            style: muted,
           ),
         ],
       ),
