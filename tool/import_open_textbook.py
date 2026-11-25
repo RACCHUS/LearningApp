@@ -29,6 +29,17 @@ What each section becomes:
 Images are not copied (they can carry separate rights); the text points to
 the original section instead. End-of-section exercise sets are skipped.
 
+Adapter contract (ingestion plan v1.2 §7.3, slice 6). This module is the
+"openstax-archive" adapter: discover (check_source: registry approval and
+the archive's own license), fetch (fetch, with --record / --replay for
+offline fixtures), parse (section_lesson: normalized lessons that keep
+their source URL and section number), and an explicit loss report
+(--loss-report: per section, what became graded, teaching-only or left out,
+skipped exercises, unsupported math and figures not carried over, and
+whether the result is faithful, not just parsed). --sections imports
+selected sections only. The import key (source release, archive version,
+scope, IMPORT_REVISION, approved practice) identifies a reproducible run.
+
 Safety: the source must be registered in data/content_sources.json with
 ``adapt`` and ``redistribute`` allowed and status ``approved``, and the
 license the publisher's archive reports must match the registry, or nothing
@@ -39,6 +50,7 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
+import hashlib
 import json
 import re
 import sys
@@ -623,10 +635,35 @@ def section_lesson(page_html: str, meta: dict, answers: dict[str, str],
 
 # ---------------------------------------------------------------- book
 
+_FETCH = {"mode": "live", "dir": None}
+
+
+def set_fetch_mode(mode: str, directory: Path | None = None) -> None:
+    """live (default), record (live and save each response) or replay
+    (read saved responses only; a missing one is an error, never a fetch)."""
+    if mode not in ("live", "record", "replay"):
+        raise ValueError(mode)
+    _FETCH["mode"], _FETCH["dir"] = mode, directory
+
+
+def fixture_path(directory: Path, url: str) -> Path:
+    return directory / (hashlib.sha256(url.encode("utf-8")).hexdigest()[:24] + ".json")
+
+
 def fetch(url: str) -> dict:
+    if _FETCH["mode"] == "replay":
+        path = fixture_path(_FETCH["dir"], url)
+        if not path.exists():
+            raise ImportProblem(f"no recorded fixture for {url}")
+        return json.loads(path.read_text(encoding="utf-8"))["body"]
     req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
     with urllib.request.urlopen(req, timeout=60) as r:
-        return json.load(r)
+        body = json.load(r)
+    if _FETCH["mode"] == "record":
+        _FETCH["dir"].mkdir(parents=True, exist_ok=True)
+        fixture_path(_FETCH["dir"], url).write_text(
+            json.dumps({"url": url, "body": body}, ensure_ascii=False, sort_keys=True), encoding="utf-8")
+    return body
 
 
 def check_source(source_id: str) -> tuple[dict, dict]:
@@ -721,14 +758,75 @@ def add_practice(lesson: dict, items: list[dict]) -> None:
     credit["body"] += PRACTICE_NOTE.format(n=len(items), kind=kind)
 
 
-def import_book(source_id: str, chapters: set[int], delay: float) -> tuple[dict, list[str]]:
+ADAPTER = "openstax-archive"
+
+
+def section_loss(number: str, title: str, url: str, lesson: dict, warnings: list[str]) -> dict:
+    """What one section kept and lost (plan v1.2 §7.3: a successful parse is
+    not the same as a faithful one)."""
+    texts = [str(v) for b in lesson["blocks"] for v in (b.get("content") or {}).values()]
+    figures = sum(t.count("_(Figure in the original section") for t in texts)
+    unsupported = sorted({w for w in warnings if w.startswith("unsupported MathML")})
+    skipped = 0
+    for w in warnings:
+        m = re.match(r"(\d+) Try It exercise\(s\) had no answer", w)
+        if m:
+            skipped += int(m.group(1))
+    return {
+        "number": number,
+        "title": title,
+        "source_locator": url,
+        "status": "graded",
+        "graded_questions": len(lesson["assessment_items"]),
+        "practice_prompts": sum(1 for b in lesson["blocks"] if b["block_type"] == "practice_prompt"),
+        "skipped_exercises_without_answer": skipped,
+        "unsupported_math": unsupported,
+        "figures_not_carried_over": figures,
+        "faithful": not unsupported and figures == 0,
+    }
+
+
+def import_key(source_id: str, archive_book: str, chapters: set[int], sections: set[str] | None,
+               practice_dir: Path) -> str:
+    """Stable identity of a run (plan v1.2 §7.2): same inputs, same key."""
+    practice_file = practice_dir / f"open_{source_id.replace('-', '_')}.yaml"
+    practice_hash = (hashlib.sha256(practice_file.read_bytes()).hexdigest()
+                     if practice_file.exists() else None)
+    spec = {"source": source_id, "archive_book": archive_book, "chapters": sorted(chapters),
+            "sections": sorted(sections) if sections is not None else None,
+            "adapter": ADAPTER, "import_revision": IMPORT_REVISION, "practice": practice_hash}
+    return hashlib.sha256(json.dumps(spec, sort_keys=True).encode("utf-8")).hexdigest()[:20]
+
+
+def loss_report(source_id: str, archive_book: str, chapters: set[int], sections: set[str] | None,
+                practice_dir: Path, section_reports: list[dict]) -> dict:
+    return {
+        "adapter": ADAPTER,
+        "adapter_revision": IMPORT_REVISION,
+        "source_release_id": source_id,
+        "archive_book": archive_book,
+        "chapters": sorted(chapters),
+        "sections": sorted(sections) if sections is not None else None,
+        "import_key": import_key(source_id, archive_book, chapters, sections, practice_dir),
+        "faithful": all(s["faithful"] for s in section_reports) if section_reports else False,
+        "section_reports": section_reports,
+    }
+
+
+def import_book(source_id: str, chapters: set[int], delay: float, *,
+                sections: set[str] | None = None, practice_dir: Path = PRACTICE,
+                retrieved_at: str | None = None,
+                report: dict | None = None) -> tuple[dict, list[str]]:
     source, book = check_source(source_id)
     meta = fetch(f"{ARCHIVE}{book['book']}.json")
     reported = ARCHIVE_LICENSE.get((meta.get("license") or {}).get("name", ""), "unknown")
     if reported != source["license"]:
         raise ImportProblem(f"archive reports {reported}, registry says {source['license']}")
     tree = meta["tree"]["contents"]
-    practice = approved_practice(source_id)
+    practice = approved_practice(source_id, practice_dir)
+    if sections is not None:
+        practice = {k: v for k, v in practice.items() if k in sections}
+    section_reports: list[dict] = []
     answer_key = next((c for c in tree if c.get("slug") == "answer-key"), None)
     all_warnings: list[str] = []
     left_out: list[str] = []
@@ -756,7 +854,7 @@ def import_book(source_id: str, chapters: set[int], delay: float) -> tuple[dict,
             if leaf.get("contents"):
                 continue
             sec_number, sec_title = split_number(plain(leaf.get("title", "")))
-            if not sec_number:
+            if not sec_number or (sections is not None and sec_number not in sections):
                 continue
             page = fetch(f"{ARCHIVE}{book['book']}:{leaf['id'].split('@')[0]}.json")
             time.sleep(delay)
@@ -768,11 +866,15 @@ def import_book(source_id: str, chapters: set[int], delay: float) -> tuple[dict,
             lesson, warnings = section_lesson(page["content"], info, answers, terms)
             all_warnings += [f"{sec_number}: {w}" for w in sorted(set(warnings))]
             add_practice(lesson, practice.pop(sec_number, []))
+            section_report = section_loss(sec_number, sec_title, info["url"], lesson, warnings)
+            section_reports.append(section_report)
             if not lesson["assessment_items"]:
                 if not mark_teaching_only(lesson):
                     left_out.append(f"{sec_number} {sec_title}")
+                    section_report["status"] = "left_out"
                     continue
                 teaching_only.append(f"{sec_number} {sec_title}")
+                section_report["status"] = "teaching_only"
             concept = "open-" + re.sub(r"[^a-z0-9]+", "-", f"{source_id}-{sec_number}".lower()).strip("-")
             lesson["concept_slugs"] = [concept]
             for q in lesson["assessment_items"]:
@@ -817,7 +919,7 @@ def import_book(source_id: str, chapters: set[int], delay: float) -> tuple[dict,
             "title": meta.get("title", ""),
             "version": f"{book['book'].split('@')[1]} (archive {ARCHIVE.rstrip('/').split('/')[-2]})",
             "source_url": f"https://openstax.org/books/{book['slug']}/pages/preface",
-            "retrieved_at": dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "retrieved_at": retrieved_at or dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
             "license": lic_full,
             "license_name": lic_short,
             "rights_note": (f"Adapted under {lic_short} (owner-approved, data/content_sources.json). "
@@ -844,6 +946,8 @@ def import_book(source_id: str, chapters: set[int], delay: float) -> tuple[dict,
     for title in teaching_only:
         all_warnings.append(f"teaching-only {title}: no answer can be graded automatically, so it has "
                             "practice with answers to reveal but no graded questions")
+    if report is not None:
+        report.update(loss_report(source_id, book["book"], chapters, sections, practice_dir, section_reports))
     return manifest, all_warnings
 
 
@@ -879,13 +983,32 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--source", required=True)
     ap.add_argument("--chapters", type=int, nargs="+", required=True)
     ap.add_argument("--delay", type=float, default=0.3)
+    ap.add_argument("--sections", nargs="+", help="import only these section numbers, e.g. 6.3 6.4")
+    ap.add_argument("--record", type=Path, help="save every fetched response here (fixtures)")
+    ap.add_argument("--replay", type=Path, help="read responses from here; never touch the network")
+    ap.add_argument("--retrieved-at", help="fixed retrieval timestamp (reproducible output)")
+    ap.add_argument("--loss-report", type=Path, help="write the per-section loss report (JSON) here")
+    ap.add_argument("--out", type=Path, help="write the manifest here instead of content/")
     args = ap.parse_args(argv)
+    if args.record and args.replay:
+        print("ERROR: --record and --replay are exclusive")
+        return 1
+    set_fetch_mode("record" if args.record else "replay" if args.replay else "live",
+                   args.record or args.replay)
+    report: dict = {}
     try:
-        manifest, warnings = import_book(args.source, set(args.chapters), args.delay)
+        manifest, warnings = import_book(
+            args.source, set(args.chapters), 0.0 if args.replay else args.delay,
+            sections=set(args.sections) if args.sections else None,
+            retrieved_at=args.retrieved_at, report=report)
     except ImportProblem as e:
         print(f"ERROR: {e}")
         return 1
-    out = REPO / "content" / f"open_{args.source.replace('-', '_')}.yaml"
+    finally:
+        set_fetch_mode("live")
+    if args.loss_report:
+        args.loss_report.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    out = args.out or REPO / "content" / f"open_{args.source.replace('-', '_')}.yaml"
     write_manifest(manifest, out)
     lessons = sum(len(o["lessons"]) for d in manifest["domains"] for o in d["objectives"])
     prompts = sum(1 for d in manifest["domains"] for o in d["objectives"] for l in o["lessons"]
@@ -894,7 +1017,7 @@ def main(argv: list[str] | None = None) -> int:
                  for l in o["lessons"])
     for w in warnings:
         print(f"WARNING: {w}")
-    print(f"wrote {out.relative_to(REPO)}: {lessons} lessons, {prompts} practice prompts, "
+    print(f"wrote {out}: {lessons} lessons, {prompts} practice prompts, "
           f"{graded} graded questions, "
           f"{len(warnings)} warning(s)")
     return 0
