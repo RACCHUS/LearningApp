@@ -284,7 +284,7 @@
         "sort_order": { "type": "integer" },
         "block_type": {
           "type": "string",
-          "enum": ["markdown", "callout", "code", "table", "image", "formula", "example", "practice_prompt", "simulation"]
+          "enum": ["markdown", "callout", "code", "table", "image", "formula", "example", "practice_prompt", "simulation", "performance_task"]
         },
         "content": { "type": "object" },
         "metadata": { "type": "object" }

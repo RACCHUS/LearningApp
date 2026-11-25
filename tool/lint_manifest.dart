@@ -319,6 +319,36 @@ class ManifestLinter {
             }
           }
 
+          // Mirrors lesson_blocks_performance_task_check (migration
+          // 20261124040000, plan v1.2 §8.8): title, fallback body,
+          // verification self_check and 2-20 criteria with text. A brief and
+          // an exemplar are what make the task usable, so they are required
+          // here too.
+          for (final block in (lesson['blocks'] as List<dynamic>?) ?? const []) {
+            if (block is! Map || block['block_type'] != 'performance_task') continue;
+            final content = (block['content'] as Map?) ?? const {};
+            final where = '$lLocation -> Block ${block['sort_order'] ?? '?'}';
+            void fail(String rule, String message) =>
+                issues.add(LintIssue(level: 'ERROR', rule: rule, location: where, message: message));
+            String text(Object? v) => (v ?? '').toString().trim();
+            for (final key in const ['title', 'body', 'brief', 'exemplar']) {
+              if (text(content[key]).isEmpty) {
+                fail('performance-task-missing-$key',
+                    'Performance task needs a non-empty content.$key.');
+              }
+            }
+            if (content['verification'] != 'self_check') {
+              fail('performance-task-verification',
+                  'Performance task verification must be self_check (the only supported mode); the database rejects anything else.');
+            }
+            final criteria = content['criteria'];
+            if (criteria is! List || criteria.length < 2 || criteria.length > 20 ||
+                criteria.any((c) => c is! Map || text(c['text']).isEmpty)) {
+              fail('performance-task-criteria',
+                  'Performance task needs 2-20 criteria, each a mapping with non-empty text.');
+            }
+          }
+
           // Track taught concepts from lesson
           final lConceptSlugs = (lesson['concept_slugs'] as List<dynamic>?)?.map((e) => e.toString()).toList();
           if (lConceptSlugs != null && lConceptSlugs.isNotEmpty) {

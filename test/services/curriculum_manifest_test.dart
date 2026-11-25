@@ -311,6 +311,35 @@ void main() {
       expect(bad.any((i) => i.rule == 'simulation-missing-body' && i.level == 'ERROR'), isTrue);
     });
 
+    test('a performance task must match the DB check and be usable (plan §8.8)', () {
+      Map<String, dynamic> task() => {
+            'title': 'Build it',
+            'body': 'Fallback text.',
+            'brief': 'Do the work.',
+            'exemplar': 'What good looks like.',
+            'verification': 'self_check',
+            'criteria': [
+              {'id': 'a', 'text': 'First'},
+              {'id': 'b', 'text': 'Second'},
+            ],
+          };
+      List<LintIssue> withTask(Map<String, dynamic> content) => lintWith((l) => (l['blocks'] as List)
+          .add({'sort_order': 99, 'block_type': 'performance_task', 'content': content}));
+      bool has(List<LintIssue> issues, String rule) =>
+          issues.any((i) => i.rule == rule && i.level == 'ERROR');
+
+      final ok = withTask(task());
+      expect(ok.where((i) => i.rule.startsWith('performance-task')), isEmpty);
+      expect(ok.where((i) => i.rule == 'json-schema'), isEmpty);
+      for (final key in ['title', 'body', 'brief', 'exemplar']) {
+        expect(has(withTask(task()..remove(key)), 'performance-task-missing-$key'), isTrue, reason: key);
+      }
+      expect(has(withTask(task()..['verification'] = 'checker'), 'performance-task-verification'), isTrue);
+      expect(has(withTask(task()..['criteria'] = [{'text': 'one'}]), 'performance-task-criteria'), isTrue);
+      expect(has(withTask(task()..['criteria'] = ['a', 'b']), 'performance-task-criteria'), isTrue);
+      expect(has(withTask(task()..['criteria'] = [{'text': 'a'}, {'text': ' '}]), 'performance-task-criteria'), isTrue);
+    });
+
     test('a teaching-only lesson cannot carry assessment items', () {
       final issues = lintWith((l) => l['tags'] = [...(l['tags'] as List), 'teaching-only']);
       expect(issues.any((i) => i.rule == 'teaching-only-has-assessments' && i.level == 'ERROR'), isTrue);

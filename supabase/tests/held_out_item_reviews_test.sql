@@ -96,7 +96,10 @@ select throws_ok($$ select public.ingest_held_out_items('d2400000-0000-4000-8000
 select throws_ok($$ select public.ingest_held_out_items('d2400000-0000-4000-8000-000000000012',
   jsonb_build_array(pg_temp.item('ho-a-1', 'ho-fixture-concept-1'))) $$,
   '23505', null, 'an item key can be used once per version');
-select is((select count(*)::int from private.held_out_item_reviews), 6,
+-- Scoped to the fixture version: a database with real held-out approvals
+-- (for example after a local publish rehearsal) must not change the result.
+select is((select count(*)::int from private.held_out_item_reviews
+           where target_version_id = 'd2400000-0000-4000-8000-000000000012'), 6,
   'failed calls wrote nothing');
 
 -- 4. Approvals are immutable; retiring is the only change.

@@ -9,7 +9,11 @@ enum LessonBlockType {
   formula,
   example,
   practicePrompt,
-  simulation;
+  simulation,
+
+  /// Hands-on task checked by the learner against a published rubric
+  /// (ingestion plan v1.2 §8.8). Self-checked only, never verified.
+  performanceTask;
 
   static LessonBlockType fromString(String value) {
     switch (value) {
@@ -32,6 +36,8 @@ enum LessonBlockType {
         return LessonBlockType.practicePrompt;
       case 'simulation':
         return LessonBlockType.simulation;
+      case 'performance_task':
+        return LessonBlockType.performanceTask;
       default:
         return LessonBlockType.markdown;
     }
@@ -57,6 +63,8 @@ enum LessonBlockType {
         return 'practice_prompt';
       case LessonBlockType.simulation:
         return 'simulation';
+      case LessonBlockType.performanceTask:
+        return 'performance_task';
     }
   }
 }

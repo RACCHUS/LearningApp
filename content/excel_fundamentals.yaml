@@ -1,6 +1,8 @@
 # Excel pilot curriculum. Prepared for ingestion 2026-11-24 (ingestion plan v1.2, D-13).
 # Study material with 10 practice questions (4 original items reviewed in
-# content/practice/excel_fundamentals.yaml) and flashcards. Its independent
+# content/practice/excel_fundamentals.yaml), flashcards and a self-checked
+# hands-on task (performance_task block, plan §8.8; review in
+# content/reviews/excel-budget-workbook-v1/). Its independent
 # held-out checks are in content/held_out/excel_fundamentals.yaml (D-14).
 # No Excel application is recreated inside LearningApp.
 source_release:
@@ -19,7 +21,7 @@ source_release:
 target:
   slug: "software-excel-fundamentals"
   title: "Microsoft Excel Fundamentals"
-  version_code: "EXCEL-PILOT-3"
+  version_code: "EXCEL-PILOT-4"
   version_title: "Spreadsheet Basics and Budget Totals"
   version_description: "Guided practice in the real Microsoft Excel application: one lesson on cell references and summing a range. Not a software replica or a professional credential."
   # Plan v2.6 §7.1: software documentation changes, so review every 9 months (V2).
@@ -111,7 +113,7 @@ domains:
                     | 2026-01-11 | Equipment | 80 |
                     | 2026-01-12 | Maintenance | 90 |
 
-                    The headings go in row 1, so the eight amounts are in C2 through C9. In C10, write a formula that totals them. Keep the amounts as typed numbers, and save the workbook in .xlsx format.
+                    The headings go in row 1, so the eight amounts are in C2 through C9. In C10, write a formula that totals them, and type the label Total in B10. Keep the amounts as typed numbers, and save the workbook as Budget-practice.xlsx.
               - sort_order: 3
                 block_type: "callout"
                 content:
@@ -125,8 +127,73 @@ domains:
                 content:
                   prompt: "Open the real Excel application and calculate the total of the eight numeric transaction cells without replacing the formula with a typed number. How would you check that your formula covers every row exactly once?"
                   exercise_id: "excel-budget-total-v1"
-                  answer: "In C10, enter =SUM(C2:C9). The total is 440. To check the range, click C10: Excel outlines the cells the formula uses, and the outline should start at the first amount (C2) and end at the last (C9). Then change one amount, for example C2 from 20 to 25: the total should become 445. Change it back afterwards."
+                  answer: "In C10, enter =SUM(C2:C9). The total is 440. To check the range, click C10 and double-click the cell (or press F2; Fn+F2 or Control+U on some Macs): Excel outlines the cells the formula uses, and the outline should start at the first amount (C2) and end at the last (C9). Press Esc to leave the cell unchanged. Then change one amount, for example C2 from 20 to 25: the total should become 445. Change it back afterwards."
               - sort_order: 5
+                block_type: "performance_task"
+                content:
+                  task_id: "excel-budget-workbook-v1"
+                  title: "Hands-on task: build and check the Budget workbook"
+                  verification: "self_check"
+                  brief: "Build the Budget workbook from this lesson in the real Excel application, save it, and check your own work against the rubric below. The questions in this lesson test what you know; this task lets you practise doing it."
+                  deliverable: "A workbook saved as **Budget-practice.xlsx** with one worksheet named **Budget**: the headings in row 1, the eight transactions in rows 2 to 9, the label **Total** in B10 and a SUM formula in C10."
+                  criteria:
+                    - id: "sheet-name"
+                      text: "The worksheet tab is named Budget, and it is the only worksheet."
+                      how_to_check: "Read the tabs at the bottom of the Excel window: there should be one tab, Budget."
+                    - id: "layout"
+                      text: "A1, B1 and C1 hold Date, Category and Amount, and the eight transactions are in rows 2 to 9 in the lesson's order."
+                      how_to_check: "Compare each row with the lesson's table. Excel may show the dates in your regional format; that's fine."
+                    - id: "numbers"
+                      text: "The eight amounts in C2:C9 are numbers, not text."
+                      how_to_check: "Select C2:C9 and look at the status bar along the bottom of the window: it should show Sum: 440 (and Count: 8 if Count is shown). If you can't see them, right-click the status bar and tick Sum and Count. If Sum is smaller than 440 or missing, some amounts were stored as text (text usually sits at the left of the cell, numbers at the right): retype them as plain numbers."
+                    - id: "formula"
+                      text: "C10 contains the formula =SUM(C2:C9), not a typed 440."
+                      how_to_check: "Click C10. The formula bar (the long box above the column letters) shows =SUM(C2:C9) while the cell shows 440."
+                    - id: "range"
+                      text: "The formula covers every amount exactly once."
+                      how_to_check: "Double-click C10 (or click it and press F2; on some Macs Fn+F2 or Control+U). Excel outlines the cells the formula uses in colour: the outline should start at C2 and end at C9. Press Esc to leave the cell unchanged."
+                    - id: "follows-data"
+                      text: "The total follows the data."
+                      how_to_check: "Type 75 in C6 (Shipping) in place of 60 and press Enter: C10 shows 455. Change it back to 60 and press Enter: C10 shows 440 again."
+                    - id: "label"
+                      text: "B10 says Total, so anyone reading the sheet knows what C10 holds."
+                      how_to_check: "Read B10."
+                    - id: "saved"
+                      text: "The workbook is saved as Budget-practice.xlsx and reopens with the formula intact."
+                      how_to_check: "In desktop Excel, File > Save As shows the name Budget-practice and the type Excel Workbook (*.xlsx). Excel for the web always saves .xlsx, so check the name at the top of the window. Then close the workbook, open the saved file again and click C10: the formula bar still shows =SUM(C2:C9)."
+                  exemplar: |
+                    A finished Budget sheet looks like this (C10 shows the formula it holds and the value it displays):
+
+                    | | A | B | C |
+                    |---|---|---|---|
+                    | **1** | Date | Category | Amount |
+                    | **2** | 2026-01-05 | Office supplies | 20 |
+                    | **3** | 2026-01-06 | Printing | 30 |
+                    | **4** | 2026-01-07 | Travel | 40 |
+                    | **5** | 2026-01-08 | Software | 50 |
+                    | **6** | 2026-01-09 | Shipping | 60 |
+                    | **7** | 2026-01-10 | Utilities | 70 |
+                    | **8** | 2026-01-11 | Equipment | 80 |
+                    | **9** | 2026-01-12 | Maintenance | 90 |
+                    | **10** | | Total | =SUM(C2:C9), showing 440 |
+
+                    Selecting C2:C9 shows **Sum: 440** (and **Count: 8**) in the status bar. With C6 changed to 75, C10 shows **455**.
+                  body: |
+                    **Hands-on task: build and check the Budget workbook.** Build the Budget workbook from this lesson in the real Excel application and save it as Budget-practice.xlsx, with one worksheet named Budget: the headings in row 1, the eight transactions in rows 2 to 9, the label Total in B10 and =SUM(C2:C9) in C10.
+
+                    Check your work:
+
+                    1. The workbook has one worksheet, named Budget.
+                    2. A1, B1 and C1 hold Date, Category and Amount, and the transactions are in rows 2 to 9 in the lesson's order.
+                    3. Selecting C2:C9 shows Sum: 440 in the status bar (right-click the status bar to turn Sum on if needed), so the amounts are numbers, not text.
+                    4. Clicking C10 shows =SUM(C2:C9) in the formula bar while the cell shows 440.
+                    5. Double-clicking C10 (or pressing F2) outlines exactly C2 to C9; press Esc afterwards.
+                    6. Changing C6 from 60 to 75 makes C10 show 455; changing it back shows 440.
+                    7. B10 says Total.
+                    8. The file is saved as Budget-practice.xlsx, and after closing and reopening it, C10 still holds the formula.
+
+                    Self-checked against a published rubric. It isn't independently verified, so it doesn't count toward readiness or award skills.
+              - sort_order: 6
                 block_type: "simulation"
                 content:
                   simulation_id: "excel-budget-total-v1"
