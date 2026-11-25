@@ -1,0 +1,423 @@
+{
+ "reviewer_model": "claude-sonnet-5-5 (Claude Sonnet 5.5)",
+ "verdict": "changes_required",
+ "lessons_reviewed": 25,
+ "items_reviewed": 324,
+ "findings": [
+  {
+   "objective": "2.2 Brain anatomy",
+   "location": "Brain Architecture and Hemispheric Specialization / callout 'Left Visual Field vs. Left Eye'",
+   "severity": "critical",
+   "claim": "the left half of each retina projects to the right hemisphere, and the right half of each retina projects to the left hemisphere",
+   "problem": "Reversed. The left visual field falls on the RIGHT half of each retina and is processed by the RIGHT hemisphere; the left half of each retina projects to the LEFT hemisphere. The callout contradicts the lesson's own split-brain example (left visual field -> right hemisphere).",
+   "evidence": "OpenStax Psychology 1e, Sensation and Perception (visual pathway, optic chiasm); standard visual neuroanatomy.",
+   "suggested_fix": "Write: 'the right half of each retina (which receives the left visual field) projects to the right hemisphere, and the left half of each retina (right visual field) projects to the left hemisphere; fibers from the nasal half of each retina cross at the optic chiasm.'"
+  },
+  {
+   "objective": "3.1 Sensory transduction/psychophysics",
+   "location": "Assessment item A0 (Weber's Law, audio engineer)",
+   "severity": "major",
+   "claim": "a 100-decibel tone is raised by 5 decibels ... how many decibels must a 200-decibel tone be raised",
+   "problem": "A 200 dB tone is physically impossible in air (about 194 dB is the theoretical maximum) and lethal long before that. Decibels are already a logarithmic scale, so applying a constant-proportion Weber calculation to dB values is conceptually wrong. The key (10 dB) is only arithmetically consistent with the faulty premise.",
+   "evidence": "Standard acoustics; Weber's law applies to physical intensity, not the already-logarithmic dB scale.",
+   "suggested_fix": "Replace with a lifted-weight or brightness item (for example a 10 g difference noticed at 100 g implies 20 g needed at 200 g) and drop the dB framing."
+  },
+  {
+   "objective": "3.2 Visual/auditory anatomy and Gestalt",
+   "location": "Assessment item A3 (broken dashes)",
+   "severity": "major",
+   "claim": "A reader effortlessly perceives a series of broken dashes as a single continuous line rather than disconnected individual fragments. Which Gestalt principle? (key: continuity; closure is an option)",
+   "problem": "Ambiguous. Perceiving gapped fragments as one complete line is a textbook illustration of closure (filling gaps), and dashes in a row are also grouped by proximity. Closure is a defensible second answer, so the key is not unique. The explanation's narrow claim that closure refers only to 'enclosed gaps' is not a standard definition.",
+   "evidence": "OpenStax Psychology 1e, Gestalt principles (closure: the brain fills in gaps to perceive a whole).",
+   "suggested_fix": "Use a stimulus that unambiguously tests continuity (two lines crossing in an X are seen as two smooth continuous lines, not four segments) or reword so closure and proximity are clearly excluded."
+  },
+  {
+   "objective": "3.2 Visual/auditory anatomy and Gestalt",
+   "location": "Visual Cliff example",
+   "severity": "minor",
+   "claim": "demonstrating that depth perception and innate avoidance of heights are present by the onset of mobile locomotion",
+   "problem": "Gibson and Walk's finding shows depth perception by crawling age but cannot show that avoidance of heights is innate. Later work (Campos and colleagues, heart-rate studies of pre-locomotor infants) suggests fear of heights develops with locomotor experience.",
+   "evidence": "Established developmental research (Campos et al.); Gibson and Walk 1960.",
+   "suggested_fix": "Say 'indicating that depth perception is present by the time infants crawl; whether it is innate or learned cannot be determined from the study'."
+  },
+  {
+   "objective": "3.2 Visual/auditory anatomy and Gestalt",
+   "location": "Opponent-process text and term definition",
+   "severity": "minor",
+   "claim": "Neural circuits beyond the retina (in ganglion cells, thalamus, and visual cortex) ... retinal and thalamic ganglion cells",
+   "problem": "Ganglion cells are in the retina, so 'beyond the retina (in ganglion cells ...)' is self-contradictory, and 'thalamic ganglion cells' does not exist; opponent processing occurs in retinal ganglion cells, the lateral geniculate nucleus of the thalamus, and cortex.",
+   "evidence": "Standard visual neuroscience; OpenStax 5.2 opponent-process section.",
+   "suggested_fix": "Use 'retinal ganglion cells, cells of the thalamus (LGN), and visual cortex'."
+  },
+  {
+   "objective": "3.2 Visual/auditory anatomy and Gestalt",
+   "location": "Lesson description and concept",
+   "severity": "minor",
+   "claim": "cochlear mechanics ... auditory transduction occurs in the cochlea via basilar membrane hair cell deflection",
+   "problem": "The lesson description and concept promise auditory anatomy, but the lesson blocks, terms and items contain no auditory content. Not a factual error; coverage of the stated objective is incomplete.",
+   "evidence": "Objective title and description versus lesson content.",
+   "suggested_fix": "Add a short auditory section (pinna, ossicles, cochlea, basilar membrane, place and frequency theories) or trim the description."
+  },
+  {
+   "objective": "4.2 Sleep disorders, dreaming, hypnosis, drugs",
+   "location": "Psychoactive Drug Classifications: Stimulants",
+   "severity": "major",
+   "claim": "Stimulants (Caffeine, Nicotine, Cocaine, Amphetamines) ... by blocking the reuptake of dopamine and norepinephrine",
+   "problem": "One mechanism is wrongly applied to the whole class. Caffeine acts mainly by blocking adenosine receptors; nicotine is an agonist at nicotinic acetylcholine receptors; amphetamines mainly promote release of dopamine and norepinephrine (in addition to some reuptake blockade). Only cocaine is well described as a reuptake blocker.",
+   "evidence": "Established psychopharmacology; OpenStax 4.5 describes stimulants as raising central nervous system activity without a single reuptake mechanism.",
+   "suggested_fix": "Say stimulants increase arousal through different mechanisms (cocaine blocks reuptake of dopamine and norepinephrine; amphetamines increase their release; caffeine blocks adenosine receptors; nicotine stimulates nicotinic ACh receptors)."
+  },
+  {
+   "objective": "4.2 Sleep disorders, dreaming, hypnosis, drugs",
+   "location": "Lesson scope versus title and description",
+   "severity": "minor",
+   "claim": "Lesson description: 'hypnosis dissociation'",
+   "problem": "Hypnosis is named in the objective title and lesson description, but no hypnosis content, term or item exists. Coverage gap, not a factual error.",
+   "evidence": "Objective text.",
+   "suggested_fix": "Add a hypnosis section (suggestibility, dissociation versus social-cognitive accounts, limited evidence for memory enhancement) or adjust the description."
+  },
+  {
+   "objective": "4.2 Sleep disorders, dreaming, hypnosis, drugs",
+   "location": "Hallucinogens bullet",
+   "severity": "minor",
+   "claim": "Hallucinogens (LSD, Psilocybin, MDMA) ... primarily acting as serotonin receptor agonists",
+   "problem": "True for LSD and psilocybin (5-HT2A agonists), but MDMA mainly releases serotonin and blocks its reuptake and is usually treated as a hybrid stimulant-hallucinogen. Marijuana is omitted.",
+   "evidence": "Standard pharmacology.",
+   "suggested_fix": "Qualify the agonist claim or remove MDMA from it."
+  },
+  {
+   "objective": "5.1 Classical conditioning",
+   "location": "Experimental Case Study: John Garcia's Conditioned Taste Aversion",
+   "severity": "minor",
+   "claim": "The rats developed immediate, powerful taste aversions after a single trial, even with a delay of several hours ... proving that organisms are biologically prepared",
+   "problem": "'Immediate' contradicts 'hours later'. The sights/sounds comparison comes from Garcia and Koelling (1966), a different study from the radiation-nausea experiments, and 'disproved' / 'proving' are stronger than the evidence warrants.",
+   "evidence": "OpenStax Psychology 1e, 6.2 (Garcia and Koelling 1966, biological constraints).",
+   "suggested_fix": "Say 'developed strong aversions after a single pairing despite a delay of hours', attribute the cue-to-consequence result to Garcia and Koelling (1966), and use 'suggesting'."
+  },
+  {
+   "objective": "5.1 Classical conditioning",
+   "location": "Generalization row, Obj 5.1 concept, item A1 (Little Albert)",
+   "severity": "minor",
+   "claim": "Little Albert fearing white rabbits and fur coats after conditioning with a white rat",
+   "problem": "Presented as settled fact. Watson and Rayner (1920) was a single-subject study with poor controls that has not been replicated, and later archival work questions what Albert actually showed. Acceptable as a classic illustration but should be labeled as such.",
+   "evidence": "Established critical literature (Harris 1979; Digdon et al. 2014).",
+   "suggested_fix": "Add 'in Watson and Rayner's classic (and methodologically criticized) 1920 demonstration'."
+  },
+  {
+   "objective": "5.2 Operant conditioning and observational learning",
+   "location": "Operant matrix, positive punishment example",
+   "severity": "minor",
+   "claim": "Positive Punishment ... Receiving a speeding fine from a traffic officer",
+   "problem": "Ambiguous: a monetary fine can be classified as removal of something desirable (money; response cost, a form of negative punishment) as easily as an added aversive consequence. It sits in the table that teaches the very distinction being tested.",
+   "evidence": "Standard operant-conditioning teaching; classification depends on framing.",
+   "suggested_fix": "Use an unambiguous example (extra chores added after a violation) and keep a fine as a negative-punishment (response-cost) example."
+  },
+  {
+   "objective": "5.2 Operant conditioning and observational learning",
+   "location": "Bandura paragraph",
+   "severity": "major",
+   "claim": "children who watched an adult violently strike an inflated doll were significantly more likely to imitate ... driven by vicarious reinforcement",
+   "problem": "In Bandura's 1961 Bobo study children imitated the model with no reinforcement of any kind. Vicarious reinforcement and punishment were manipulated in the 1965 variant and affected performance of imitation, not learning. Saying imitation in the classic study was 'driven by vicarious reinforcement' is false.",
+   "evidence": "OpenStax Psychology 1e, 6.4 observational learning (Bandura, Ross and Ross 1961); Bandura 1965.",
+   "suggested_fix": "Say 'imitated the model without any direct reward; later variations showed that seeing a model rewarded or punished changes how readily the behavior is performed'."
+  },
+  {
+   "objective": "5.2 Operant conditioning and observational learning",
+   "location": "Assessment item A3 (Bobo doll factor)",
+   "severity": "major",
+   "claim": "what factor determined whether children spontaneously imitated aggressive behaviors ... (key: Observing vicarious consequences delivered to the model)",
+   "problem": "Not the unique correct answer for 'the classic Bobo Doll experiments'. In the 1961 study children imitated without consequences, and Bandura did report a gender effect (boys imitated physical aggression more), so 'the gender of the child' is also defensible. Vicarious consequences (1965) influenced performance rather than whether the behavior was learned; 'determined' overstates.",
+   "evidence": "Bandura, Ross and Ross 1961; Bandura 1965.",
+   "suggested_fix": "Reword to the 1965 variant ('when the model was seen being punished, children imitated less') or ask which process was demonstrated (observational learning/modeling), and make the gender option clearly wrong."
+  },
+  {
+   "objective": "5.2 Operant conditioning and observational learning",
+   "location": "Latent Learning callout",
+   "severity": "minor",
+   "claim": "When food was finally introduced, they navigated the maze just as quickly as rewarded rats",
+   "problem": "Tolman and Honzik (1930): after reward was introduced the previously unrewarded group improved sharply within a day or two and then matched or exceeded the always-rewarded group; 'just as quickly' implies instant parity.",
+   "evidence": "Standard account of Tolman and Honzik 1930.",
+   "suggested_fix": "Say 'their errors dropped abruptly and matched those of the always-rewarded rats within a day or two'."
+  },
+  {
+   "objective": "6.1 Memory",
+   "location": "Misinformation Effect term example",
+   "severity": "minor",
+   "claim": "Eyewitnesses falsely recalling a stop sign after being asked a question containing the premise 'after the yield sign'",
+   "problem": "The example does not match the definition: incorporating the misleading information would mean recalling a yield sign (Loftus, Miller and Burns 1978 switched stop and yield signs). As written, participants recalled the sign that was NOT in the misleading question.",
+   "evidence": "Loftus, Miller and Burns 1978; OpenStax 8.2.",
+   "suggested_fix": "Say 'originally saw a stop sign but, after a question mentioning a yield sign, report having seen a yield sign'."
+  },
+  {
+   "objective": "6.1 Memory",
+   "location": "Patient H.M. example",
+   "severity": "minor",
+   "claim": "H.M. showed flawless day-to-day improvement ... removing both hippocampi",
+   "problem": "The surgery removed most medial temporal lobe structures (hippocampus, amygdala, entorhinal and perirhinal cortex), not just the hippocampi, and mirror-drawing improvement was substantial but not 'flawless'. Milner's role is correctly attributed.",
+   "evidence": "Standard H.M. literature (Scoville and Milner 1957; Milner 1962).",
+   "suggested_fix": "Say 'bilateral medial temporal lobectomy including most of both hippocampi' and 'steady improvement'."
+  },
+  {
+   "objective": "6.1 Memory",
+   "location": "Q0 and A4 (Baddeley central executive)",
+   "severity": "minor",
+   "claim": "coordinates ... and integrates information across slave systems / integrating inputs from sensory buffers",
+   "problem": "Integrating information across subsystems is the defined role of the episodic buffer, which is also an option in Q0. The key (central executive) is still best because of 'allocates attentional resources', but the stem lets a reader defend the buffer.",
+   "evidence": "Baddeley 2000 revision of the working memory model.",
+   "suggested_fix": "Drop 'integrates information across slave systems' from the stem."
+  },
+  {
+   "objective": "7.1 Motivation",
+   "location": "Hunger table",
+   "severity": "minor",
+   "claim": "Lateral Hypothalamus 'hunger center' ... Ventromedial Hypothalamus 'satiety center'; rat ... quadruples its normal body weight",
+   "problem": "The dual-center model is a simplification: appetite involves arcuate and paraventricular circuits, leptin, ghrelin and insulin, and VMH-lesion obesity is partly a hyperinsulinemia and fiber-damage effect. VMH-lesioned rats typically double to triple body weight, not quadruple. The concept text promises ghrelin and leptin but the lesson omits them.",
+   "evidence": "Current neuroscience of appetite; OpenStax 10.1 hunger section.",
+   "suggested_fix": "Label the LH/VMH model 'classic', note hypothalamic networks and hormones, and change 'quadruples' to 'roughly doubles or triples'."
+  },
+  {
+   "objective": "7.2 Emotion and stress",
+   "location": "Term: Facial Feedback Hypothesis",
+   "severity": "major",
+   "claim": "The tendency of facial muscle states to trigger corresponding feelings ... Holding a pen between one's teeth ... increases ratings of cartoon humor",
+   "problem": "The pen-in-teeth finding (Strack, Martin and Stepper 1988) failed to replicate in a 17-lab Registered Replication Report (Wagenmakers et al. 2016); the broader hypothesis shows small, inconsistent effects. The definition and example present it as an established effect.",
+   "evidence": "Wagenmakers et al. 2016 (Perspectives on Psychological Science); OpenStax 10.2 states it only as a proposal ('proposes').",
+   "suggested_fix": "Phrase it as a hypothesis ('proposes that') and replace the example or note that the original study did not replicate."
+  },
+  {
+   "objective": "7.2 Emotion and stress",
+   "location": "Schachter-Singer Suproxin callout",
+   "severity": "major",
+   "claim": "This proved that cognitive context labels generalized arousal.",
+   "problem": "The study is presented as proof. Its effects were weak and inconsistent (the anger condition was modest, many participants were excluded), it has not replicated well, and it is regarded as only partly supportive of two-factor theory (Marshall and Zimbardo 1979; Reisenzein 1983).",
+   "evidence": "Established critical literature; the unsupported 'proved' language.",
+   "suggested_fix": "Replace 'proved' with 'was interpreted as supporting' and add one sentence on mixed replication."
+  },
+  {
+   "objective": "7.2 Emotion and stress",
+   "location": "Example: medical school finals / Exhaustion stage",
+   "severity": "minor",
+   "claim": "The morning after exams conclude, dozens fall severely ill ... Their bodies have entered Stage 3: Exhaustion; The immune system collapses",
+   "problem": "Illness right after a short stressor is usually described as a 'let-down' effect; Selye's exhaustion stage follows prolonged chronic stress, not a few days of exams. 'Collapses' overstates immune effects of GAS exhaustion.",
+   "evidence": "OpenStax 14.2 (GAS); stress-immunity research.",
+   "suggested_fix": "Use a chronic stressor (months of caregiving) for the exhaustion example and soften 'collapses' to 'weakens'."
+  },
+  {
+   "objective": "8.1 Prenatal and cognitive development",
+   "location": "Piaget table",
+   "severity": "minor",
+   "claim": "Object Permanence (~8 months); Stranger anxiety ... Lacks symbolic mental representation",
+   "problem": "Stranger anxiety is not a Piagetian milestone. Piaget's ages are presented as fixed although later habituation research (Baillargeon) shows object knowledge earlier than Piaget claimed.",
+   "evidence": "OpenStax 9.1 notes later challenges to Piaget's ages.",
+   "suggested_fix": "Remove 'Stranger anxiety' from the Piaget row and add a note that later research suggests earlier competence."
+  },
+  {
+   "objective": "8.2 Attachment, parenting, Erikson, Kohlberg",
+   "location": "Parenting styles table",
+   "severity": "minor",
+   "claim": "Highest self-esteem, self-reliance, and social competence ... Poorest outcomes: delinquency, emotional detachment",
+   "problem": "Outcomes are correlational and based largely on Western middle-class samples; presented as causal and universal.",
+   "evidence": "OpenStax 9.2 parenting section; cross-cultural research.",
+   "suggested_fix": "Add 'are associated with' and a cultural-variation note."
+  },
+  {
+   "objective": "9.1 Psychodynamic and humanistic personality",
+   "location": "Defense mechanisms: Repression",
+   "severity": "major",
+   "claim": "Repression ... Primary defense; banishing anxiety-arousing thoughts to the unconscious | Forgetting traumatic childhood memories of physical abuse",
+   "problem": "Repression, and especially 'repressed' abuse memories, is contested: there is little empirical support for memories of repeated trauma being walled off and later recovered accurately, and the recovered-memory movement produced false memories (Loftus). Presented as an established mechanism with no caveat.",
+   "evidence": "Consensus view in memory research (Loftus; McNally); OpenStax 11.1 presents defense mechanisms as Freud's theory.",
+   "suggested_fix": "Use a benign example (forgetting an unpleasant appointment) and add 'a Freudian concept with limited empirical support; traumatic events are more often remembered than forgotten'."
+  },
+  {
+   "objective": "9.1 Psychodynamic and humanistic personality",
+   "location": "Lesson scope",
+   "severity": "minor",
+   "claim": "Lesson description: 'psychosexual stages'; item A2 (Jung collective unconscious); objective title 'self-actualization'",
+   "problem": "Psychosexual stages, Jung's collective unconscious and Maslow's self-actualization appear in the title or description or are tested (A2 on Jung) but are not taught in this lesson (Jung appears only in the Objective 1.1 table). Coverage gap.",
+   "evidence": "Objective text.",
+   "suggested_fix": "Add short psychosexual-stage and Jung paragraphs or remove A2."
+  },
+  {
+   "objective": "9.2 Trait, social-cognitive, assessment",
+   "location": "Big Five text and concept",
+   "severity": "minor",
+   "claim": "represents the gold standard of contemporary trait psychology ... cross-culturally validated standard",
+   "problem": "Overstated. The Five-Factor Model is the dominant trait taxonomy but is debated (HEXACO; weak replication in some non-WEIRD samples such as the Tsimane, Gurven et al. 2013).",
+   "evidence": "Gurven et al. 2013; Big Five literature.",
+   "suggested_fix": "Say 'the most widely accepted trait taxonomy'."
+  },
+  {
+   "objective": "10.1 Disorders: classification, anxiety, trauma",
+   "location": "Rosenhan example",
+   "severity": "major",
+   "claim": "David Rosenhan sent eight sane pseudopatients ... All were admitted and diagnosed with schizophrenia ... 'patient engages in excessive note-taking behavior' ... demonstrated the profound, persistent biasing power of diagnostic labels",
+   "problem": "Contested and partly inaccurate. Rosenhan's own report says 7 of 8 were diagnosed with schizophrenia and 1 with manic-depressive psychosis. The nurses' note he quoted read 'patient engages in writing behavior'. Susannah Cahalan's 2019 investigation (The Great Pretender) and earlier critiques (Spitzer 1975) indicate unreliable data reporting. The lesson states the conclusion as settled.",
+   "evidence": "Rosenhan 1973, Science; Spitzer 1975; Cahalan 2019.",
+   "suggested_fix": "Say 'seven were diagnosed with schizophrenia and one with a mood disorder', fix the quote, and add 'later reanalyses have seriously questioned the study's methods and data'."
+  },
+  {
+   "objective": "10.1 Disorders: classification, anxiety, trauma",
+   "location": "Item A2 (panic disorder with agoraphobia) and Specific Phobia row",
+   "severity": "minor",
+   "claim": "Panic disorder with agoraphobia ... recognized by adult as irrational",
+   "problem": "DSM-5/DSM-5-TR code panic disorder and agoraphobia as separate diagnoses (the 'with agoraphobia' form is DSM-IV), and DSM-5 dropped the requirement that adults recognize the fear as excessive. The lesson cites DSM-5-TR while using DSM-IV conventions. The key remains best.",
+   "evidence": "DSM-5-TR criteria.",
+   "suggested_fix": "Reword the option as 'panic disorder with comorbid agoraphobia' and remove 'recognized by adult as irrational'."
+  },
+  {
+   "objective": "10.2 Mood, schizophrenia and personality disorders",
+   "location": "Concept: Depressive and Bipolar Disorders",
+   "severity": "minor",
+   "claim": "Depression involves monoamine deficits",
+   "problem": "The monoamine-deficiency hypothesis is oversimplified and not supported as a sole cause; presented as fact.",
+   "evidence": "Current depression neurobiology literature.",
+   "suggested_fix": "Say 'is associated with disturbances in monoamine and other neural systems'."
+  },
+  {
+   "objective": "11.2 Biomedical therapies, outcomes",
+   "location": "Meta-analysis paragraph",
+   "severity": "major",
+   "claim": "The single strongest predictor of positive outcome across all therapy types is the therapeutic alliance",
+   "problem": "Overstated. Alliance is one of the better-supported common-factor predictors (r about .28) but 'the single strongest' is not established. Also, Smith and Glass pooled mostly controlled but non-randomized studies, not 'hundreds of randomized controlled trials', and the 1977 result was about the 75th percentile (80% came in the 1980 update); 'decisively disproved' is stronger than needed.",
+   "evidence": "Smith and Glass 1977; Smith, Glass and Miller 1980; Norcross and Lambert alliance reviews.",
+   "suggested_fix": "Say 'among the best-supported predictors', 'hundreds of controlled studies', and 'about 80%'."
+  },
+  {
+   "objective": "12.1 Attribution, dissonance, social influence",
+   "location": "Classic Social Influence Experiments table: Stanford Prison Experiment",
+   "severity": "major",
+   "claim": "Deindividuation and institutional roles rapidly overrode personal morality within 6 days",
+   "problem": "Presented as a settled demonstration but heavily discredited: guards were coached to be harsh, demand characteristics and self-selection are documented (Carnahan and McFarland 2007), archival and interview evidence (Le Texier 2019, American Psychologist) contradicts the account, and the BBC Prison Study (Reicher and Haslam 2006) did not replicate it. The causal interpretation (deindividuation) is not supported.",
+   "evidence": "Le Texier 2019; Carnahan and McFarland 2007; Reicher and Haslam 2006 (OpenStax's own reference list cites Le Texier and Carnahan and McFarland).",
+   "suggested_fix": "Remove it from 'definitive findings' or relabel it 'a famous but heavily criticized demonstration; guard behavior was shaped by experimenter instructions'."
+  },
+  {
+   "objective": "12.1 Attribution, dissonance, social influence",
+   "location": "Milgram table row and concept text",
+   "severity": "minor",
+   "claim": "65% of ordinary participants obeyed orders to deliver the maximum 450-volt lethal shock",
+   "problem": "The learner was a confederate and no shocks were delivered; participants believed the shock was dangerous. 'Lethal' should be 'apparently lethal'. Archival analyses (Perry 2013) also raise questions about how many participants believed the setup.",
+   "evidence": "Milgram 1963; Perry 2013.",
+   "suggested_fix": "Say 'believed they were delivering a dangerous 450-volt shock (the shocks were fake)'."
+  },
+  {
+   "objective": "12.1 Attribution, dissonance, social influence",
+   "location": "Item Q1 (Milgram, situational factor)",
+   "severity": "minor",
+   "claim": "which situational factor significantly reduced participants' willingness ... (key: peer rebellion)",
+   "problem": "Option A is also a real reduction: Milgram's off-campus Bridgeport office variation lowered obedience from 65% to 47.5% (not statistically significant but a reduction). The stem should ask what reduced obedience 'most dramatically'.",
+   "evidence": "Milgram 1974.",
+   "suggested_fix": "Reword to 'Which variation reduced obedience most dramatically, to about 10%?'"
+  },
+  {
+   "objective": "12.1 Attribution, dissonance, social influence",
+   "location": "Pitfall callout: FAE and culture",
+   "severity": "minor",
+   "claim": "significantly more pronounced in Western individualistic cultures ... markedly lower in East Asian collectivist cultures",
+   "problem": "Cultural differences in the fundamental attribution error are real but modest and task-dependent (Choi, Nisbett and Norenzayan 1999; Morris and Peng 1994); 'markedly' and the heading 'appears primarily' overstate.",
+   "evidence": "Cross-cultural attribution research.",
+   "suggested_fix": "Use 'somewhat weaker in some East Asian samples'."
+  },
+  {
+   "objective": "12.2 Group dynamics, prejudice, bystander",
+   "location": "Darley-Latane callout and Q0",
+   "severity": "minor",
+   "claim": "Spurred by the murder of Kitty Genovese ... This bystander apathy is driven by",
+   "problem": "The Genovese case that inspired the research was widely misreported (the '38 passive witnesses' account is inaccurate; Manning, Levine and Collins 2007), and 'apathy' is a disputed label.",
+   "evidence": "Manning et al. 2007 (American Psychologist).",
+   "suggested_fix": "Add 'the story as originally reported has since been shown to be exaggerated' and use 'bystander effect' rather than 'apathy'."
+  },
+  {
+   "objective": "12.2 Group dynamics, prejudice, bystander",
+   "location": "Groupthink example",
+   "severity": "minor",
+   "claim": "the Bay of Pigs invasion failure, NASA Challenger launch disaster",
+   "problem": "Bay of Pigs is Janis's own example. Challenger is more commonly analyzed as 'normalization of deviance' (Vaughan 1996); the groupthink reading is contested.",
+   "evidence": "Janis 1972; Vaughan 1996.",
+   "suggested_fix": "Keep Bay of Pigs; drop Challenger or mark it as a contested application."
+  },
+  {
+   "objective": "13.1 Statistics, psychometrics, intelligence",
+   "location": "Normal curve bullet",
+   "severity": "minor",
+   "claim": "99.74% fall within +/-3 standard deviations",
+   "problem": "The exact value is 99.73%. The 99.74% figure is wrong in the second decimal.",
+   "evidence": "Standard normal tables.",
+   "suggested_fix": "Use 99.73% (or 99.7%)."
+  },
+  {
+   "objective": "13.1 Statistics, psychometrics, intelligence",
+   "location": "Example: alternate-form retake",
+   "severity": "minor",
+   "claim": "retake an alternate form 30 days later ... demonstrating exceptional test-retest reliability",
+   "problem": "Correlating scores on an alternate form across time indicates alternate-form reliability, not test-retest reliability, which requires the same test.",
+   "evidence": "Standard psychometrics.",
+   "suggested_fix": "Say 'the same test' or call the result alternate-form reliability."
+  },
+  {
+   "objective": "13.1 Statistics, psychometrics, intelligence",
+   "location": "Term: Statistical Significance and item A2 explanation",
+   "severity": "minor",
+   "claim": "unlikely to have arisen by random chance alone ... only a 2% probability that the observed difference ... occurred by chance alone",
+   "problem": "Common p-value misinterpretation: p = .02 is the probability of data at least this extreme IF the null hypothesis were true, not the probability the result is due to chance. The key (D) is worded correctly, but the explanation's first sentence blurs it.",
+   "evidence": "Standard statistical inference; ASA 2016 statement on p-values.",
+   "suggested_fix": "Rephrase as 'if the null hypothesis were true, results this extreme would occur only about 2% of the time'."
+  },
+  {
+   "objective": "13.1 Statistics, psychometrics, intelligence",
+   "location": "Intelligence callout",
+   "severity": "minor",
+   "claim": "Howard Gardner proposed eight independent multiple intelligences",
+   "problem": "Presented without noting that multiple intelligences have weak empirical support (abilities correlate positively, supporting g) and are not strictly 'independent'.",
+   "evidence": "Intelligence research consensus (Carroll; Gottfredson).",
+   "suggested_fix": "Say 'Gardner proposed eight relatively separate intelligences; the theory is influential but weakly supported by test data'."
+  },
+  {
+   "objective": "1.1 History and perspectives",
+   "location": "Contemporary perspectives table and item A2",
+   "severity": "minor",
+   "claim": "Psychodynamic ... early childhood attachment; A2 'innate conflict between their ideal self and their actual self-concept'",
+   "problem": "Early attachment is Bowlby/Ainsworth rather than psychodynamic theory proper. In A2, 'innate' conflict is imprecise (Rogers sees incongruence as arising from conditions of worth). The item still has one best answer (humanistic).",
+   "evidence": "OpenStax 1.3 perspectives.",
+   "suggested_fix": "Replace 'early childhood attachment' with 'early childhood experiences' and drop 'innate' from A2."
+  },
+  {
+   "objective": "1.1 History and perspectives",
+   "location": "Historical overview paragraph",
+   "severity": "minor",
+   "claim": "Wundt and his student Edward Bradford Titchener championed structuralism",
+   "problem": "Structuralism was Titchener's label and system; Wundt's own approach is usually called voluntarism or experimental psychology. The concept text credits both.",
+   "evidence": "Standard history of psychology; OpenStax 1.2.",
+   "suggested_fix": "Say 'Wundt's laboratory method was developed by Titchener into structuralism'."
+  },
+  {
+   "objective": "2.1 Research methods",
+   "location": "Experimental method paragraph",
+   "severity": "minor",
+   "claim": "The experiment is the only psychological research method capable of establishing definitive cause-and-effect relationships ... ensuring that preexisting individual differences ... are distributed evenly",
+   "problem": "'Definitive' and 'ensuring' overstate: random assignment equalizes groups only on average and does not guarantee equivalence in small samples.",
+   "evidence": "Standard research methods texts; OpenStax 2.2.",
+   "suggested_fix": "Use 'the primary method for testing cause and effect' and 'tends to distribute differences evenly'."
+  },
+  {
+   "objective": "2.2 Brain anatomy",
+   "location": "Phineas Gage (lesson table, term example, item A0)",
+   "severity": "minor",
+   "claim": "emotional disinhibition (Phineas Gage) ... dramatic personality shifts and emotional volatility after an iron rod pierced his prefrontal cortex",
+   "problem": "Gage's personality change is likely exaggerated in popular accounts (Macmillan 2000), damage was mostly left ventromedial/orbitofrontal, and he later worked as a coach driver. The lesson states the story as settled. Item A0 is consistent with its key.",
+   "evidence": "Macmillan 2000, An Odd Kind of Fame.",
+   "suggested_fix": "Add 'accounts of the personality change are partly anecdotal and probably exaggerated'."
+  },
+  {
+   "objective": "2.2 Brain anatomy",
+   "location": "Subcortical structures list and item A1 explanation",
+   "severity": "minor",
+   "claim": "Forebrain / Limbic System: Thalamus ... Olfactory signals bypass the thalamus directly to the olfactory bulb",
+   "problem": "The thalamus is a forebrain (diencephalic) structure, not part of the limbic system, and the reticular formation extends from the medulla through the midbrain. In A1 the 'directly to the olfactory bulb' wording is imprecise: olfactory receptors project to the bulb, which projects to cortex without a thalamic relay.",
+   "evidence": "OpenStax 3.2; neuroanatomy.",
+   "suggested_fix": "Say 'Forebrain structures (some limbic)' and 'olfactory information reaches the cortex via the olfactory bulb without a thalamic relay'."
+  }
+ ],
+ "summary": "All 25 lessons (50 questions, 95 assessment items, 48 flashcards, 76 terms, 52 concepts, 3 stimuli) were read in full. Severity counts: {'critical': 1, 'major': 11, 'minor': 34}. One critical error (retina-to-hemisphere projection reversed in the split-brain callout) and several major issues must be fixed before publication: an impossible 200 dB Weber item, an ambiguous Gestalt closure/continuity item, a false class-wide stimulant mechanism, two Bandura/Bobo errors, facial-feedback and Schachter-Singer findings presented as settled, repressed-memory framing, Rosenhan's study (false 'all diagnosed with schizophrenia', questioned data), the 'single strongest predictor' alliance claim, and the Stanford Prison Experiment presented as definitive. Core content (neuron physiology, lobes, Piaget, Erikson, Kohlberg, Ainsworth, Harlow, conditioning definitions, Milgram and Darley-Latane figures, DSM categories, statistics) is accurate, and the keys of the remaining items are correct and unambiguous. No learning-styles or left/right-brain personality claims were found. Several lessons promise content (hypnosis, psychosexual stages, auditory anatomy, Jung, self-actualization) that is not taught; that is a coverage gap rather than a factual error."
+}
