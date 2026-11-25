@@ -236,6 +236,47 @@ class LearnerResource {
   };
 }
 
+/// What is next in the learner's outside study for one goal (companion plan
+/// v1.0 §6): the first part not yet marked studied in the first resource
+/// that has one, and the learner's own estimates for everything left.
+class OutsideStudyPlan {
+  const OutsideStudyPlan({
+    required this.targetId,
+    required this.resourceId,
+    required this.resourceTitle,
+    required this.sectionTitle,
+    required this.sectionMinutes,
+    required this.remainingMinutes,
+    required this.partsWithoutEstimate,
+  });
+
+  final String targetId;
+  final String resourceId;
+  final String resourceTitle;
+  final String sectionTitle;
+  final int? sectionMinutes;
+
+  /// Across every resource of the goal, parts not yet studied.
+  final int remainingMinutes;
+  final int partsWithoutEstimate;
+
+  /// Null when no resource of the goal has a part left to study.
+  static OutsideStudyPlan? from(String targetId, List<LearnerResource> resources) {
+    final current = resources.where((r) => r.nextSectionIndex != null).firstOrNull;
+    if (current == null) return null;
+    final part = current.sections[current.nextSectionIndex!];
+    return OutsideStudyPlan(
+      targetId: targetId,
+      resourceId: current.id,
+      resourceTitle: current.title,
+      sectionTitle: part.title,
+      sectionMinutes: part.minutes,
+      remainingMinutes: resources.fold(0, (sum, r) => sum + r.remainingMinutes),
+      partsWithoutEstimate: resources.fold(0, (sum, r) => sum + r.remainingWithoutEstimate),
+    );
+  }
+}
+
 /// Result of cleaning a link the learner typed or pasted.
 class NormalizedLink {
   const NormalizedLink.ok(this.url) : error = null;

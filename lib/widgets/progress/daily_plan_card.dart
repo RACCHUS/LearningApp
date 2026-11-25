@@ -7,6 +7,7 @@ import 'package:learning_pwa/providers/daily_plan_provider.dart';
 import 'package:learning_pwa/providers/learning_context_provider.dart';
 import 'package:learning_pwa/providers/target_readiness_provider.dart';
 import 'package:learning_pwa/theme/design_tokens.dart';
+import 'package:learning_pwa/widgets/companion/outside_study_widgets.dart';
 
 /// Card displayed on the Progress screen rendering today's Daily Study Plan,
 /// time budget split, load-aware pacing, and exam date target countdown.
@@ -68,6 +69,7 @@ class DailyPlanCard extends ConsumerWidget {
 
               // Workload Split Bar
               _buildWorkloadBar(plan, theme),
+              OutsideStudyPlanLine(dailyMinutes: plan.targetDailyMinutes),
               const SizedBox(height: DesignTokens.space3),
 
               // Targets Summary
