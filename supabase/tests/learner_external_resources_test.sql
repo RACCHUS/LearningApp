@@ -48,7 +48,7 @@ select is_empty(
         and (p.prosrc ilike '%learner_resource_objectives%' or p.prosrc ilike '%learner_external_resources%')
         and p.proname not in ('save_learner_external_resource', 'set_learner_resource_objectives',
                               'set_learner_resource_objective_studied', 'delete_learner_external_resource',
-                              'set_learner_resource_sections') $$,
+                              'set_learner_resource_sections', 'set_learner_resource_section_studied') $$,
   'no other function reads self-reported outside study');
 
 -- Gate OFF (it was seeded OFF and later activated by 20261125040000).

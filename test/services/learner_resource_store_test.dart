@@ -37,6 +37,12 @@ class FakeAccountStore implements LearnerResourceStore {
   @override
   Future<void> setSections(String resourceId, List<ResourceSection> s) async => sections[resourceId] = s;
 
+  final studiedSections = <String>[];
+
+  @override
+  Future<void> setSectionStudied(String resourceId, int index, bool studied) async =>
+      studiedSections.add('$resourceId:$index');
+
   @override
   Future<List<LearnerResource>> list(String targetId) async => const [];
 
@@ -175,6 +181,74 @@ void main() {
     expect([for (final s in r.sections) s.title], ['First', 'Second']);
     expect(r.sections.first.objectiveKeys, {'1.1'});
     expect(r.sections.first.source, SectionMapSource.learner, reason: 'an unknown source never reads as reviewed');
+  });
+
+  test('marking parts studied is self-report and marks an objective only when all its parts are done', () async {
+    final store = LocalLearnerResourceStore();
+    final id = await store.save(targetId: 't1', title: 'A', kind: LearnerResourceKind.book);
+    await store.setSections(id, const [
+      ResourceSection(title: 'Part 1', objectiveKeys: {'1.1'}, minutes: 25),
+      ResourceSection(title: 'Part 2', objectiveKeys: {'1.1', '1.2'}, minutes: 40),
+      ResourceSection(title: 'Part 3'),
+    ]);
+    var r = (await store.list('t1')).single;
+    expect(r.nextSectionIndex, 0);
+    expect(r.remainingMinutes, 65);
+    expect(r.remainingWithoutEstimate, 1);
+
+    await store.setSectionStudied(id, 0, true);
+    r = (await LocalLearnerResourceStore().list('t1')).single;
+    expect(r.nextSectionIndex, 1);
+    expect(r.remainingMinutes, 40);
+    expect(r.studiedCount, 0);
+
+    await store.setSectionStudied(id, 1, true);
+    r = (await store.list('t1')).single;
+    expect(r.objectives['1.1'], isNotNull);
+    expect(r.objectives['1.2'], isNotNull);
+
+    await store.setSectionStudied(id, 1, false);
+    r = (await store.list('t1')).single;
+    expect(r.nextSectionIndex, 1);
+    expect(r.studiedCount, 2, reason: 'unmarking a part never unmarks an objective');
+    await expectLater(store.setSectionStudied(id, 9, true), throwsStateError);
+  });
+
+  test('replacing the outline keeps the mark of a part whose title is unchanged', () async {
+    final store = LocalLearnerResourceStore();
+    final id = await store.save(targetId: 't1', title: 'A', kind: LearnerResourceKind.book);
+    await store.setSections(id, const [ResourceSection(title: 'Part 1'), ResourceSection(title: 'Part 2')]);
+    await store.setSectionStudied(id, 0, true);
+    await store.setSections(id, const [
+      ResourceSection(title: 'Intro'),
+      ResourceSection(title: 'Part 1', minutes: 30),
+      ResourceSection(title: 'Part 2'),
+    ]);
+    final r = (await store.list('t1')).single;
+    expect([for (final s in r.sections) s.studied], [false, true, false]);
+    expect(r.sections[1].minutes, 30);
+    expect(r.nextSectionIndex, 0);
+  });
+
+  test('moving to an account carries the studied parts and estimates', () async {
+    final local = LocalLearnerResourceStore();
+    final id = await local.save(targetId: 't1', title: 'A', kind: LearnerResourceKind.book);
+    await local.setSections(id, const [ResourceSection(title: 'P1', minutes: 5), ResourceSection(title: 'P2')]);
+    await local.setSectionStudied(id, 1, true);
+    final account = FakeAccountStore();
+    await moveLocalResourcesToAccount(local, account);
+    expect(account.sections['acct-1']!.first.minutes, 5);
+    expect(account.studiedSections, ['acct-1:1']);
+  });
+
+  test('study time is written in hours and minutes, and bad estimates are dropped', () {
+    expect(formatStudyMinutes(25), '25 min');
+    expect(formatStudyMinutes(60), '1 h');
+    expect(formatStudyMinutes(95), '1 h 35 min');
+    final s = ResourceSection.fromJson({'title': 'x', 'est_minutes': 9000, 'studied_at': 'nope'});
+    expect(s.minutes, isNull);
+    expect(s.studied, isFalse);
+    expect(const ResourceSection(title: 'x').toRpcJson().containsKey('minutes'), isFalse);
   });
 
   test('a failed move leaves the unsaved resources on the device', () async {

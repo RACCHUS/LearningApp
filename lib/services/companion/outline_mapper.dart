@@ -5,8 +5,16 @@ import 'package:learning_pwa/services/content_generation/reuse_gate.dart';
 
 /// The parts found in a pasted outline.
 class ParsedOutline {
-  const ParsedOutline(this.titles, {this.truncated = false});
+  const ParsedOutline(
+    this.titles, {
+    this.truncated = false,
+    this.minutes = const [],
+  });
   final List<String> titles;
+
+  /// For each title, the length stated on its line ("12:30", "25 min",
+  /// "1 h 20 min"), in whole minutes; null where the line gave none.
+  final List<int?> minutes;
 
   /// True when the paste was longer than the caps and the rest was dropped.
   final bool truncated;
@@ -71,7 +79,41 @@ class OutlineMapper {
   static final _tailPage = RegExp(
     r'(\s*\.{2,}\s*|\t+|\s{3,})(p\.?\s*)?\d{1,4}$',
   );
+  static final _tailWords = RegExp(
+    r'\s*[\-–—|(\[]?\s*(?:(\d{1,2})\s*(?:hours?|hrs?|h))?\s*(?:(\d{1,3})\s*(?:minutes?|mins?|m))?\s*[)\]]?$',
+    caseSensitive: false,
+  );
   static final _letter = RegExp(r'[A-Za-z]');
+
+  /// Removes a length from the end of [line] and returns it in minutes.
+  /// A two-part time is read as minutes:seconds, the usual form for video.
+  static (String, int?) _takeLength(String line) {
+    final time = _tailTime.firstMatch(line);
+    if (time != null) {
+      final parts = RegExp(
+        r'\d+',
+      ).allMatches(time.group(0)!).map((m) => int.parse(m.group(0)!)).toList();
+      final seconds = parts.length == 3
+          ? parts[0] * 3600 + parts[1] * 60 + parts[2]
+          : parts[0] * 60 + parts[1];
+      return (
+        line.substring(0, time.start),
+        _clampMinutes((seconds / 60).ceil()),
+      );
+    }
+    final words = _tailWords.firstMatch(line);
+    if (words != null && (words.group(1) != null || words.group(2) != null)) {
+      final total =
+          int.parse(words.group(1) ?? '0') * 60 +
+          int.parse(words.group(2) ?? '0');
+      return (line.substring(0, words.start), _clampMinutes(total));
+    }
+    return (line, null);
+  }
+
+  static int? _clampMinutes(int m) => m < 1
+      ? null
+      : (m > ResourceSection.maxMinutes ? ResourceSection.maxMinutes : m);
 
   /// One part per line. Bullets, video timestamps and page numbers are
   /// removed; chapter numbers stay because the learner knows parts by them.
@@ -79,13 +121,15 @@ class OutlineMapper {
     var truncated = pasted.length > maxPasteLength;
     final text = truncated ? pasted.substring(0, maxPasteLength) : pasted;
     final titles = <String>[];
+    final minutes = <int?>[];
     final seen = <String>{};
     for (final raw in const LineSplitter().convert(text)) {
       var line = raw
           .trimRight()
           .replaceFirst(_tailPage, '')
           .replaceFirst(_leadBullet, '');
-      line = line.replaceFirst(_leadTime, '').replaceFirst(_tailTime, '');
+      final (rest, length) = _takeLength(line.replaceFirst(_leadTime, ''));
+      line = rest;
       line = line.replaceAll(RegExp(r'\s+'), ' ').trim();
       if (!_letter.hasMatch(line)) continue;
       if (line.length > ResourceSection.maxTitleLength) {
@@ -97,8 +141,9 @@ class OutlineMapper {
         break;
       }
       titles.add(line);
+      minutes.add(length);
     }
-    return ParsedOutline(titles, truncated: truncated);
+    return ParsedOutline(titles, truncated: truncated, minutes: minutes);
   }
 
   static Set<String> _words(String text) => {

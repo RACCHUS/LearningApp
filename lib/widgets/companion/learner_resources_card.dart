@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:learning_pwa/models/companion/learner_resource.dart';
 import 'package:learning_pwa/models/learning_support/external_companion.dart';
 import 'package:learning_pwa/providers/learner_resource_provider.dart';
+import 'package:learning_pwa/screens/companion/companion_screen.dart';
 import 'package:learning_pwa/screens/companion/goal_gaps_screen.dart';
 import 'package:learning_pwa/screens/companion/learner_resource_screen.dart';
 import 'package:learning_pwa/services/companion/learner_resource_store.dart';
@@ -109,6 +110,26 @@ class LearnerResourcesCard extends ConsumerWidget {
                     ),
                   ),
                 ),
+              // Resume point: the first part of each resource not yet marked studied.
+              for (final r in resources.valueOrNull ?? const <LearnerResource>[])
+                if (r.nextSectionIndex != null)
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton.icon(
+                      key: Key('learner_resource_continue_${r.id}'),
+                      onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => CompanionScreen(goal: goal, resourceId: r.id),
+                        ),
+                      ),
+                      icon: const Icon(Icons.playlist_play, size: 18),
+                      label: Text(
+                        'Continue: ${r.sections[r.nextSectionIndex!].title}'
+                        '${r.sections[r.nextSectionIndex!].minutes == null ? '' : ' (about ${formatStudyMinutes(r.sections[r.nextSectionIndex!].minutes!)})'}',
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ),
               if ((resources.valueOrNull ?? const []).isNotEmpty) _GoalCoverageSummary(goal: goal),
               if (stranded > 0) ...[
                 const SizedBox(height: DesignTokens.space2),
