@@ -50,9 +50,13 @@ create function pg_temp.obj(p_label text, p_code text) returns jsonb language sq
   select o from pj, jsonb_array_elements(result->'objectives') o where label = p_label and o->>'code' = p_code;
 $$;
 
--- 1. Seeded off: nothing is computed.
-select is((select enabled from private.site_feature_controls where feature_key = 'learning.readiness_projection'),
-  false, 'the switch is seeded off');
+-- 1. Activated by migration 20261124100000 (audited); while off nothing is computed.
+select ok(exists(select 1 from private.site_feature_change_audit
+                 where feature_key = 'learning.readiness_projection' and next_enabled
+                   and reason like '%20261124100000%'),
+  'the activation is recorded in the feature audit');
+update private.site_feature_controls set enabled = false
+  where feature_key = 'learning.readiness_projection';
 select pg_temp.snap('off', 'anon');
 select is((select result from pj where label = 'off'), '{"enabled": false}'::jsonb, 'while off it returns only enabled: false');
 
