@@ -157,6 +157,7 @@ void main() {
         isTrue,
       );
       expect(find.text('Nothing matched by words.'), findsOneWidget);
+      expect(find.text('1. Chapter 1: Exponents'), findsOneWidget);
 
       await tester.tap(find.byKey(const Key('outline_save')));
       await tester.pumpAndSettle();
