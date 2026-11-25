@@ -123,6 +123,12 @@ class _CostObservabilityScreenState extends State<CostObservabilityScreen> {
             ),
           if (_isAdmin)
             IconButton(
+              icon: const Icon(Icons.school_outlined),
+              tooltip: 'Learner signals',
+              onPressed: () => context.push('/admin/learner-signals'),
+            ),
+          if (_isAdmin)
+            IconButton(
               icon: const Icon(Icons.refresh),
               tooltip: 'Refresh Telemetry',
               onPressed: _isLoading ? null : _loadSnapshot,
