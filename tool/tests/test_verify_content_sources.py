@@ -225,10 +225,14 @@ class DeclaredUseTests(unittest.TestCase):
         problems, _ = self.scan({"content/m.yaml": self.manifest(), "data/rights_discrepancy_allowlist.json": bad})
         self.assertTrue(any("open_decision" in p for p in problems))
 
-    def test_the_real_allowlist_blocks_only_its_manifests(self):
+    def test_the_real_allowlist_blocks_no_manifest(self):
+        # Both CLEP OpenStax releases were resolved on 2026-11-25 (declared
+        # reference after a verbatim-overlap audit), so nothing is blocked.
         root = Path(__file__).resolve().parents[2]
-        self.assertTrue(v.publish_check(root, "content/clep_college_algebra.yaml"))
-        self.assertEqual(v.publish_check(root, "content/excel_fundamentals.yaml"), [])
+        for manifest in ("content/clep_college_algebra.yaml",
+                         "content/clep_introductory_psychology.yaml",
+                         "content/excel_fundamentals.yaml"):
+            self.assertEqual(v.publish_check(root, manifest), [], manifest)
 
 
 if __name__ == "__main__":

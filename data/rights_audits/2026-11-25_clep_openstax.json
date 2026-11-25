@@ -1,0 +1,1668 @@
+{
+  "about": "Verbatim-overlap audits behind the 'use' declared for manifest source releases (ingestion plan v1.2 §6). Produced by tool/rights_overlap_audit.py against the pinned OpenStax archive; re-run it after the lesson text changes. Numbers are evidence; the decision records what was read and concluded.",
+  "audited_on": "2026-11-25",
+  "audited_by": "AI (Claude Opus 5.5) under the owner's delegation of plan decisions (2026-11-24)",
+  "audits": [
+    {
+      "shingle_words": 8,
+      "manifest_shingles": 24417,
+      "books": {
+        "9b08c294-057f-4201-9f48-5d6ad992740d@ebc5beb": {
+          "matched_shingles": 183,
+          "share": 0.0075,
+          "longest_run_words": 24,
+          "segments_with_share_over_10pct": 0,
+          "matched_passages": [
+            "in one variable a linear equation in one variable can be written in the form",
+            "product rule a m a n a m n quotient rule a m a n a m n power rule a m n a",
+            "numerator and denominator by the complex conjugate of the denominator c",
+            "both sides of the equation by the least common denominator lcd",
+            "numerator and denominator by the conjugate of the denominator",
+            "solving linear equations in one variable a linear equation",
+            "identity equation an equation that is true for all values",
+            "equation an equation in which the variable appears",
+            "one to one if no horizontal line crosses the graph",
+            "reflections of each other across the line y x",
+            "all real numbers greater than or equal to 2",
+            "a function is increasing on an interval if",
+            "apply the product rule of logarithms log 2",
+            "nth term of an arithmetic sequence a n a 1",
+            "term of a geometric sequence a n a 1 r n 1",
+            "that indicates how many times the base is",
+            "whether a function is even odd or neither",
+            "all real numbers less than or equal to 7",
+            "equations a set of two or more equations",
+            "a function is one to one if each output",
+            "in meters above ground as a function of",
+            "in watts per square meter and i 0 10 12",
+            "what is the domain of the function f x",
+            "difference of squares a 2 b 2 a b a b",
+            "difference of squares a b a b a 2 b 2",
+            "the radicand of a square root must be",
+            "the graph of the parent function f x",
+            "a vertical stretch by a factor of 3",
+            "difference of cubes a 3 b 3 a b a 2",
+            "the sum of the terms of a sequence",
+            "natural numbers plus zero 0 1 2 3",
+            "a m a n a m n power rule a m n a",
+            "n log b m n log b m log b n log",
+            "where a is the real part and b",
+            "n a n b n power of a quotient",
+            "sum of cubes a 3 b 3 a b a 2",
+            "equations a 1 x b 1 y c 1",
+            "f x f x f x f x f x f x f",
+            "g x is in the domain of f",
+            "n a n a 1 n 1 d a n a 1",
+            "formula a n a 1 n 1 d",
+            "log b x log b y log b",
+            "a 2 x b 2 y c 2 the",
+            "a n x n a n 1 x n 1",
+            "c f c where f c f x",
+            "f g x x and g f x x",
+            "i 1 i i 2 1 i 3 i 2",
+            "x 2 x 2 x 3 x 2 x 2",
+            "x 4 x 4 and x 2 x 2",
+            "y log b x y log b x",
+            "a b a b or a b a b",
+            "f a b then f 1 b a",
+            "a 2 b 2 a b a b a",
+            "a n a 1 n 1 d a 4",
+            "i 1 i i 2 1 i 3 i",
+            "x 2 5 x 3 x 3 x 2",
+            "x 2 x 2 x 2 4 x 3",
+            "x 2 x 3 5 x 2 x 3",
+            "a 2 b 2 a b a b",
+            "a 3 b 3 a b a 2",
+            "i 3 i 2 i 1 i i",
+            "x 2 x 3 x 2 5 x",
+            "x 2 x 3 x 2 x 3",
+            "x 3 x 2 5 x 3 x"
+          ],
+          "title": "College Algebra",
+          "license": "Creative Commons Attribution License",
+          "pages": 123,
+          "archive": "https://openstax.org/apps/archive/20260604.144757/contents/"
+        },
+        "35d7cce2-48dd-4403-b6a5-e828cb5a17da@789b540": {
+          "matched_shingles": 183,
+          "share": 0.0075,
+          "longest_run_words": 24,
+          "segments_with_share_over_10pct": 0,
+          "matched_passages": [
+            "in one variable a linear equation in one variable can be written in the form",
+            "product rule a m a n a m n quotient rule a m a n a m n power rule a m n a",
+            "numerator and denominator by the complex conjugate of the denominator c",
+            "both sides of the equation by the least common denominator lcd",
+            "numerator and denominator by the conjugate of the denominator",
+            "solving linear equations in one variable a linear equation",
+            "identity equation an equation that is true for all values",
+            "equation an equation in which the variable appears",
+            "one to one if no horizontal line crosses the graph",
+            "reflections of each other across the line y x",
+            "all real numbers greater than or equal to 2",
+            "a function is increasing on an interval if",
+            "apply the product rule of logarithms log 2",
+            "nth term of an arithmetic sequence a n a 1",
+            "term of a geometric sequence a n a 1 r n 1",
+            "that indicates how many times the base is",
+            "whether a function is even odd or neither",
+            "all real numbers less than or equal to 7",
+            "equations a set of two or more equations",
+            "a function is one to one if each output",
+            "in meters above ground as a function of",
+            "in watts per square meter and i 0 10 12",
+            "what is the domain of the function f x",
+            "difference of squares a 2 b 2 a b a b",
+            "difference of squares a b a b a 2 b 2",
+            "the radicand of a square root must be",
+            "the graph of the parent function f x",
+            "a vertical stretch by a factor of 3",
+            "difference of cubes a 3 b 3 a b a 2",
+            "the sum of the terms of a sequence",
+            "natural numbers plus zero 0 1 2 3",
+            "a m a n a m n power rule a m n a",
+            "n log b m n log b m log b n log",
+            "where a is the real part and b",
+            "n a n b n power of a quotient",
+            "sum of cubes a 3 b 3 a b a 2",
+            "equations a 1 x b 1 y c 1",
+            "f x f x f x f x f x f x f",
+            "g x is in the domain of f",
+            "n a n a 1 n 1 d a n a 1",
+            "formula a n a 1 n 1 d",
+            "log b x log b y log b",
+            "a 2 x b 2 y c 2 the",
+            "a n x n a n 1 x n 1",
+            "c f c where f c f x",
+            "f g x x and g f x x",
+            "i 1 i i 2 1 i 3 i 2",
+            "x 2 x 2 x 3 x 2 x 2",
+            "x 4 x 4 and x 2 x 2",
+            "y log b x y log b x",
+            "a b a b or a b a b",
+            "f a b then f 1 b a",
+            "a 2 b 2 a b a b a",
+            "a n a 1 n 1 d a 4",
+            "i 1 i i 2 1 i 3 i",
+            "x 2 5 x 3 x 3 x 2",
+            "x 2 x 2 x 2 4 x 3",
+            "x 2 x 3 5 x 2 x 3",
+            "a 2 b 2 a b a b",
+            "a 3 b 3 a b a 2",
+            "i 3 i 2 i 1 i i",
+            "x 2 x 3 x 2 5 x",
+            "x 2 x 3 x 2 x 3",
+            "x 3 x 2 5 x 3 x"
+          ],
+          "title": "College Algebra 2e",
+          "license": "Creative Commons Attribution-NonCommercial-ShareAlike License",
+          "pages": 123,
+          "archive": "https://openstax.org/apps/archive/20260604.144757/contents/"
+        }
+      },
+      "later_edition_only": {
+        "book": "35d7cce2-48dd-4403-b6a5-e828cb5a17da@789b540",
+        "not_in": "9b08c294-057f-4201-9f48-5d6ad992740d@ebc5beb",
+        "shingles": []
+      },
+      "segments": [
+        {
+          "code": "1.1",
+          "segment": "lesson: Exponents, Radicals, and Scientific Notation",
+          "words": 1040,
+          "9b08c294-057f-4201-9f48-5d6ad992740d@ebc5beb": {
+            "share": 0.0087,
+            "longest_run_words": 13
+          },
+          "35d7cce2-48dd-4403-b6a5-e828cb5a17da@789b540": {
+            "share": 0.0087,
+            "longest_run_words": 13
+          }
+        },
+        {
+          "code": "1.1",
+          "segment": "objective text",
+          "words": 265,
+          "9b08c294-057f-4201-9f48-5d6ad992740d@ebc5beb": {
+            "share": 0.0659,
+            "longest_run_words": 24
+          },
+          "35d7cce2-48dd-4403-b6a5-e828cb5a17da@789b540": {
+            "share": 0.0659,
+            "longest_run_words": 24
+          }
+        },
+        {
+          "code": "1.2",
+          "segment": "lesson: Polynomial Operations, Factoring, and Special Products",
+          "words": 975,
+          "9b08c294-057f-4201-9f48-5d6ad992740d@ebc5beb": {
+            "share": 0.032,
+            "longest_run_words": 11
+          },
+          "35d7cce2-48dd-4403-b6a5-e828cb5a17da@789b540": {
+            "share": 0.032,
+            "longest_run_words": 11
+          }
+        },
+        {
+          "code": "1.2",
+          "segment": "objective text",
+          "words": 240,
+          "9b08c294-057f-4201-9f48-5d6ad992740d@ebc5beb": {
+            "share": 0.0515,
+            "longest_run_words": 11
+          },
+          "35d7cce2-48dd-4403-b6a5-e828cb5a17da@789b540": {
+            "share": 0.0515,
+            "longest_run_words": 11
+          }
+        },
+        {
+          "code": "1.3",
+          "segment": "lesson: Rational Expressions and Domain Restrictions",
+          "words": 1034,
+          "9b08c294-057f-4201-9f48-5d6ad992740d@ebc5beb": {
+            "share": 0.0049,
+            "longest_run_words": 9
+          },
+          "35d7cce2-48dd-4403-b6a5-e828cb5a17da@789b540": {
+            "share": 0.0049,
+            "longest_run_words": 9
+          }
+        },
+        {
+          "code": "1.3",
+          "segment": "objective text",
+          "words": 238,
+          "9b08c294-057f-4201-9f48-5d6ad992740d@ebc5beb": {
+            "share": 0.0,
+            "longest_run_words": 0
+          },
+          "35d7cce2-48dd-4403-b6a5-e828cb5a17da@789b540": {
+            "share": 0.0,
+            "longest_run_words": 0
+          }
+        },
+        {
+          "code": "1.4",
+          "segment": "lesson: Absolute Value Operations and Real Line Distance",
+          "words": 801,
+          "9b08c294-057f-4201-9f48-5d6ad992740d@ebc5beb": {
+            "share": 0.0,
+            "longest_run_words": 0
+          },
+          "35d7cce2-48dd-4403-b6a5-e828cb5a17da@789b540": {
+            "share": 0.0,
+            "longest_run_words": 0
+          }
+        },
+        {
+          "code": "1.4",
+          "segment": "objective text",
+          "words": 210,
+          "9b08c294-057f-4201-9f48-5d6ad992740d@ebc5beb": {
+            "share": 0.0,
+            "longest_run_words": 0
+          },
+          "35d7cce2-48dd-4403-b6a5-e828cb5a17da@789b540": {
+            "share": 0.0,
+            "longest_run_words": 0
+          }
+        },
+        {
+          "code": "1.5",
+          "segment": "lesson: Logarithmic Expressions and Properties",
+          "words": 1153,
+          "9b08c294-057f-4201-9f48-5d6ad992740d@ebc5beb": {
+            "share": 0.007,
+            "longest_run_words": 12
+          },
+          "35d7cce2-48dd-4403-b6a5-e828cb5a17da@789b540": {
+            "share": 0.007,
+            "longest_run_words": 12
+          }
+        },
+        {
+          "code": "1.5",
+          "segment": "objective text",
+          "words": 227,
+          "9b08c294-057f-4201-9f48-5d6ad992740d@ebc5beb": {
+            "share": 0.0091,
+            "longest_run_words": 8
+          },
+          "35d7cce2-48dd-4403-b6a5-e828cb5a17da@789b540": {
+            "share": 0.0091,
+            "longest_run_words": 8
+          }
+        },
+        {
+          "code": "1.0",
+          "segment": "domain text",
+          "words": 16,
+          "9b08c294-057f-4201-9f48-5d6ad992740d@ebc5beb": {
+            "share": 0.0,
+            "longest_run_words": 0
+          },
+          "35d7cce2-48dd-4403-b6a5-e828cb5a17da@789b540": {
+            "share": 0.0,
+            "longest_run_words": 0
+          }
+        },
+        {
+          "code": "2.1",
+          "segment": "lesson: Linear Equations, Applications, and Inequalities",
+          "words": 1027,
+          "9b08c294-057f-4201-9f48-5d6ad992740d@ebc5beb": {
+            "share": 0.0127,
+            "longest_run_words": 15
+          },
+          "35d7cce2-48dd-4403-b6a5-e828cb5a17da@789b540": {
+            "share": 0.0127,
+            "longest_run_words": 15
+          }
+        },
+        {
+          "code": "2.1",
+          "segment": "objective text",
+          "words": 237,
+          "9b08c294-057f-4201-9f48-5d6ad992740d@ebc5beb": {
+            "share": 0.0174,
+            "longest_run_words": 11
+          },
+          "35d7cce2-48dd-4403-b6a5-e828cb5a17da@789b540": {
+            "share": 0.0174,
+            "longest_run_words": 11
+          }
+        },
+        {
+          "code": "2.2",
+          "segment": "lesson: Quadratic Equations and Discriminant Analysis",
+          "words": 1009,
+          "9b08c294-057f-4201-9f48-5d6ad992740d@ebc5beb": {
+            "share": 0.0,
+            "longest_run_words": 0
+          },
+          "35d7cce2-48dd-4403-b6a5-e828cb5a17da@789b540": {
+            "share": 0.0,
+            "longest_run_words": 0
+          }
+        },
+        {
+          "code": "2.2",
+          "segment": "objective text",
+          "words": 242,
+          "9b08c294-057f-4201-9f48-5d6ad992740d@ebc5beb": {
+            "share": 0.0,
+            "longest_run_words": 0
+          },
+          "35d7cce2-48dd-4403-b6a5-e828cb5a17da@789b540": {
+            "share": 0.0,
+            "longest_run_words": 0
+          }
+        },
+        {
+          "code": "2.3",
+          "segment": "lesson: Radical, Rational, and Absolute Value Equations",
+          "words": 1074,
+          "9b08c294-057f-4201-9f48-5d6ad992740d@ebc5beb": {
+            "share": 0.0009,
+            "longest_run_words": 8
+          },
+          "35d7cce2-48dd-4403-b6a5-e828cb5a17da@789b540": {
+            "share": 0.0009,
+            "longest_run_words": 8
+          }
+        },
+        {
+          "code": "2.3",
+          "segment": "objective text",
+          "words": 211,
+          "9b08c294-057f-4201-9f48-5d6ad992740d@ebc5beb": {
+            "share": 0.0,
+            "longest_run_words": 0
+          },
+          "35d7cce2-48dd-4403-b6a5-e828cb5a17da@789b540": {
+            "share": 0.0,
+            "longest_run_words": 0
+          }
+        },
+        {
+          "code": "2.4",
+          "segment": "lesson: Systems of Linear and Non-Linear Equations",
+          "words": 973,
+          "9b08c294-057f-4201-9f48-5d6ad992740d@ebc5beb": {
+            "share": 0.0052,
+            "longest_run_words": 9
+          },
+          "35d7cce2-48dd-4403-b6a5-e828cb5a17da@789b540": {
+            "share": 0.0052,
+            "longest_run_words": 9
+          }
+        },
+        {
+          "code": "2.4",
+          "segment": "objective text",
+          "words": 233,
+          "9b08c294-057f-4201-9f48-5d6ad992740d@ebc5beb": {
+            "share": 0.0,
+            "longest_run_words": 0
+          },
+          "35d7cce2-48dd-4403-b6a5-e828cb5a17da@789b540": {
+            "share": 0.0,
+            "longest_run_words": 0
+          }
+        },
+        {
+          "code": "2.5",
+          "segment": "lesson: Exponential and Logarithmic Equations and Models",
+          "words": 1017,
+          "9b08c294-057f-4201-9f48-5d6ad992740d@ebc5beb": {
+            "share": 0.001,
+            "longest_run_words": 8
+          },
+          "35d7cce2-48dd-4403-b6a5-e828cb5a17da@789b540": {
+            "share": 0.001,
+            "longest_run_words": 8
+          }
+        },
+        {
+          "code": "2.5",
+          "segment": "objective text",
+          "words": 258,
+          "9b08c294-057f-4201-9f48-5d6ad992740d@ebc5beb": {
+            "share": 0.0,
+            "longest_run_words": 0
+          },
+          "35d7cce2-48dd-4403-b6a5-e828cb5a17da@789b540": {
+            "share": 0.0,
+            "longest_run_words": 0
+          }
+        },
+        {
+          "code": "2.0",
+          "segment": "domain text",
+          "words": 19,
+          "9b08c294-057f-4201-9f48-5d6ad992740d@ebc5beb": {
+            "share": 0.0,
+            "longest_run_words": 0
+          },
+          "35d7cce2-48dd-4403-b6a5-e828cb5a17da@789b540": {
+            "share": 0.0,
+            "longest_run_words": 0
+          }
+        },
+        {
+          "code": "3.1",
+          "segment": "lesson: Functions, Domain, Range, and Evaluation",
+          "words": 989,
+          "9b08c294-057f-4201-9f48-5d6ad992740d@ebc5beb": {
+            "share": 0.0092,
+            "longest_run_words": 9
+          },
+          "35d7cce2-48dd-4403-b6a5-e828cb5a17da@789b540": {
+            "share": 0.0092,
+            "longest_run_words": 9
+          }
+        },
+        {
+          "code": "3.1",
+          "segment": "objective text",
+          "words": 228,
+          "9b08c294-057f-4201-9f48-5d6ad992740d@ebc5beb": {
+            "share": 0.0,
+            "longest_run_words": 0
+          },
+          "35d7cce2-48dd-4403-b6a5-e828cb5a17da@789b540": {
+            "share": 0.0,
+            "longest_run_words": 0
+          }
+        },
+        {
+          "code": "3.2",
+          "segment": "lesson: Operations and Composition of Functions",
+          "words": 977,
+          "9b08c294-057f-4201-9f48-5d6ad992740d@ebc5beb": {
+            "share": 0.001,
+            "longest_run_words": 8
+          },
+          "35d7cce2-48dd-4403-b6a5-e828cb5a17da@789b540": {
+            "share": 0.001,
+            "longest_run_words": 8
+          }
+        },
+        {
+          "code": "3.2",
+          "segment": "objective text",
+          "words": 242,
+          "9b08c294-057f-4201-9f48-5d6ad992740d@ebc5beb": {
+            "share": 0.0043,
+            "longest_run_words": 8
+          },
+          "35d7cce2-48dd-4403-b6a5-e828cb5a17da@789b540": {
+            "share": 0.0043,
+            "longest_run_words": 8
+          }
+        },
+        {
+          "code": "3.3",
+          "segment": "lesson: Graphical Behavior, Intercepts, and Symmetry",
+          "words": 1017,
+          "9b08c294-057f-4201-9f48-5d6ad992740d@ebc5beb": {
+            "share": 0.0129,
+            "longest_run_words": 13
+          },
+          "35d7cce2-48dd-4403-b6a5-e828cb5a17da@789b540": {
+            "share": 0.0129,
+            "longest_run_words": 13
+          }
+        },
+        {
+          "code": "3.3",
+          "segment": "objective text",
+          "words": 236,
+          "9b08c294-057f-4201-9f48-5d6ad992740d@ebc5beb": {
+            "share": 0.0044,
+            "longest_run_words": 8
+          },
+          "35d7cce2-48dd-4403-b6a5-e828cb5a17da@789b540": {
+            "share": 0.0044,
+            "longest_run_words": 8
+          }
+        },
+        {
+          "code": "3.4",
+          "segment": "lesson: Transformations of Parent Functions",
+          "words": 993,
+          "9b08c294-057f-4201-9f48-5d6ad992740d@ebc5beb": {
+            "share": 0.001,
+            "longest_run_words": 8
+          },
+          "35d7cce2-48dd-4403-b6a5-e828cb5a17da@789b540": {
+            "share": 0.001,
+            "longest_run_words": 8
+          }
+        },
+        {
+          "code": "3.4",
+          "segment": "objective text",
+          "words": 220,
+          "9b08c294-057f-4201-9f48-5d6ad992740d@ebc5beb": {
+            "share": 0.0047,
+            "longest_run_words": 8
+          },
+          "35d7cce2-48dd-4403-b6a5-e828cb5a17da@789b540": {
+            "share": 0.0047,
+            "longest_run_words": 8
+          }
+        },
+        {
+          "code": "3.5",
+          "segment": "lesson: Inverse Functions and One-to-One Criteria",
+          "words": 996,
+          "9b08c294-057f-4201-9f48-5d6ad992740d@ebc5beb": {
+            "share": 0.004,
+            "longest_run_words": 10
+          },
+          "35d7cce2-48dd-4403-b6a5-e828cb5a17da@789b540": {
+            "share": 0.004,
+            "longest_run_words": 10
+          }
+        },
+        {
+          "code": "3.5",
+          "segment": "objective text",
+          "words": 243,
+          "9b08c294-057f-4201-9f48-5d6ad992740d@ebc5beb": {
+            "share": 0.0254,
+            "longest_run_words": 9
+          },
+          "35d7cce2-48dd-4403-b6a5-e828cb5a17da@789b540": {
+            "share": 0.0254,
+            "longest_run_words": 9
+          }
+        },
+        {
+          "code": "3.6",
+          "segment": "lesson: Rational Functions and Asymptotic Behavior",
+          "words": 1065,
+          "9b08c294-057f-4201-9f48-5d6ad992740d@ebc5beb": {
+            "share": 0.0,
+            "longest_run_words": 0
+          },
+          "35d7cce2-48dd-4403-b6a5-e828cb5a17da@789b540": {
+            "share": 0.0,
+            "longest_run_words": 0
+          }
+        },
+        {
+          "code": "3.6",
+          "segment": "objective text",
+          "words": 245,
+          "9b08c294-057f-4201-9f48-5d6ad992740d@ebc5beb": {
+            "share": 0.0,
+            "longest_run_words": 0
+          },
+          "35d7cce2-48dd-4403-b6a5-e828cb5a17da@789b540": {
+            "share": 0.0,
+            "longest_run_words": 0
+          }
+        },
+        {
+          "code": "3.0",
+          "segment": "domain text",
+          "words": 20,
+          "9b08c294-057f-4201-9f48-5d6ad992740d@ebc5beb": {
+            "share": 0.0,
+            "longest_run_words": 0
+          },
+          "35d7cce2-48dd-4403-b6a5-e828cb5a17da@789b540": {
+            "share": 0.0,
+            "longest_run_words": 0
+          }
+        },
+        {
+          "code": "4.1",
+          "segment": "lesson: Real Number System and Fundamental Properties",
+          "words": 970,
+          "9b08c294-057f-4201-9f48-5d6ad992740d@ebc5beb": {
+            "share": 0.001,
+            "longest_run_words": 8
+          },
+          "35d7cce2-48dd-4403-b6a5-e828cb5a17da@789b540": {
+            "share": 0.001,
+            "longest_run_words": 8
+          }
+        },
+        {
+          "code": "4.1",
+          "segment": "objective text",
+          "words": 220,
+          "9b08c294-057f-4201-9f48-5d6ad992740d@ebc5beb": {
+            "share": 0.0,
+            "longest_run_words": 0
+          },
+          "35d7cce2-48dd-4403-b6a5-e828cb5a17da@789b540": {
+            "share": 0.0,
+            "longest_run_words": 0
+          }
+        },
+        {
+          "code": "4.2",
+          "segment": "lesson: Complex Numbers and Imaginary Arithmetic",
+          "words": 865,
+          "9b08c294-057f-4201-9f48-5d6ad992740d@ebc5beb": {
+            "share": 0.0128,
+            "longest_run_words": 11
+          },
+          "35d7cce2-48dd-4403-b6a5-e828cb5a17da@789b540": {
+            "share": 0.0128,
+            "longest_run_words": 11
+          }
+        },
+        {
+          "code": "4.2",
+          "segment": "objective text",
+          "words": 217,
+          "9b08c294-057f-4201-9f48-5d6ad992740d@ebc5beb": {
+            "share": 0.0381,
+            "longest_run_words": 11
+          },
+          "35d7cce2-48dd-4403-b6a5-e828cb5a17da@789b540": {
+            "share": 0.0381,
+            "longest_run_words": 11
+          }
+        },
+        {
+          "code": "4.3",
+          "segment": "lesson: Arithmetic and Geometric Sequences and Series",
+          "words": 961,
+          "9b08c294-057f-4201-9f48-5d6ad992740d@ebc5beb": {
+            "share": 0.0105,
+            "longest_run_words": 12
+          },
+          "35d7cce2-48dd-4403-b6a5-e828cb5a17da@789b540": {
+            "share": 0.0105,
+            "longest_run_words": 12
+          }
+        },
+        {
+          "code": "4.3",
+          "segment": "objective text",
+          "words": 223,
+          "9b08c294-057f-4201-9f48-5d6ad992740d@ebc5beb": {
+            "share": 0.037,
+            "longest_run_words": 12
+          },
+          "35d7cce2-48dd-4403-b6a5-e828cb5a17da@789b540": {
+            "share": 0.037,
+            "longest_run_words": 12
+          }
+        },
+        {
+          "code": "4.4",
+          "segment": "lesson: Combinatorics and the Binomial Theorem",
+          "words": 970,
+          "9b08c294-057f-4201-9f48-5d6ad992740d@ebc5beb": {
+            "share": 0.0,
+            "longest_run_words": 0
+          },
+          "35d7cce2-48dd-4403-b6a5-e828cb5a17da@789b540": {
+            "share": 0.0,
+            "longest_run_words": 0
+          }
+        },
+        {
+          "code": "4.4",
+          "segment": "objective text",
+          "words": 213,
+          "9b08c294-057f-4201-9f48-5d6ad992740d@ebc5beb": {
+            "share": 0.0,
+            "longest_run_words": 0
+          },
+          "35d7cce2-48dd-4403-b6a5-e828cb5a17da@789b540": {
+            "share": 0.0,
+            "longest_run_words": 0
+          }
+        },
+        {
+          "code": "4.0",
+          "segment": "domain text",
+          "words": 23,
+          "9b08c294-057f-4201-9f48-5d6ad992740d@ebc5beb": {
+            "share": 0.0,
+            "longest_run_words": 0
+          },
+          "35d7cce2-48dd-4403-b6a5-e828cb5a17da@789b540": {
+            "share": 0.0,
+            "longest_run_words": 0
+          }
+        },
+        {
+          "code": "",
+          "segment": "stimuli",
+          "words": 100,
+          "9b08c294-057f-4201-9f48-5d6ad992740d@ebc5beb": {
+            "share": 0.0,
+            "longest_run_words": 0
+          },
+          "35d7cce2-48dd-4403-b6a5-e828cb5a17da@789b540": {
+            "share": 0.0,
+            "longest_run_words": 0
+          }
+        }
+      ],
+      "manifest": "clep_college_algebra.yaml",
+      "release_id": "openstax-college-algebra-1e",
+      "declared_release_book": "9b08c294-057f-4201-9f48-5d6ad992740d@ebc5beb",
+      "decision": "reference",
+      "rationale": "0.75% of the manifest's 8-word shingles occur in the 1st edition, no lesson or objective exceeds 10%, and the matched passages are standard terminology and formula statements (the longest, 24 words, is the product, quotient and power rules written as formulas). Nothing occurs only in the CC BY-NC-SA 2e. The lessons are independently written; OpenStax is cited for alignment and section reference."
+    },
+    {
+      "shingle_words": 8,
+      "manifest_shingles": 30115,
+      "books": {
+        "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
+          "matched_shingles": 18,
+          "share": 0.0006,
+          "longest_run_words": 9,
+          "segments_with_share_over_10pct": 0,
+          "matched_passages": [
+            "diagnostic and statistical manual of mental disorders dsm 5",
+            "the sympathetic division of the autonomic nervous system",
+            "james lange cannon bard and schachter singer two factor",
+            "the strength and direction of the relationship between",
+            "general adaptation syndrome hans selye s three stage",
+            "james lange cannon bard schachter singer two factor",
+            "information from short term to long term memory",
+            "after an unpredictable number of responses e g",
+            "how fast were the cars going when they smashed",
+            "the james lange theory of emotion asserts that",
+            "that objects continue to exist even when they",
+            "objects continue to exist even when they are",
+            "when the learner was in the same room"
+          ],
+          "title": "Psychology",
+          "license": "Creative Commons Attribution License",
+          "pages": 187,
+          "archive": "https://openstax.org/apps/archive/20260604.144757/contents/"
+        },
+        "06aba565-9432-40f6-97ee-b8a361f118a8@de7e40c": {
+          "matched_shingles": 22,
+          "share": 0.0007,
+          "longest_run_words": 11,
+          "segments_with_share_over_10pct": 0,
+          "matched_passages": [
+            "diagnostic and statistical manual of mental disorders dsm 5",
+            "the sympathetic division of the autonomic nervous system",
+            "james lange cannon bard and schachter singer two factor",
+            "the strength and direction of the relationship between",
+            "general adaptation syndrome hans selye s three stage",
+            "james lange cannon bard schachter singer two factor",
+            "a candle a book of matches and a box of thumbtacks",
+            "information from short term to long term memory",
+            "after an unpredictable number of responses e g",
+            "how fast were the cars going when they smashed",
+            "the james lange theory of emotion asserts that",
+            "that objects continue to exist even when they",
+            "objects continue to exist even when they are",
+            "when the learner was in the same room"
+          ],
+          "title": "Psychology 2e",
+          "license": "Creative Commons Attribution-NonCommercial-ShareAlike License",
+          "pages": 187,
+          "archive": "https://openstax.org/apps/archive/20260604.144757/contents/"
+        }
+      },
+      "later_edition_only": {
+        "book": "06aba565-9432-40f6-97ee-b8a361f118a8@de7e40c",
+        "not_in": "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc",
+        "shingles": [
+          "a book of matches and a box of",
+          "a candle a book of matches and a",
+          "book of matches and a box of thumbtacks",
+          "candle a book of matches and a box"
+        ]
+      },
+      "segments": [
+        {
+          "code": "1.1",
+          "segment": "lesson: Historical Foundations and Modern Perspectives in Psychology",
+          "words": 1011,
+          "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
+            "share": 0.0,
+            "longest_run_words": 0
+          },
+          "06aba565-9432-40f6-97ee-b8a361f118a8@de7e40c": {
+            "share": 0.0,
+            "longest_run_words": 0
+          }
+        },
+        {
+          "code": "1.1",
+          "segment": "objective text",
+          "words": 218,
+          "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
+            "share": 0.0,
+            "longest_run_words": 0
+          },
+          "06aba565-9432-40f6-97ee-b8a361f118a8@de7e40c": {
+            "share": 0.0,
+            "longest_run_words": 0
+          }
+        },
+        {
+          "code": "1.2",
+          "segment": "lesson: Scientific Methods: Experiments, Correlations, and Ethical S",
+          "words": 1316,
+          "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
+            "share": 0.0,
+            "longest_run_words": 0
+          },
+          "06aba565-9432-40f6-97ee-b8a361f118a8@de7e40c": {
+            "share": 0.0,
+            "longest_run_words": 0
+          }
+        },
+        {
+          "code": "1.2",
+          "segment": "objective text",
+          "words": 184,
+          "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
+            "share": 0.0056,
+            "longest_run_words": 8
+          },
+          "06aba565-9432-40f6-97ee-b8a361f118a8@de7e40c": {
+            "share": 0.0056,
+            "longest_run_words": 8
+          }
+        },
+        {
+          "code": "1.0",
+          "segment": "domain text",
+          "words": 22,
+          "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
+            "share": 0.0,
+            "longest_run_words": 0
+          },
+          "06aba565-9432-40f6-97ee-b8a361f118a8@de7e40c": {
+            "share": 0.0,
+            "longest_run_words": 0
+          }
+        },
+        {
+          "code": "2.1",
+          "segment": "lesson: The Neuron and Electrochemical Communication",
+          "words": 1023,
+          "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
+            "share": 0.0,
+            "longest_run_words": 0
+          },
+          "06aba565-9432-40f6-97ee-b8a361f118a8@de7e40c": {
+            "share": 0.0,
+            "longest_run_words": 0
+          }
+        },
+        {
+          "code": "2.1",
+          "segment": "objective text",
+          "words": 149,
+          "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
+            "share": 0.0,
+            "longest_run_words": 0
+          },
+          "06aba565-9432-40f6-97ee-b8a361f118a8@de7e40c": {
+            "share": 0.0,
+            "longest_run_words": 0
+          }
+        },
+        {
+          "code": "2.2",
+          "segment": "lesson: Brain Architecture and Hemispheric Specialization",
+          "words": 1243,
+          "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
+            "share": 0.0008,
+            "longest_run_words": 8
+          },
+          "06aba565-9432-40f6-97ee-b8a361f118a8@de7e40c": {
+            "share": 0.0008,
+            "longest_run_words": 8
+          }
+        },
+        {
+          "code": "2.2",
+          "segment": "objective text",
+          "words": 158,
+          "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
+            "share": 0.0,
+            "longest_run_words": 0
+          },
+          "06aba565-9432-40f6-97ee-b8a361f118a8@de7e40c": {
+            "share": 0.0,
+            "longest_run_words": 0
+          }
+        },
+        {
+          "code": "2.0",
+          "segment": "domain text",
+          "words": 21,
+          "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
+            "share": 0.0,
+            "longest_run_words": 0
+          },
+          "06aba565-9432-40f6-97ee-b8a361f118a8@de7e40c": {
+            "share": 0.0,
+            "longest_run_words": 0
+          }
+        },
+        {
+          "code": "3.1",
+          "segment": "lesson: Sensory Reception, Transduction, and Thresholds",
+          "words": 1001,
+          "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
+            "share": 0.0,
+            "longest_run_words": 0
+          },
+          "06aba565-9432-40f6-97ee-b8a361f118a8@de7e40c": {
+            "share": 0.0,
+            "longest_run_words": 0
+          }
+        },
+        {
+          "code": "3.1",
+          "segment": "objective text",
+          "words": 151,
+          "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
+            "share": 0.0,
+            "longest_run_words": 0
+          },
+          "06aba565-9432-40f6-97ee-b8a361f118a8@de7e40c": {
+            "share": 0.0,
+            "longest_run_words": 0
+          }
+        },
+        {
+          "code": "3.2",
+          "segment": "lesson: Visual Anatomy, Color Theories, and Perceptual Organization",
+          "words": 1028,
+          "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
+            "share": 0.0,
+            "longest_run_words": 0
+          },
+          "06aba565-9432-40f6-97ee-b8a361f118a8@de7e40c": {
+            "share": 0.0,
+            "longest_run_words": 0
+          }
+        },
+        {
+          "code": "3.2",
+          "segment": "objective text",
+          "words": 162,
+          "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
+            "share": 0.0,
+            "longest_run_words": 0
+          },
+          "06aba565-9432-40f6-97ee-b8a361f118a8@de7e40c": {
+            "share": 0.0,
+            "longest_run_words": 0
+          }
+        },
+        {
+          "code": "3.0",
+          "segment": "domain text",
+          "words": 22,
+          "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
+            "share": 0.0,
+            "longest_run_words": 0
+          },
+          "06aba565-9432-40f6-97ee-b8a361f118a8@de7e40c": {
+            "share": 0.0,
+            "longest_run_words": 0
+          }
+        },
+        {
+          "code": "4.1",
+          "segment": "lesson: Sleep Architecture and Biological Rhythms",
+          "words": 791,
+          "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
+            "share": 0.0,
+            "longest_run_words": 0
+          },
+          "06aba565-9432-40f6-97ee-b8a361f118a8@de7e40c": {
+            "share": 0.0,
+            "longest_run_words": 0
+          }
+        },
+        {
+          "code": "4.1",
+          "segment": "objective text",
+          "words": 161,
+          "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
+            "share": 0.0,
+            "longest_run_words": 0
+          },
+          "06aba565-9432-40f6-97ee-b8a361f118a8@de7e40c": {
+            "share": 0.0,
+            "longest_run_words": 0
+          }
+        },
+        {
+          "code": "4.2",
+          "segment": "lesson: Sleep Disorders, Theories of Dreaming, and Psychoactive Drug",
+          "words": 905,
+          "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
+            "share": 0.0,
+            "longest_run_words": 0
+          },
+          "06aba565-9432-40f6-97ee-b8a361f118a8@de7e40c": {
+            "share": 0.0,
+            "longest_run_words": 0
+          }
+        },
+        {
+          "code": "4.2",
+          "segment": "objective text",
+          "words": 159,
+          "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
+            "share": 0.0,
+            "longest_run_words": 0
+          },
+          "06aba565-9432-40f6-97ee-b8a361f118a8@de7e40c": {
+            "share": 0.0,
+            "longest_run_words": 0
+          }
+        },
+        {
+          "code": "4.0",
+          "segment": "domain text",
+          "words": 23,
+          "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
+            "share": 0.0,
+            "longest_run_words": 0
+          },
+          "06aba565-9432-40f6-97ee-b8a361f118a8@de7e40c": {
+            "share": 0.0,
+            "longest_run_words": 0
+          }
+        },
+        {
+          "code": "5.1",
+          "segment": "lesson: Classical Conditioning: Principles and Extinction",
+          "words": 1073,
+          "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
+            "share": 0.0,
+            "longest_run_words": 0
+          },
+          "06aba565-9432-40f6-97ee-b8a361f118a8@de7e40c": {
+            "share": 0.0,
+            "longest_run_words": 0
+          }
+        },
+        {
+          "code": "5.1",
+          "segment": "objective text",
+          "words": 169,
+          "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
+            "share": 0.0,
+            "longest_run_words": 0
+          },
+          "06aba565-9432-40f6-97ee-b8a361f118a8@de7e40c": {
+            "share": 0.0,
+            "longest_run_words": 0
+          }
+        },
+        {
+          "code": "5.2",
+          "segment": "lesson: Operant Conditioning: Reinforcement, Schedules, and Observat",
+          "words": 1069,
+          "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
+            "share": 0.0009,
+            "longest_run_words": 8
+          },
+          "06aba565-9432-40f6-97ee-b8a361f118a8@de7e40c": {
+            "share": 0.0009,
+            "longest_run_words": 8
+          }
+        },
+        {
+          "code": "5.2",
+          "segment": "objective text",
+          "words": 137,
+          "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
+            "share": 0.0,
+            "longest_run_words": 0
+          },
+          "06aba565-9432-40f6-97ee-b8a361f118a8@de7e40c": {
+            "share": 0.0,
+            "longest_run_words": 0
+          }
+        },
+        {
+          "code": "5.0",
+          "segment": "domain text",
+          "words": 19,
+          "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
+            "share": 0.0,
+            "longest_run_words": 0
+          },
+          "06aba565-9432-40f6-97ee-b8a361f118a8@de7e40c": {
+            "share": 0.0,
+            "longest_run_words": 0
+          }
+        },
+        {
+          "code": "6.1",
+          "segment": "lesson: Memory Systems: Encoding, Storage, and Retrieval",
+          "words": 1145,
+          "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
+            "share": 0.0044,
+            "longest_run_words": 9
+          },
+          "06aba565-9432-40f6-97ee-b8a361f118a8@de7e40c": {
+            "share": 0.0044,
+            "longest_run_words": 9
+          }
+        },
+        {
+          "code": "6.1",
+          "segment": "objective text",
+          "words": 164,
+          "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
+            "share": 0.0,
+            "longest_run_words": 0
+          },
+          "06aba565-9432-40f6-97ee-b8a361f118a8@de7e40c": {
+            "share": 0.0,
+            "longest_run_words": 0
+          }
+        },
+        {
+          "code": "6.2",
+          "segment": "lesson: Problem Solving, Cognitive Biases, and Language Acquisition",
+          "words": 1117,
+          "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
+            "share": 0.0,
+            "longest_run_words": 0
+          },
+          "06aba565-9432-40f6-97ee-b8a361f118a8@de7e40c": {
+            "share": 0.0036,
+            "longest_run_words": 11
+          }
+        },
+        {
+          "code": "6.2",
+          "segment": "objective text",
+          "words": 169,
+          "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
+            "share": 0.0,
+            "longest_run_words": 0
+          },
+          "06aba565-9432-40f6-97ee-b8a361f118a8@de7e40c": {
+            "share": 0.0,
+            "longest_run_words": 0
+          }
+        },
+        {
+          "code": "6.0",
+          "segment": "domain text",
+          "words": 20,
+          "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
+            "share": 0.0,
+            "longest_run_words": 0
+          },
+          "06aba565-9432-40f6-97ee-b8a361f118a8@de7e40c": {
+            "share": 0.0,
+            "longest_run_words": 0
+          }
+        },
+        {
+          "code": "7.1",
+          "segment": "lesson: Theories of Motivation and Motivational Drives",
+          "words": 756,
+          "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
+            "share": 0.0,
+            "longest_run_words": 0
+          },
+          "06aba565-9432-40f6-97ee-b8a361f118a8@de7e40c": {
+            "share": 0.0,
+            "longest_run_words": 0
+          }
+        },
+        {
+          "code": "7.1",
+          "segment": "objective text",
+          "words": 149,
+          "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
+            "share": 0.0,
+            "longest_run_words": 0
+          },
+          "06aba565-9432-40f6-97ee-b8a361f118a8@de7e40c": {
+            "share": 0.0,
+            "longest_run_words": 0
+          }
+        },
+        {
+          "code": "7.2",
+          "segment": "lesson: Theories of Emotion, Stress, and Selye's GAS",
+          "words": 957,
+          "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
+            "share": 0.0011,
+            "longest_run_words": 8
+          },
+          "06aba565-9432-40f6-97ee-b8a361f118a8@de7e40c": {
+            "share": 0.0011,
+            "longest_run_words": 8
+          }
+        },
+        {
+          "code": "7.2",
+          "segment": "objective text",
+          "words": 174,
+          "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
+            "share": 0.024,
+            "longest_run_words": 9
+          },
+          "06aba565-9432-40f6-97ee-b8a361f118a8@de7e40c": {
+            "share": 0.024,
+            "longest_run_words": 9
+          }
+        },
+        {
+          "code": "7.0",
+          "segment": "domain text",
+          "words": 24,
+          "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
+            "share": 0.0,
+            "longest_run_words": 0
+          },
+          "06aba565-9432-40f6-97ee-b8a361f118a8@de7e40c": {
+            "share": 0.0,
+            "longest_run_words": 0
+          }
+        },
+        {
+          "code": "8.1",
+          "segment": "lesson: Cognitive and Motor Development Across Childhood",
+          "words": 985,
+          "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
+            "share": 0.002,
+            "longest_run_words": 8
+          },
+          "06aba565-9432-40f6-97ee-b8a361f118a8@de7e40c": {
+            "share": 0.002,
+            "longest_run_words": 8
+          }
+        },
+        {
+          "code": "8.1",
+          "segment": "objective text",
+          "words": 149,
+          "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
+            "share": 0.0,
+            "longest_run_words": 0
+          },
+          "06aba565-9432-40f6-97ee-b8a361f118a8@de7e40c": {
+            "share": 0.0,
+            "longest_run_words": 0
+          }
+        },
+        {
+          "code": "8.2",
+          "segment": "lesson: Attachment, Parenting Styles, and Psychosocial Moral Develop",
+          "words": 1080,
+          "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
+            "share": 0.0,
+            "longest_run_words": 0
+          },
+          "06aba565-9432-40f6-97ee-b8a361f118a8@de7e40c": {
+            "share": 0.0,
+            "longest_run_words": 0
+          }
+        },
+        {
+          "code": "8.2",
+          "segment": "objective text",
+          "words": 169,
+          "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
+            "share": 0.0,
+            "longest_run_words": 0
+          },
+          "06aba565-9432-40f6-97ee-b8a361f118a8@de7e40c": {
+            "share": 0.0,
+            "longest_run_words": 0
+          }
+        },
+        {
+          "code": "8.0",
+          "segment": "domain text",
+          "words": 30,
+          "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
+            "share": 0.0,
+            "longest_run_words": 0
+          },
+          "06aba565-9432-40f6-97ee-b8a361f118a8@de7e40c": {
+            "share": 0.0,
+            "longest_run_words": 0
+          }
+        },
+        {
+          "code": "9.1",
+          "segment": "lesson: Psychodynamic and Humanistic Perspectives on Personality",
+          "words": 842,
+          "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
+            "share": 0.0,
+            "longest_run_words": 0
+          },
+          "06aba565-9432-40f6-97ee-b8a361f118a8@de7e40c": {
+            "share": 0.0,
+            "longest_run_words": 0
+          }
+        },
+        {
+          "code": "9.1",
+          "segment": "objective text",
+          "words": 156,
+          "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
+            "share": 0.0,
+            "longest_run_words": 0
+          },
+          "06aba565-9432-40f6-97ee-b8a361f118a8@de7e40c": {
+            "share": 0.0,
+            "longest_run_words": 0
+          }
+        },
+        {
+          "code": "9.2",
+          "segment": "lesson: Trait Perspectives, Social-Cognitive Theory, and Personality",
+          "words": 925,
+          "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
+            "share": 0.0,
+            "longest_run_words": 0
+          },
+          "06aba565-9432-40f6-97ee-b8a361f118a8@de7e40c": {
+            "share": 0.0,
+            "longest_run_words": 0
+          }
+        },
+        {
+          "code": "9.2",
+          "segment": "objective text",
+          "words": 165,
+          "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
+            "share": 0.0,
+            "longest_run_words": 0
+          },
+          "06aba565-9432-40f6-97ee-b8a361f118a8@de7e40c": {
+            "share": 0.0,
+            "longest_run_words": 0
+          }
+        },
+        {
+          "code": "9.0",
+          "segment": "domain text",
+          "words": 22,
+          "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
+            "share": 0.0,
+            "longest_run_words": 0
+          },
+          "06aba565-9432-40f6-97ee-b8a361f118a8@de7e40c": {
+            "share": 0.0,
+            "longest_run_words": 0
+          }
+        },
+        {
+          "code": "10.1",
+          "segment": "lesson: Psychological Disorders: Classification, Anxiety, OCD, and T",
+          "words": 1023,
+          "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
+            "share": 0.002,
+            "longest_run_words": 9
+          },
+          "06aba565-9432-40f6-97ee-b8a361f118a8@de7e40c": {
+            "share": 0.002,
+            "longest_run_words": 9
+          }
+        },
+        {
+          "code": "10.1",
+          "segment": "objective text",
+          "words": 169,
+          "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
+            "share": 0.0,
+            "longest_run_words": 0
+          },
+          "06aba565-9432-40f6-97ee-b8a361f118a8@de7e40c": {
+            "share": 0.0,
+            "longest_run_words": 0
+          }
+        },
+        {
+          "code": "10.2",
+          "segment": "lesson: Depressive, Bipolar, Schizophrenic, and Personality Patholog",
+          "words": 924,
+          "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
+            "share": 0.0,
+            "longest_run_words": 0
+          },
+          "06aba565-9432-40f6-97ee-b8a361f118a8@de7e40c": {
+            "share": 0.0,
+            "longest_run_words": 0
+          }
+        },
+        {
+          "code": "10.2",
+          "segment": "objective text",
+          "words": 149,
+          "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
+            "share": 0.0,
+            "longest_run_words": 0
+          },
+          "06aba565-9432-40f6-97ee-b8a361f118a8@de7e40c": {
+            "share": 0.0,
+            "longest_run_words": 0
+          }
+        },
+        {
+          "code": "10.0",
+          "segment": "domain text",
+          "words": 25,
+          "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
+            "share": 0.0,
+            "longest_run_words": 0
+          },
+          "06aba565-9432-40f6-97ee-b8a361f118a8@de7e40c": {
+            "share": 0.0,
+            "longest_run_words": 0
+          }
+        },
+        {
+          "code": "11.1",
+          "segment": "lesson: Psychological Therapies: Insight, Behavior, and Cognitive Ap",
+          "words": 852,
+          "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
+            "share": 0.0,
+            "longest_run_words": 0
+          },
+          "06aba565-9432-40f6-97ee-b8a361f118a8@de7e40c": {
+            "share": 0.0,
+            "longest_run_words": 0
+          }
+        },
+        {
+          "code": "11.1",
+          "segment": "objective text",
+          "words": 146,
+          "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
+            "share": 0.0,
+            "longest_run_words": 0
+          },
+          "06aba565-9432-40f6-97ee-b8a361f118a8@de7e40c": {
+            "share": 0.0,
+            "longest_run_words": 0
+          }
+        },
+        {
+          "code": "11.2",
+          "segment": "lesson: Biomedical Therapies, Psychopharmacology, and Treatment Outc",
+          "words": 1030,
+          "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
+            "share": 0.0,
+            "longest_run_words": 0
+          },
+          "06aba565-9432-40f6-97ee-b8a361f118a8@de7e40c": {
+            "share": 0.0,
+            "longest_run_words": 0
+          }
+        },
+        {
+          "code": "11.2",
+          "segment": "objective text",
+          "words": 152,
+          "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
+            "share": 0.0,
+            "longest_run_words": 0
+          },
+          "06aba565-9432-40f6-97ee-b8a361f118a8@de7e40c": {
+            "share": 0.0,
+            "longest_run_words": 0
+          }
+        },
+        {
+          "code": "11.0",
+          "segment": "domain text",
+          "words": 20,
+          "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
+            "share": 0.0,
+            "longest_run_words": 0
+          },
+          "06aba565-9432-40f6-97ee-b8a361f118a8@de7e40c": {
+            "share": 0.0,
+            "longest_run_words": 0
+          }
+        },
+        {
+          "code": "12.1",
+          "segment": "lesson: Social Thinking: Attribution, Cognitive Dissonance, and Obed",
+          "words": 1271,
+          "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
+            "share": 0.0008,
+            "longest_run_words": 8
+          },
+          "06aba565-9432-40f6-97ee-b8a361f118a8@de7e40c": {
+            "share": 0.0008,
+            "longest_run_words": 8
+          }
+        },
+        {
+          "code": "12.1",
+          "segment": "objective text",
+          "words": 162,
+          "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
+            "share": 0.0,
+            "longest_run_words": 0
+          },
+          "06aba565-9432-40f6-97ee-b8a361f118a8@de7e40c": {
+            "share": 0.0,
+            "longest_run_words": 0
+          }
+        },
+        {
+          "code": "12.2",
+          "segment": "lesson: Group Influence, Prejudice, and the Bystander Effect",
+          "words": 1077,
+          "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
+            "share": 0.0,
+            "longest_run_words": 0
+          },
+          "06aba565-9432-40f6-97ee-b8a361f118a8@de7e40c": {
+            "share": 0.0,
+            "longest_run_words": 0
+          }
+        },
+        {
+          "code": "12.2",
+          "segment": "objective text",
+          "words": 153,
+          "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
+            "share": 0.0,
+            "longest_run_words": 0
+          },
+          "06aba565-9432-40f6-97ee-b8a361f118a8@de7e40c": {
+            "share": 0.0,
+            "longest_run_words": 0
+          }
+        },
+        {
+          "code": "12.0",
+          "segment": "domain text",
+          "words": 20,
+          "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
+            "share": 0.0,
+            "longest_run_words": 0
+          },
+          "06aba565-9432-40f6-97ee-b8a361f118a8@de7e40c": {
+            "share": 0.0,
+            "longest_run_words": 0
+          }
+        },
+        {
+          "code": "13.1",
+          "segment": "lesson: Statistical Measures, Psychometric Standards, and Intelligen",
+          "words": 1526,
+          "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
+            "share": 0.0,
+            "longest_run_words": 0
+          },
+          "06aba565-9432-40f6-97ee-b8a361f118a8@de7e40c": {
+            "share": 0.0,
+            "longest_run_words": 0
+          }
+        },
+        {
+          "code": "13.1",
+          "segment": "objective text",
+          "words": 197,
+          "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
+            "share": 0.0,
+            "longest_run_words": 0
+          },
+          "06aba565-9432-40f6-97ee-b8a361f118a8@de7e40c": {
+            "share": 0.0,
+            "longest_run_words": 0
+          }
+        },
+        {
+          "code": "13.0",
+          "segment": "domain text",
+          "words": 31,
+          "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
+            "share": 0.0,
+            "longest_run_words": 0
+          },
+          "06aba565-9432-40f6-97ee-b8a361f118a8@de7e40c": {
+            "share": 0.0,
+            "longest_run_words": 0
+          }
+        },
+        {
+          "code": "",
+          "segment": "stimuli",
+          "words": 223,
+          "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc": {
+            "share": 0.0,
+            "longest_run_words": 0
+          },
+          "06aba565-9432-40f6-97ee-b8a361f118a8@de7e40c": {
+            "share": 0.0,
+            "longest_run_words": 0
+          }
+        }
+      ],
+      "manifest": "clep_introductory_psychology.yaml",
+      "release_id": "openstax-psychology-1e",
+      "declared_release_book": "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc",
+      "decision": "reference",
+      "rationale": "0.06% of the manifest's 8-word shingles occur in the 1st edition (longest run 9 words: standard terms such as 'diagnostic and statistical manual of mental disorders dsm 5'). The 4 shingles found only in the CC BY-NC-SA 2e are the materials list of Duncker's candle problem ('a candle, a book of matches and a box of thumbtacks'), a standard description of a classic experiment, not adapted 2e text. The lessons are independently written; OpenStax 1e is cited for alignment and section reference."
+    }
+  ]
+}
