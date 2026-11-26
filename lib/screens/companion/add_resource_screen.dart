@@ -39,7 +39,12 @@ class AddResourceScreen extends ConsumerStatefulWidget {
     this.initialUrl,
     this.initialTitle,
     this.appOrigin,
+    this.viaExtension = false,
   });
+
+  /// True when the browser extension opened this form. Its own switch then
+  /// decides whether the form is offered, and the bookmark tip is left out.
+  final bool viaExtension;
 
   final String? initialUrl;
   final String? initialTitle;
@@ -127,7 +132,9 @@ class _AddResourceScreenState extends ConsumerState<AddResourceScreen> {
     final muted = theme.textTheme.bodySmall?.copyWith(
       color: theme.colorScheme.onSurfaceVariant,
     );
-    final enabled = ref.watch(companionCaptureEnabledProvider);
+    final enabled = widget.viaExtension
+        ? ref.watch(companionExtensionEnabledProvider)
+        : ref.watch(companionCaptureEnabledProvider);
     final goals = ref.watch(captureGoalsProvider);
     final origin = widget.appOrigin ?? (kIsWeb ? Uri.base.origin : '');
     final selected = goals.any((g) => g.targetId == _targetId)
@@ -252,7 +259,7 @@ class _AddResourceScreenState extends ConsumerState<AddResourceScreen> {
             key: const Key('capture_privacy_note'),
             style: muted,
           ),
-          if (origin.isNotEmpty) ...[
+          if (origin.isNotEmpty && !widget.viaExtension) ...[
             const SizedBox(height: DesignTokens.space4),
             ExpansionTile(
               key: const Key('capture_how'),

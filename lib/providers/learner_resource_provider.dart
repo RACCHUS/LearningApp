@@ -48,6 +48,18 @@ final companionEmbedsEnabledProvider = Provider<bool>((ref) {
       );
 });
 
+/// Switch `content.companion_extension` (default OFF): the route the browser
+/// extension opens (companion plan v1.0, EX-9). A client entry point; reads
+/// and saves stay behind the learner-resources server gate.
+final companionExtensionEnabledProvider = Provider<bool>((ref) {
+  return ref.watch(learnerResourcesEnabledProvider) &&
+      isSiteFeatureEnabled(
+        ref.watch(siteFeatureSnapshotProvider).valueOrNull,
+        SiteFeatureKeys.contentCompanionExtension,
+        runtimeReady: SiteFeatureRuntime.snapshotEnabled,
+      );
+});
+
 /// The small floating window (companion plan v1.0, EX-8). One per app; on
 /// browsers without the feature it reports `supported == false`.
 final floatingWindowProvider = Provider<FloatingWindow>((ref) {

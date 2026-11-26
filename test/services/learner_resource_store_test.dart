@@ -47,6 +47,9 @@ class FakeAccountStore implements LearnerResourceStore {
   Future<List<LearnerResource>> list(String targetId) async => const [];
 
   @override
+  Future<List<LearnerResource>> listAll() async => const [];
+
+  @override
   Future<void> delete(String resourceId) async {}
 }
 
