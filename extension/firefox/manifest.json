@@ -2,26 +2,48 @@
   "manifest_version": 3,
   "name": "LearningApp companion",
   "version": "0.1.0",
-  "description": "Opens your LearningApp companion beside the course, video or article you are studying. Reads the page address only when you click the button.",
-  "permissions": ["activeTab"],
+  "description": "Opens your LearningApp study plan beside the course, video or article you are on. Reads the page address only when you click.",
+  "permissions": [
+    "activeTab"
+  ],
   "action": {
     "default_title": "Open my LearningApp companion for this page",
-    "default_icon": { "192": "icon-192.png" }
+    "default_icon": {
+      "16": "icon-16.png",
+      "32": "icon-32.png",
+      "48": "icon-48.png"
+    }
   },
   "background": {
-    "scripts": ["background.js"]
+    "scripts": [
+      "background.js"
+    ]
   },
   "sidebar_action": {
     "default_title": "LearningApp companion",
     "default_panel": "panel.html",
-    "default_icon": "icon-192.png",
+    "default_icon": {
+      "16": "icon-16.png",
+      "32": "icon-32.png"
+    },
     "open_at_install": false
   },
-  "icons": { "192": "icon-192.png" },
+  "icons": {
+    "16": "icon-16.png",
+    "32": "icon-32.png",
+    "48": "icon-48.png",
+    "128": "icon-128.png",
+    "192": "icon-192.png"
+  },
   "browser_specific_settings": {
     "gecko": {
       "id": "companion@learningapp-2ed8a.web.app",
-      "strict_min_version": "121.0"
+      "strict_min_version": "121.0",
+      "data_collection_permissions": {
+        "required": [
+          "browsingActivity"
+        ]
+      }
     }
   }
 }

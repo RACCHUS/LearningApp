@@ -389,7 +389,7 @@ Recommended defaults. Under the owner's standing delegation these stand unless t
 | X-8 | Catalog storage | Repository files first, database later |
 | X-9 | Sync | Server tables for signed-in learners; device-local for guests |
 | X-10 | Pilots | P1–P3 in §9 |
-| X-11 | Chrome Web Store fee | **Owner.** Until decided: Firefox listing plus manual Chrome install for testers |
+| X-11 | Chrome Web Store fee | **Decided by the owner 2026-11-26: pay the US$5 one-time fee.** Everything the listing needs is in `extension/STORE_LISTING.md`; `tool/package_extension.py` builds the upload. Creating the account, paying, publishing the privacy policy and submitting stay with the owner |
 | X-12 | Native apps and Safari extension | **Owner.** Paid extension slots; not built |
 | X-13 | Switching each new key ON in production | **Owner**, per key, after browser verification as guest and signed in |
 
