@@ -129,6 +129,12 @@ class _CostObservabilityScreenState extends State<CostObservabilityScreen> {
             ),
           if (_isAdmin)
             IconButton(
+              icon: const Icon(Icons.menu_book_outlined),
+              tooltip: 'Outside study outcomes',
+              onPressed: () => context.push('/admin/companion-outcomes'),
+            ),
+          if (_isAdmin)
+            IconButton(
               icon: const Icon(Icons.refresh),
               tooltip: 'Refresh Telemetry',
               onPressed: _isLoading ? null : _loadSnapshot,
