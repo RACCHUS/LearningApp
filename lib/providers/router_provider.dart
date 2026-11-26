@@ -1,4 +1,5 @@
 import 'package:learning_pwa/screens/companion/add_resource_screen.dart';
+import 'package:learning_pwa/screens/companion/companion_for_link_screen.dart';
 import 'package:learning_pwa/screens/companion/companion_screen.dart';
 import 'package:learning_pwa/screens/settings_screen.dart';
 import 'package:learning_pwa/screens/governance/moderation_queue_screen.dart'
@@ -189,6 +190,16 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => AddResourceScreen(
           initialUrl: state.uri.queryParameters['url'],
           initialTitle: state.uri.queryParameters['title'],
+        ),
+      ),
+      // Opened by the browser extension. As with /add-resource, the query is
+      // inside the URL fragment and never reaches a server.
+      GoRoute(
+        path: '/companion-for',
+        name: 'companion-for',
+        builder: (context, state) => CompanionForLinkScreen(
+          url: state.uri.queryParameters['url'],
+          title: state.uri.queryParameters['title'],
         ),
       ),
       GoRoute(

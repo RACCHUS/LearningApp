@@ -1,0 +1,27 @@
+{
+  "manifest_version": 3,
+  "name": "LearningApp companion",
+  "version": "0.1.0",
+  "description": "Opens your LearningApp companion beside the course, video or article you are studying. Reads the page address only when you click the button.",
+  "permissions": ["activeTab"],
+  "action": {
+    "default_title": "Open my LearningApp companion for this page",
+    "default_icon": { "192": "icon-192.png" }
+  },
+  "background": {
+    "scripts": ["background.js"]
+  },
+  "sidebar_action": {
+    "default_title": "LearningApp companion",
+    "default_panel": "panel.html",
+    "default_icon": "icon-192.png",
+    "open_at_install": false
+  },
+  "icons": { "192": "icon-192.png" },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "companion@learningapp-2ed8a.web.app",
+      "strict_min_version": "121.0"
+    }
+  }
+}
