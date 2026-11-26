@@ -27,8 +27,8 @@
    "id": "openstax-college-algebra",
    "kind": "book",
    "publisher": "OpenStax",
-   "title": "College Algebra",
-   "canonical_url": "https://openstax.org/details/books/college-algebra",
+   "title": "College Algebra (1st edition)",
+   "canonical_url": "https://openstax.org/books/college-algebra/pages/1-introduction-to-prerequisites",
    "locale": "en-US",
    "edition_or_published": "2015-02-13",
    "access": "free_no_login",
@@ -42,7 +42,10 @@
    ],
    "metadata_checked_at": "2026-11-26",
    "review": {
-    "status": "pending"
+    "status": "approved",
+    "reviewer_kind": "ai",
+    "reviewer_model": "claude-sonnet-5-5",
+    "reviewed_on": "2026-11-26"
    }
   }
  ],

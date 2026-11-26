@@ -290,6 +290,16 @@ void main() {
         );
         expect(m.approved, isTrue);
         expect(m.coverage.length, 20);
+        final openstax = c.resources.singleWhere(
+          (r) => r.id == 'openstax-college-algebra',
+        );
+        expect(openstax.approved, isTrue);
+        expect(openstax.reviewerKind, 'ai');
+        expect(
+          openstax.url,
+          startsWith('https://openstax.org/books/college-algebra/pages/'),
+          reason: 'the 1st edition the map was checked against, not the 2e',
+        );
         expect(
           c.resources
               .singleWhere((r) => r.id == 'modern-states-college-algebra')

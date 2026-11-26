@@ -4,8 +4,8 @@
 id: openstax-college-algebra
 kind: book
 publisher: OpenStax
-title: College Algebra
-canonical_url: https://openstax.org/details/books/college-algebra
+title: College Algebra (1st edition)
+canonical_url: https://openstax.org/books/college-algebra/pages/1-introduction-to-prerequisites
 locale: en-US
 edition_or_published: '2015-02-13'
 access: free_no_login
@@ -24,15 +24,27 @@ metadata_checked_at: '2026-11-26'
 facts:
 - claim: Free to read online; the chapter pages loaded without signing in when checked.
   source_url: https://openstax.org/books/college-algebra/pages/1-introduction-to-prerequisites
-- claim: The book text is under the Creative Commons Attribution 4.0 license; OpenStax's own images, activities and assessments are under CC BY-NC-SA.
+- claim: Published by OpenStax; the citation panel on the chapter page lists the publication date as 13 February 2015.
   source_url: https://openstax.org/books/college-algebra/pages/1-introduction-to-prerequisites
-- claim: Published by OpenStax, first published 13 February 2015.
+- claim: This is the first edition. The book's details page now redirects to College Algebra 2e (published 21 December 2021), which says the first edition remains available in web view and links to this chapter page. The objective map and its section links are for the first edition, so the record links here and not to the 2e.
+  source_url: https://openstax.org/details/books/college-algebra-2e
+- claim: The publisher's pages disagree about the license. The preface's Customization section says this book is licensed under CC BY 4.0. The citation panel on the same pages says it uses "the Creative Commons Attribution License" but describes noncommercial, share-alike terms, and the site footer names CC BY-NC-SA 4.0 unless otherwise noted. LearningApp only links to it.
+  source_url: https://openstax.org/books/college-algebra/pages/preface
+- claim: The citation panel says the book may not be used to train, or be ingested into, large language models or generative AI offerings without OpenStax's prior written permission. The catalog stores only the link, titles and section numbers; nothing from the book is given to an AI.
   source_url: https://openstax.org/books/college-algebra/pages/1-introduction-to-prerequisites
 unknown:
-- Whether the online edition is the same as the 1e archive the objective mapping was checked against (the page does not name an edition).
+- Which license currently governs this first edition's text, given the preface (CC BY 4.0) and the citation panel (noncommercial, share-alike) disagree. Irrelevant to a link, but it matters for any reuse.
 - Practice at the book level was not read from the publisher's pages; the per-section practice in the map comes from the reviewed objective mapping.
 - Accessibility details beyond the site's linked accessibility statement.
+- How long OpenStax will keep the first edition online now that the 2e is current.
 authored_by: ai-drafted-by-claude
 review:
-  status: pending
+  status: approved
+  reviewer_kind: ai
+  reviewer_model: claude-sonnet-5-5
+  reviewed_on: '2026-11-26'
+  notes: 'Independent AI review (different model from the author) against the publisher''s pages. First pass: changes
+    required (the details URL now redirects to the 2e; the license claim was not supported; the AI-training restriction
+    was missing). Second pass: approved. Third pass on the license fact after the preface was found: approved.
+    Evidence: data/external_resources/reviews/2026-11-26_openstax-college-algebra.json'
 selection_note: 'Pilot P1, re-pointed 2026-11-26. The first pilot (Modern States) could not be mapped because its site refuses automated reading. This book is free without sign-in, aligned closely enough that an independently reviewed objective mapping already exists (data/concept_mappings/), and needs no account, so it can be the best free route. LearningApp also imports some of its sections as lessons; the catalog entry is the whole book read on its own site, and both appear side by side.'
