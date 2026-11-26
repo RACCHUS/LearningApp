@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -258,5 +260,57 @@ void main() {
     await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
     await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
     handle.dispose();
+  });
+
+  test(
+    'the clock says when the planned time for a part is up, and only then',
+    () {
+      expect(
+        floatingClockText(const Duration(minutes: 9, seconds: 5), 10),
+        'Time on this part: 9:05',
+      );
+      expect(
+        plannedTimeUp(const Duration(minutes: 9, seconds: 59), 10),
+        isFalse,
+      );
+      expect(plannedTimeUp(const Duration(minutes: 10), 10), isTrue);
+      expect(
+        floatingClockText(const Duration(minutes: 10, seconds: 1), 10),
+        'Time on this part: 10:01 (planned 10 min)',
+      );
+      expect(
+        floatingClockText(const Duration(minutes: 95), null),
+        'Time on this part: 95:00',
+        reason: 'no estimate, no reminder',
+      );
+      expect(plannedTimeUp(const Duration(hours: 3), 0), isFalse);
+      expect(
+        plannedTimeUpMessage('2.1 Linear equations', 80),
+        'Your planned 1 h 20 min for "2.1 Linear equations" is up. Mark it done when you finish, then check yourself.',
+      );
+    },
+  );
+
+  test('the reminder needs no permission prompt and stores nothing', () {
+    final web = File(
+      'lib/services/companion/floating_companion_web.dart',
+    ).readAsStringSync();
+    expect(
+      web.contains('requestPermission'),
+      isFalse,
+      reason: 'it must never ask for notification permission',
+    );
+    for (final banned in [
+      'localStorage',
+      'SharedPreferences',
+      'rpc(',
+      'fetch(',
+    ]) {
+      expect(
+        web.contains(banned),
+        isFalse,
+        reason: 'the floating window must not use $banned',
+      );
+    }
   });
 }

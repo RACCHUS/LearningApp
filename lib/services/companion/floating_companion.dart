@@ -48,6 +48,29 @@ class FloatingContent {
   }
 }
 
+/// The clock line in the floating window. Once the learner's own estimate
+/// for the part has passed, it says so: the reminder at the planned end
+/// (companion plan v1.0, EX-4). It is shown only while the window is open;
+/// nothing is scheduled or stored anywhere.
+String floatingClockText(Duration elapsed, int? plannedMinutes) {
+  final s = elapsed.inSeconds < 0 ? 0 : elapsed.inSeconds;
+  final clock =
+      'Time on this part: ${s ~/ 60}:${(s % 60).toString().padLeft(2, '0')}';
+  if (!plannedTimeUp(elapsed, plannedMinutes)) return clock;
+  return '$clock (planned ${formatStudyMinutes(plannedMinutes!)})';
+}
+
+/// Said once when the planned time for a part has passed.
+String plannedTimeUpMessage(String? partTitle, int plannedMinutes) =>
+    'Your planned ${formatStudyMinutes(plannedMinutes)} for '
+    '"${partTitle ?? 'this part'}" is up. Mark it done when you finish, then check yourself.';
+
+/// True once [plannedMinutes] (the learner's own estimate) have passed.
+bool plannedTimeUp(Duration elapsed, int? plannedMinutes) =>
+    plannedMinutes != null &&
+    plannedMinutes > 0 &&
+    elapsed.inSeconds >= plannedMinutes * 60;
+
 /// A small always-on-top window beside whatever the learner is studying, on
 /// desktop browsers that support Document Picture-in-Picture. It is opened
 /// only by the learner's click, holds no player and watches nothing: the
