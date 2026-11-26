@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// An account store that fails on demand, to test a part-way move.
 class FakeAccountStore implements LearnerResourceStore {
   final saved = <String>[];
+  final catalogIds = <String?>[];
   final objectives = <String, Set<String>>{};
   final studied = <String>[];
   String? failOnTitle;
@@ -19,9 +20,11 @@ class FakeAccountStore implements LearnerResourceStore {
     required LearnerResourceKind kind,
     String? url,
     ExternalAccess? access,
+    String? catalogId,
   }) async {
     if (title == failOnTitle) throw StateError('offline');
     saved.add(title);
+    catalogIds.add(catalogId);
     return 'acct-${saved.length}';
   }
 
@@ -261,5 +264,42 @@ void main() {
     final account = FakeAccountStore()..failOnTitle = 'B';
     await expectLater(moveLocalResourcesToAccount(local, account), throwsStateError);
     expect((await local.listAll()).map((r) => r.title), ['B']);
+  });
+
+  test('the catalog entry a resource came from is kept on the device, in an edit and on the move', () async {
+    final local = LocalLearnerResourceStore();
+    final id = await local.save(
+      targetId: 't1',
+      title: 'Book',
+      kind: LearnerResourceKind.book,
+      url: 'https://example.org/book',
+      catalogId: 'openstax-college-algebra',
+    );
+    expect((await local.list('t1')).single.catalogId, 'openstax-college-algebra');
+    await local.save(
+      id: id,
+      targetId: 't1',
+      title: 'Renamed',
+      kind: LearnerResourceKind.book,
+      catalogId: 'openstax-college-algebra',
+    );
+    expect((await local.list('t1')).single.catalogId, 'openstax-college-algebra');
+    await local.save(targetId: 't1', title: 'Mine', kind: LearnerResourceKind.course);
+    final account = FakeAccountStore();
+    expect(await moveLocalResourcesToAccount(local, account), 2);
+    expect(account.catalogIds, ['openstax-college-algebra', null]);
+  });
+
+  test('an account row carries its catalog id', () {
+    final r = LearnerResource.fromJson({
+      'id': 'x',
+      'target_id': 't1',
+      'title': 'T',
+      'kind': 'book',
+      'catalog_resource_id': 'openstax-college-algebra',
+    });
+    expect(r.catalogId, 'openstax-college-algebra');
+    expect(LearnerResource.fromJson(r.toJson()).catalogId, 'openstax-college-algebra');
+    expect(LearnerResource.fromJson({'id': 'y', 'target_id': 't1', 'title': 'T', 'kind': 'book'}).catalogId, isNull);
   });
 }
