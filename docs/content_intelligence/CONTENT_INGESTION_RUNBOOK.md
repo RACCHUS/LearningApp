@@ -212,8 +212,8 @@ Every curriculum manifest has a profile in `data/notation_profiles.yaml`: math m
 
 1. **Non-commercial status:** does LearningApp, with its sponsor, affiliate and donation plans, count as non-commercial for CC BY-NC-SA sources?
 2. ~~Psychology source~~: **decided by the owner on 2026-11-24 (D-5).** CLEP Introductory Psychology now cites Psychology (1st edition, CC BY 4.0). Citations keep their section numbers; each cited 1e section was checked against its lesson topic, but lesson text was not re-verified line by line. 2e stays link and reference only. Edit `tool/curriculum_clep_psychology/` and `tool/generate_clep_psychology_course.py`, then regenerate; don't edit the YAML by hand.
-3. ~~Approve the CC BY sources for adapting~~: **approved by the owner on 2026-11-20** for OpenStax College Algebra, Prealgebra and Psychology (1st editions), including `adapt` and `ai_transform`; `redistribute` added on 2026-11-24 (D-7).
-4. **Unconfirmed AI claim:** the Bridges say OpenStax prohibits use for training large language models. No such statement was found on OpenStax pages on 2026-11-20. Keep the conservative note, or correct it.
+3. ~~Approve the CC BY sources for adapting~~: **approved by the owner on 2026-11-20** for OpenStax College Algebra, Prealgebra and Psychology (1st editions), including `adapt` and `ai_transform`; `redistribute` added on 2026-11-24 (D-7). **`ai_transform` withdrawn on 2026-11-26** after OpenStax's AI notice; the CC BY 4.0 license and the other uses stand (`data/rights_audits/2026-11-26_openstax_site_notices.json`).
+4. ~~Unconfirmed AI claim~~: **confirmed on 2026-11-26.** OpenStax book pages now say the books may not be used to train, or be put into, large language models or generative AI offerings without written permission. The Bridges' note stands, and `ai_transform` is withdrawn for every OpenStax source (`data/rights_audits/2026-11-26_openstax_site_notices.json`).
 5. **Production ingestion:** load the curricula (Excel and CLEP Algebra first) into production.
 
 ## Checklist for an AI agent
