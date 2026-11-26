@@ -28,16 +28,17 @@ bool sameResourceLink(String a, String b) {
 
 /// The learner's resource whose link is [url], in any of their goals,
 /// whether or not they have started learning that goal. Null while loading
-/// or when there is none.
-final resourceForLinkProvider = FutureProvider.family<LearnerResource?, String>(
-  (ref, url) async {
-    if (!ref.watch(learnerResourcesEnabledProvider)) return null;
-    final all = await ref.watch(learnerResourceStoreProvider).listAll();
-    return all
-        .where((r) => r.url != null && sameResourceLink(r.url!, url))
-        .firstOrNull;
-  },
-);
+/// or when there is none. Read afresh on each visit (autoDispose): a page
+/// added from this screen must open its companion the next time, even in a
+/// side panel where the app stays loaded between clicks.
+final resourceForLinkProvider = FutureProvider.autoDispose
+    .family<LearnerResource?, String>((ref, url) async {
+      if (!ref.watch(learnerResourcesEnabledProvider)) return null;
+      final all = await ref.watch(learnerResourceStoreProvider).listAll();
+      return all
+          .where((r) => r.url != null && sameResourceLink(r.url!, url))
+          .firstOrNull;
+    });
 
 /// What the browser extension opens (companion plan v1.0 §5.4, EX-9): the
 /// companion for the page the learner is on if it is one of their

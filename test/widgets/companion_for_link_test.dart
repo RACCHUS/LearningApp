@@ -210,6 +210,67 @@ void main() {
   );
 
   testWidgets(
+    'after a page is added, opening it again in the same session opens its companion',
+    (tester) async {
+      // A side panel keeps the app loaded between clicks, so the match must
+      // be read afresh on each visit, not remembered from the first one.
+      final showing = ValueNotifier<bool>(true);
+      addTearDown(showing.dispose);
+      const url = 'https://example.org/again';
+      tester.view.physicalSize = const Size(420, 2400);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            companionExtensionEnabledProvider.overrideWithValue(true),
+            companionCaptureEnabledProvider.overrideWithValue(false),
+            companionEmbedsEnabledProvider.overrideWithValue(false),
+            captureGoalsProvider.overrideWithValue(goals),
+            learnerResourcesEnabledProvider.overrideWithValue(true),
+            learnerResourcesUseAccountProvider.overrideWithValue(false),
+            learnerResourceStoreProvider.overrideWithValue(
+              LocalLearnerResourceStore(),
+            ),
+            targetDetailProvider.overrideWith((ref, id) async => _target(id)),
+            targetVersionProvider.overrideWith((ref, id) async => _version(id)),
+            targetCurriculumNodesProvider.overrideWith(
+              (ref, id) async => const <CurriculumNode>[],
+            ),
+            objectiveReadinessProvider.overrideWith((ref, id) async => null),
+            targetCoverageProvider.overrideWith(
+              (ref, slug) async => CoverageSummary([]),
+            ),
+          ],
+          child: MaterialApp(
+            home: ValueListenableBuilder<bool>(
+              valueListenable: showing,
+              builder: (_, on, _) => on
+                  ? const CompanionForLinkScreen(url: url, title: 'Again')
+                  : const SizedBox(),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('capture_save')), findsOneWidget);
+
+      showing.value = false;
+      await tester.pumpAndSettle();
+      await LocalLearnerResourceStore().save(
+        targetId: 't1',
+        title: 'Again course',
+        kind: LearnerResourceKind.course,
+        url: url,
+      );
+      showing.value = true;
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('capture_save')), findsNothing);
+      expect(find.text('Again course'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
     'a browser page or a missing address falls back to the plain form',
     (tester) async {
       await pump(tester, url: 'about:config', title: 'Settings');
