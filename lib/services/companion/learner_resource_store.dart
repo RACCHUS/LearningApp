@@ -11,6 +11,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 abstract class LearnerResourceStore {
   Future<List<LearnerResource>> list(String targetId);
 
+  /// Every resource the learner has, in any goal.
+  Future<List<LearnerResource>> listAll();
+
   /// Creates ([id] null) or edits a resource. [url] must already be cleaned
   /// by `normalizeLearnerLink`.
   Future<String> save({
@@ -56,6 +59,17 @@ class SupabaseLearnerResourceStore implements LearnerResourceStore {
           'learner_resource_sections(position,title,objective_keys,map_source,est_minutes,start_seconds,studied_at)',
         )
         .eq('target_id', targetId)
+        .order('created_at');
+    return [
+      for (final r in rows as List) LearnerResource.fromJson(Map<String, dynamic>.from(r as Map)),
+    ];
+  }
+
+  @override
+  Future<List<LearnerResource>> listAll() async {
+    final rows = await _client
+        .from('learner_external_resources')
+        .select('id,target_id,title,kind,url,access')
         .order('created_at');
     return [
       for (final r in rows as List) LearnerResource.fromJson(Map<String, dynamic>.from(r as Map)),
@@ -150,7 +164,8 @@ class LocalLearnerResourceStore implements LearnerResourceStore {
     await _write(all);
   }
 
-  /// Every resource on this device, for moving them into an account.
+  /// Every resource on this device (also used to move them into an account).
+  @override
   Future<List<LearnerResource>> listAll() => _all();
 
   @override

@@ -173,6 +173,8 @@ void main() {
         tester,
         url: 'https://example.org/gre/course/?utm_source=mail#week-2',
         title: 'GRE course',
+        // Found even though the learner has not started learning that goal.
+        withGoals: const [],
       );
       expect(find.text('My GRE course'), findsOneWidget);
       expect(find.byKey(const Key('companion_summary')), findsOneWidget);

@@ -26,19 +26,16 @@ bool sameResourceLink(String a, String b) {
   return bare(a) == bare(b);
 }
 
-/// The learner's resource whose link is [url], in any of their goals. Null
-/// while loading or when there is none.
+/// The learner's resource whose link is [url], in any of their goals,
+/// whether or not they have started learning that goal. Null while loading
+/// or when there is none.
 final resourceForLinkProvider = FutureProvider.family<LearnerResource?, String>(
   (ref, url) async {
-    for (final goal in ref.watch(captureGoalsProvider)) {
-      final resources = await ref.watch(
-        learnerResourcesProvider(goal.targetId).future,
-      );
-      for (final r in resources) {
-        if (r.url != null && sameResourceLink(r.url!, url)) return r;
-      }
-    }
-    return null;
+    if (!ref.watch(learnerResourcesEnabledProvider)) return null;
+    final all = await ref.watch(learnerResourceStoreProvider).listAll();
+    return all
+        .where((r) => r.url != null && sameResourceLink(r.url!, url))
+        .firstOrNull;
   },
 );
 
