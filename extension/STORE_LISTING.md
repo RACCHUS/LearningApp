@@ -56,7 +56,7 @@ Opens your LearningApp study plan beside the course, video or article you are on
 |---|---|---|
 | Store icon | `extension/store-assets/store-icon-128.png` | 128×128 (96×96 artwork, transparent padding) |
 | Small promo tile (Chrome, Edge) | `extension/store-assets/promo-small-440x280.png` | 440×280 |
-| Screenshots | `extension/store-assets/screenshot-*.png` | 1280×800 |
+| Screenshot | `extension/store-assets/store-shot-1-add-from-page.png`: the live site opened by the extension on an OpenStax page, as a guest, with the name and link filled in | 1280×800 |
 
 The icon is the app's own icon (`web/icons/icon-512.png`), so the extension matches the installed app. It is a detailed picture, and at 16 pixels in the toolbar it reads only as a dark square with a light spot. A simpler mark would be clearer; that is a branding choice for the owner.
 
