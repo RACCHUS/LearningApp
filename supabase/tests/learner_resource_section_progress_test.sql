@@ -31,7 +31,8 @@ select is_empty(
   $$ select p.proname from pg_proc p join pg_namespace n on n.oid = p.pronamespace
       where n.nspname in ('public', 'private')
         and p.prosrc ilike '%learner_resource_sections%'
-        and p.proname not in ('set_learner_resource_sections', 'set_learner_resource_section_studied') $$,
+        and p.proname not in ('set_learner_resource_sections', 'set_learner_resource_section_studied',
+                              'get_companion_outcome_report') $$,
   'no other function reads self-reported progress through a resource');
 
 update private.site_feature_controls set enabled = true, release_ready = true
