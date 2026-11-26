@@ -223,11 +223,11 @@ Read to understand; no refactor proposals.
 
 ## Outside-resource companion {#companion}
 
-Gates `content.learner_resources`, `.companion_capture` (`add_resource_screen.dart`), `.companion_embeds` (`companion_player.dart`), `.companion_extension` (`companion_for_link_screen.dart`, `extension/`). Plan: `LEARNINGAPP_EXTERNAL_RESOURCE_COMPANION_PLAN_V1_0_2026-11-25.md`. "Studied" is self-report, never readiness.
+Gates `content.learner_resources`, `.companion_capture` (`add_resource_screen.dart`), `.companion_embeds`, `.companion_extension` (`extension/`), `.resource_recommendations` (`ways_to_study_card.dart`). Plan: `LEARNINGAPP_EXTERNAL_RESOURCE_COMPANION_PLAN_V1_0_2026-11-25.md`. "Studied" is self-report, never readiness.
 <!-- map-ref path="lib/screens/companion/learner_resource_screen.dart" role="owner" -->
 - Owner: that screen; gaps `goal_gaps_screen.dart`; outline `resource_outline_screen.dart`; steps `companion_screen.dart`, float `floating_companion.dart`; card `learner_resources_card.dart`; `outside_study_widgets.dart`; storage `learner_resource_store.dart`.
 <!-- map-ref path="supabase/migrations/20261125030000_learner_external_resources.sql" role="contract" -->
-- Contract: gated RPCs there and in later `2026112*` migrations; report `COMPANION_OUTCOME_REPORT.md`; catalog `tool/verify_external_resources.py`.
+- Contract: gated RPCs there and in later `2026112*` migrations; catalog `tool/verify_external_resources.py`.
 <!-- map-ref path="supabase/tests/learner_external_resources_test.sql" role="test" -->
 - Tests: that file and `learner_resource_*_test.sql`; `*companion*_test.dart`, `*resource*_flow_test.dart`.
 

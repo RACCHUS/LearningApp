@@ -1,0 +1,38 @@
+# Catalog resource (companion plan v1.0 §3.3). Link-only: this record grants
+# no reuse and is not a recommendation until its review is approved and a
+# map exists. Validate: python tool/verify_external_resources.py
+id: openstax-college-algebra
+kind: book
+publisher: OpenStax
+title: College Algebra
+canonical_url: https://openstax.org/details/books/college-algebra
+locale: en-US
+edition_or_published: '2015-02-13'
+access: free_no_login
+price: null
+rights_posture: link_only
+embed:
+  allowed: false
+  reason: A textbook read on the publisher's own site. Nothing beyond a link is needed or assumed.
+has_practice: null
+captions: null
+transcript: null
+stated_length_hours: null
+targets:
+- clep-college-algebra
+metadata_checked_at: '2026-11-26'
+facts:
+- claim: Free to read online; the chapter pages loaded without signing in when checked.
+  source_url: https://openstax.org/books/college-algebra/pages/1-introduction-to-prerequisites
+- claim: The book text is under the Creative Commons Attribution 4.0 license; OpenStax's own images, activities and assessments are under CC BY-NC-SA.
+  source_url: https://openstax.org/books/college-algebra/pages/1-introduction-to-prerequisites
+- claim: Published by OpenStax, first published 13 February 2015.
+  source_url: https://openstax.org/books/college-algebra/pages/1-introduction-to-prerequisites
+unknown:
+- Whether the online edition is the same as the 1e archive the objective mapping was checked against (the page does not name an edition).
+- Practice at the book level was not read from the publisher's pages; the per-section practice in the map comes from the reviewed objective mapping.
+- Accessibility details beyond the site's linked accessibility statement.
+authored_by: ai-drafted-by-claude
+review:
+  status: pending
+selection_note: 'Pilot P1, re-pointed 2026-11-26. The first pilot (Modern States) could not be mapped because its site refuses automated reading. This book is free without sign-in, aligned closely enough that an independently reviewed objective mapping already exists (data/concept_mappings/), and needs no account, so it can be the best free route. LearningApp also imports some of its sections as lessons; the catalog entry is the whole book read on its own site, and both appear side by side.'

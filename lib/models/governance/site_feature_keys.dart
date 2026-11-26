@@ -55,6 +55,8 @@ abstract final class SiteFeatureKeys {
   static const String contentCompanionEmbeds = 'content.companion_embeds';
   static const String contentCompanionExtension =
       'content.companion_extension';
+  static const String contentResourceRecommendations =
+      'content.resource_recommendations';
 
   static const Set<String> all = {
     telFast,
@@ -101,5 +103,6 @@ abstract final class SiteFeatureKeys {
     contentCompanionCapture,
     contentCompanionEmbeds,
     contentCompanionExtension,
+    contentResourceRecommendations,
   };
 }

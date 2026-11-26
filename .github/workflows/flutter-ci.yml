@@ -344,6 +344,8 @@ jobs:
           "$CI_TEST_PYTHON" tool/verify_concept_mappings.py
           "$CI_TEST_PYTHON" -m unittest discover -s tool/tests -p 'test_verify_concept_mappings.py' -v
           "$CI_TEST_PYTHON" tool/verify_external_resources.py
+          "$CI_TEST_PYTHON" tool/derive_resource_map.py data/concept_mappings/clep-college-algebra__openstax-college-algebra-1e.yaml openstax-college-algebra --check
+          "$CI_TEST_PYTHON" tool/build_resource_catalog.py --check
           "$CI_TEST_PYTHON" -m unittest discover -s tool/tests -p 'test_verify_external_resources.py' -v
           "$CI_TEST_PYTHON" tool/check_notation.py
           "$CI_TEST_PYTHON" -m unittest discover -s tool/tests -p 'test_check_notation.py' -v

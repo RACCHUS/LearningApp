@@ -1,6 +1,9 @@
 """Scheduled dead-link check for external resources (master plan v2.6 §7.5,
 §9.3): every source and companion URL in content/bridges and
-content/companions must still respond. Exits 1 when any link is dead, so
+content/companions must still respond, and so must every link of a catalog
+resource that has an objective map (data/resource_maps/): only those can
+be recommended. A resource without a map is not checked, because some
+publishers refuse automated requests. Exits 1 when any link is dead, so
 the scheduled workflow fails and the owner is notified; nothing in the app
 changes automatically.
 
@@ -30,6 +33,22 @@ def collect_urls(root: Path = REPO) -> dict[str, list[str]]:
         for url in urls:
             if isinstance(url, str) and url.startswith("https://"):
                 found.setdefault(url, []).append(Path(path).name)
+    import yaml  # only the catalog part needs it
+
+    mapped: dict[str, list[str]] = {}
+    for path in sorted(glob.glob(str(root / "data" / "resource_maps" / "*.yaml"))):
+        doc = yaml.safe_load(Path(path).read_text(encoding="utf-8")) or {}
+        urls = [s.get("locator") for c in doc.get("coverage") or [] for s in c.get("sections") or []]
+        mapped.setdefault(str(doc.get("resource_id")), []).extend(u for u in urls if u)
+        for url in urls:
+            if isinstance(url, str) and url.startswith("https://"):
+                found.setdefault(url, []).append(Path(path).name)
+    for rid in mapped:
+        record = root / "data" / "external_resources" / f"{rid}.yaml"
+        if record.exists():
+            url = (yaml.safe_load(record.read_text(encoding="utf-8")) or {}).get("canonical_url")
+            if isinstance(url, str) and url.startswith("https://"):
+                found.setdefault(url, []).append(record.name)
     return found
 
 
