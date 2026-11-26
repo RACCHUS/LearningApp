@@ -38,14 +38,14 @@ To point a build at another copy of LearningApp, change `APP_ORIGIN` at the top 
 
 **Chrome or Edge:** open `chrome://extensions` (or `edge://extensions`), turn on "Developer mode", choose "Load unpacked", and pick the `extension/chrome` folder.
 
-Then open any https page and click the LearningApp button. While the app-side switch is off, LearningApp says the extension is not available.
+Then open any https page and click the LearningApp button. If the app-side switch is turned off, LearningApp says the extension is not available.
 
 ## Publishing (owner)
 
-Not done, and not something the build can do:
+Everything the store forms ask for, the packaging command and what only the owner can do: [STORE_LISTING.md](STORE_LISTING.md). In short:
 
 - **Firefox Add-ons:** needs a developer account (free). The listing asks what data the extension collects; that declaration is the owner's to make. The honest description is in "What it can see" above.
-- **Chrome Web Store:** needs a developer account with a one-time US$5 registration fee (plan decision X-11). Until then the Chrome build is a manual install for testers.
+- **Chrome Web Store:** needs a developer account with a one-time US$5 registration fee (plan decision X-11; approved by the owner 2026-11-26).
 - **Edge Add-ons:** separate free account; the Chrome folder is what gets uploaded.
 - **Safari:** not built (plan decision X-12).
 

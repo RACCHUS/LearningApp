@@ -406,6 +406,7 @@ class TargetDetailScreen extends ConsumerWidget {
                             targetSlug: target.slug,
                             targetVersionId: ver.id,
                             goalTitle: target.title,
+                            targetId: target.id,
                           ),
                           const SizedBox(height: DesignTokens.space3),
                         ],
