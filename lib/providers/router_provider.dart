@@ -18,6 +18,8 @@ import 'package:learning_pwa/screens/governance/prompt_pack_signals_screen.dart'
     deferred as prompt_pack_signals;
 import 'package:learning_pwa/screens/governance/learner_signals_screen.dart'
     deferred as learner_signals;
+import 'package:learning_pwa/screens/governance/companion_outcome_screen.dart'
+    deferred as companion_outcome;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -644,6 +646,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => DeferredLoaderWidget(
           loader: learner_signals.loadLibrary,
           builder: () => learner_signals.LearnerSignalsScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/admin/companion-outcomes',
+        name: 'companion-outcomes',
+        builder: (context, state) => DeferredLoaderWidget(
+          loader: companion_outcome.loadLibrary,
+          builder: () => companion_outcome.CompanionOutcomeScreen(),
         ),
       ),
       GoRoute(

@@ -58,4 +58,4 @@ The draft notice was not changed.
 
 ## Reading it
 
-There is no screen for this report yet. An admin or moderator can call `get_companion_outcome_report` with a goal's version id through the API.
+Admins open it from the cost and telemetry screen (the book icon, "Outside study outcomes") or at `/#/admin/companion-outcomes`: pick a goal, and each group is shown or marked as withheld, with the list of what is not measured. Screen: `lib/screens/governance/companion_outcome_screen.dart`. The function stays callable through the API for admins and moderators.
