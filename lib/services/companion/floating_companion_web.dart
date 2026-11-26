@@ -26,6 +26,8 @@ class _WebFloatingWindow implements FloatingWindow {
   Timer? _ticker;
   DateTime _partStarted = DateTime.now();
   String? _partTitle;
+  int? _plannedMinutes;
+  bool _reminded = false;
   web.Element? _clock;
   void Function()? _onDone;
   void Function()? _onClosed;
@@ -98,9 +100,34 @@ class _WebFloatingWindow implements FloatingWindow {
   void _tick() {
     final clock = _clock;
     if (clock == null) return;
-    final s = DateTime.now().difference(_partStarted).inSeconds;
-    clock.textContent =
-        'Time on this part: ${s ~/ 60}:${(s % 60).toString().padLeft(2, '0')}';
+    final elapsed = DateTime.now().difference(_partStarted);
+    clock.textContent = floatingClockText(elapsed, _plannedMinutes);
+    if (!_reminded && plannedTimeUp(elapsed, _plannedMinutes)) {
+      _reminded = true;
+      final message = plannedTimeUpMessage(_partTitle, _plannedMinutes!);
+      // Shown once in the window as a status line (read once by a screen
+      // reader), and as a system notification only if the learner already
+      // allowed notifications: this never asks for permission.
+      final doc = _window?.document;
+      if (doc != null) {
+        final note = _el(
+          doc,
+          'p',
+          message,
+          'margin:0 0 8px;color:#fdd663;font-weight:600;',
+        );
+        note.setAttribute('role', 'status');
+        clock.after(note);
+      }
+      try {
+        if (web.Notification.permission == 'granted') {
+          web.Notification(
+            'LearningApp companion',
+            web.NotificationOptions(body: message),
+          );
+        }
+      } catch (_) {}
+    }
   }
 
   // Every piece of text goes in through textContent, never as markup: part
@@ -121,7 +148,9 @@ class _WebFloatingWindow implements FloatingWindow {
     if (c.partTitle != _partTitle) {
       _partTitle = c.partTitle;
       _partStarted = DateTime.now();
+      _reminded = false;
     }
+    _plannedMinutes = c.minutes;
     body.textContent = '';
     body.setAttribute(
       'style',
