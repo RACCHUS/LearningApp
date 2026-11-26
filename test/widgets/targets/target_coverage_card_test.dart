@@ -3,7 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:learning_pwa/models/companion/learner_resource.dart';
 import 'package:learning_pwa/models/content_generation/coverage_matrix.dart';
+import 'package:learning_pwa/providers/learner_resource_provider.dart';
 import 'package:learning_pwa/providers/learning_support_controller_provider.dart';
 import 'package:learning_pwa/providers/target_coverage_provider.dart';
 import 'package:learning_pwa/services/learning_support/bridge_library.dart';
@@ -24,16 +26,16 @@ void main() {
   setUpAll(() async => bridges = await BridgeLibrary.load(rootBundle));
 
   Future<void> pumpCard(WidgetTester tester, List<Map<String, dynamic>> rows,
-      {Set<String> drafts = const {}}) async {
+      {Set<String> drafts = const {}, String? targetId, List<LearnerResource> mine = const []}) async {
     tester.view.physicalSize = const Size(1200, 2000);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     final router = GoRouter(routes: [
       GoRoute(
         path: '/',
-        builder: (_, __) => const Scaffold(
+        builder: (_, __) => Scaffold(
           body: SingleChildScrollView(
-            child: TargetCoverageCard(targetSlug: 'algebra', targetVersionId: 'v1'),
+            child: TargetCoverageCard(targetSlug: 'algebra', targetVersionId: 'v1', targetId: targetId),
           ),
         ),
       ),
@@ -45,6 +47,7 @@ void main() {
         bridgeLibraryProvider.overrideWith((ref) async => bridges),
         coverageMatrixLoaderProvider.overrideWithValue((slug) async => {'objectives': rows}),
         coverageDraftsLoaderProvider.overrideWithValue((ids) async => drafts.intersection(ids)),
+        learnerResourcesProvider.overrideWith((ref, id) async => mine),
       ],
       child: MaterialApp.router(routerConfig: router),
     ));
@@ -75,6 +78,26 @@ void main() {
     await tester.tap(find.byKey(const Key('need-make-own-o-1.4')));
     await tester.pumpAndSettle();
     expect(find.text('create'), findsOneWidget);
+  });
+
+  testWidgets("the learner's own outside resources are marked, as their own notes", (tester) async {
+    const book = LearnerResource(
+      id: 'r1',
+      targetId: 't1',
+      title: 'My textbook',
+      kind: LearnerResourceKind.book,
+      objectives: {'1.2': null},
+    );
+    final rows = [row('1.2', ['exponents'], example: 0), row('1.4', ['history'], example: 0)];
+    await pumpCard(tester, rows, targetId: 't1', mine: const [book]);
+    expect(find.byKey(const Key('target-coverage-outside')), findsOneWidget);
+    expect(find.textContaining('1 of 2 topics'), findsOneWidget);
+    expect(find.textContaining('only LearningApp checks count toward readiness'), findsOneWidget);
+    expect(find.text('Covered in what you use: My textbook'), findsOneWidget);
+    expect(find.byKey(const Key('need-outside-o-1.4')), findsNothing);
+    // Without a goal id, or with no resources, nothing outside is shown.
+    await pumpCard(tester, rows);
+    expect(find.byKey(const Key('target-coverage-outside')), findsNothing);
   });
 
   testWidgets('long need lists collapse to three', (tester) async {

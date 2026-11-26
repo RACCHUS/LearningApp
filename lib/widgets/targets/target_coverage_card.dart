@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:learning_pwa/models/companion/learner_resource.dart';
 import 'package:learning_pwa/models/content_generation/coverage_matrix.dart';
+import 'package:learning_pwa/providers/learner_resource_provider.dart';
 import 'package:learning_pwa/providers/manual_generation_v2_provider.dart';
 import 'package:learning_pwa/providers/target_coverage_provider.dart';
 import 'package:learning_pwa/screens/lessons/prompt_cart_screen.dart';
@@ -36,10 +38,16 @@ class TargetCoverageCard extends ConsumerStatefulWidget {
     required this.targetSlug,
     required this.targetVersionId,
     this.goalTitle,
+    this.targetId,
   });
 
   final String targetSlug;
   final String targetVersionId;
+
+  /// When given, the learner's own outside resources for this goal are
+  /// marked beside LearningApp's pieces (companion plan v1.0, EX-2). They
+  /// are the learner's own notes and never count toward readiness.
+  final String? targetId;
 
   /// Shown in the prompt cart; the cart is offered only when given.
   final String? goalTitle;
@@ -61,6 +69,15 @@ class _TargetCoverageCardState extends ConsumerState<TargetCoverageCard> {
     final theme = Theme.of(context);
     final needs = summary.needs;
     final shown = _showAll ? needs : needs.take(_collapsedNeeds).toList();
+    final mine = widget.targetId == null
+        ? const <LearnerResource>[]
+        : ref.watch(learnerResourcesProvider(widget.targetId!)).valueOrNull ?? const <LearnerResource>[];
+    List<String> outsideFor(CoverageRow row) {
+      final code = (row.code ?? '').trim();
+      final key = code.isNotEmpty ? code : row.title.trim();
+      return [for (final r in mine) if (r.objectives.containsKey(key)) r.title];
+    }
+    final outsideTopics = mine.isEmpty ? 0 : summary.rows.where((r) => outsideFor(r).isNotEmpty).length;
 
     return Card(
       key: const Key('target-coverage-card'),
@@ -87,6 +104,15 @@ class _TargetCoverageCardState extends ConsumerState<TargetCoverageCard> {
                   _RoleChip(role: role, counts: summary.countsFor(role)),
               ],
             ),
+            if (mine.isNotEmpty) ...[
+              const SizedBox(height: DesignTokens.space2),
+              Text(
+                'In what you use outside LearningApp: $outsideTopics of ${summary.rows.length} topics. '
+                'Your own notes; only LearningApp checks count toward readiness.',
+                key: const Key('target-coverage-outside'),
+                style: theme.textTheme.bodySmall,
+              ),
+            ],
             if (needs.isNotEmpty) ...[
               const SizedBox(height: DesignTokens.space3),
               Text('Missing pieces (${needs.length})',
@@ -110,7 +136,7 @@ class _TargetCoverageCardState extends ConsumerState<TargetCoverageCard> {
                   ),
                 ),
               for (final n in shown)
-                NeedCard(need: n, targetVersionId: widget.targetVersionId),
+                NeedCard(need: n, targetVersionId: widget.targetVersionId, outside: outsideFor(n.row)),
               if (needs.length > _collapsedNeeds)
                 TextButton(
                   key: const Key('target-coverage-show-all'),
@@ -153,10 +179,13 @@ class _RoleChip extends StatelessWidget {
 /// One objective's missing pieces with the smallest useful actions: make a
 /// private version, or ask for it on the Wanted Board.
 class NeedCard extends StatelessWidget {
-  const NeedCard({super.key, required this.need, required this.targetVersionId});
+  const NeedCard({super.key, required this.need, required this.targetVersionId, this.outside = const []});
 
   final CoverageNeed need;
   final String targetVersionId;
+
+  /// Titles of the learner's own outside resources that cover this topic.
+  final List<String> outside;
 
   @override
   Widget build(BuildContext context) {
@@ -181,6 +210,9 @@ class NeedCard extends StatelessWidget {
                 style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600)),
             Text('${CoverageState.gap.icon} Not available yet: ${need.missingLabel}',
                 style: theme.textTheme.bodySmall),
+            if (outside.isNotEmpty)
+              Text('Covered in what you use: ${outside.join(', ')}',
+                  key: Key('need-outside-${need.row.objectiveId}'), style: theme.textTheme.bodySmall),
             Wrap(
               spacing: DesignTokens.space2,
               children: [
