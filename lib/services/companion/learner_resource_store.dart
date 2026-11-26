@@ -15,7 +15,8 @@ abstract class LearnerResourceStore {
   Future<List<LearnerResource>> listAll();
 
   /// Creates ([id] null) or edits a resource. [url] must already be cleaned
-  /// by `normalizeLearnerLink`.
+  /// by `normalizeLearnerLink`. [catalogId] names the catalog entry it came
+  /// from; an edit must pass the resource's own [catalogId] to keep it.
   Future<String> save({
     String? id,
     required String targetId,
@@ -23,6 +24,7 @@ abstract class LearnerResourceStore {
     required LearnerResourceKind kind,
     String? url,
     ExternalAccess? access,
+    String? catalogId,
   });
 
   /// Replaces the set of covered objectives; kept ones keep "studied".
@@ -55,7 +57,7 @@ class SupabaseLearnerResourceStore implements LearnerResourceStore {
     final rows = await _client
         .from('learner_external_resources')
         .select(
-          'id,target_id,title,kind,url,access,learner_resource_objectives(objective_key,studied_at),'
+          'id,target_id,title,kind,url,access,catalog_resource_id,learner_resource_objectives(objective_key,studied_at),'
           'learner_resource_sections(position,title,objective_keys,map_source,est_minutes,start_seconds,studied_at)',
         )
         .eq('target_id', targetId)
@@ -69,7 +71,7 @@ class SupabaseLearnerResourceStore implements LearnerResourceStore {
   Future<List<LearnerResource>> listAll() async {
     final rows = await _client
         .from('learner_external_resources')
-        .select('id,target_id,title,kind,url,access')
+        .select('id,target_id,title,kind,url,access,catalog_resource_id')
         .order('created_at');
     return [
       for (final r in rows as List) LearnerResource.fromJson(Map<String, dynamic>.from(r as Map)),
@@ -84,6 +86,7 @@ class SupabaseLearnerResourceStore implements LearnerResourceStore {
     required LearnerResourceKind kind,
     String? url,
     ExternalAccess? access,
+    String? catalogId,
   }) async {
     final res = await _client.rpc(
       'save_learner_external_resource',
@@ -94,6 +97,7 @@ class SupabaseLearnerResourceStore implements LearnerResourceStore {
         'p_url': url,
         'p_access': access?.wire,
         'p_resource_id': id,
+        'p_catalog_resource_id': catalogId,
       },
     );
     return '$res';
@@ -180,13 +184,17 @@ class LocalLearnerResourceStore implements LearnerResourceStore {
     required LearnerResourceKind kind,
     String? url,
     ExternalAccess? access,
+    String? catalogId,
   }) async {
     final clean = title.trim();
     if (clean.isEmpty || clean.length > LearnerResource.maxTitleLength) {
       throw ArgumentError('title');
     }
     if (id != null) {
-      await _update(id, (r) => r.copyWith(title: clean, kind: kind, url: () => url, access: () => access));
+      await _update(
+        id,
+        (r) => r.copyWith(title: clean, kind: kind, url: () => url, access: () => access, catalogId: () => catalogId),
+      );
       return id;
     }
     final all = await _all();
@@ -194,7 +202,17 @@ class LocalLearnerResourceStore implements LearnerResourceStore {
     // The clock alone can repeat within one tick, so add random bits. The
     // bound is a literal: `1 << 32` is 0 when compiled for the web.
     final newId = 'local-${DateTime.now().microsecondsSinceEpoch}-${_random.nextInt(0x7fffffff)}';
-    all.add(LearnerResource(id: newId, targetId: targetId, title: clean, kind: kind, url: url, access: access));
+    all.add(
+      LearnerResource(
+        id: newId,
+        targetId: targetId,
+        title: clean,
+        kind: kind,
+        url: url,
+        access: access,
+        catalogId: catalogId,
+      ),
+    );
     await _write(all);
     return newId;
   }
@@ -286,6 +304,7 @@ Future<int> moveLocalResourcesToAccount(LocalLearnerResourceStore local, Learner
       kind: r.kind,
       url: r.url,
       access: r.access,
+      catalogId: r.catalogId,
     );
     if (r.objectives.isNotEmpty) {
       await account.setObjectives(id, r.objectives.keys.toSet());

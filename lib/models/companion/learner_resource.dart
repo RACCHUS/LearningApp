@@ -144,6 +144,7 @@ class LearnerResource {
     required this.kind,
     this.url,
     this.access,
+    this.catalogId,
     this.objectives = const {},
     this.sections = const [],
   });
@@ -156,6 +157,10 @@ class LearnerResource {
   final LearnerResourceKind kind;
   final String? url;
   final ExternalAccess? access;
+
+  /// The catalog entry it was added from ("Use this", EX-5), or null for a
+  /// resource the learner added themselves.
+  final String? catalogId;
   final Map<String, DateTime?> objectives;
 
   /// The resource's outline, in order. Empty until the learner adds one.
@@ -189,6 +194,7 @@ class LearnerResource {
     LearnerResourceKind? kind,
     String? Function()? url,
     ExternalAccess? Function()? access,
+    String? Function()? catalogId,
     Map<String, DateTime?>? objectives,
     List<ResourceSection>? sections,
   }) => LearnerResource(
@@ -198,6 +204,7 @@ class LearnerResource {
     kind: kind ?? this.kind,
     url: url == null ? this.url : url(),
     access: access == null ? this.access : access(),
+    catalogId: catalogId == null ? this.catalogId : catalogId(),
     objectives: objectives ?? this.objectives,
     sections: sections ?? this.sections,
   );
@@ -225,6 +232,9 @@ class LearnerResource {
       kind: LearnerResourceKind.fromWire(json['kind']),
       url: url is String && url.isNotEmpty ? url : null,
       access: ExternalAccess.fromWire(json['access']),
+      catalogId: json['catalog_resource_id'] is String && (json['catalog_resource_id'] as String).isNotEmpty
+          ? json['catalog_resource_id'] as String
+          : null,
       objectives: Map.unmodifiable(objectives),
       sections: List.unmodifiable([
         for (final s in rows)
@@ -240,6 +250,7 @@ class LearnerResource {
     'kind': kind.wire,
     'url': url,
     'access': access?.wire,
+    'catalog_resource_id': catalogId,
     'learner_resource_objectives': [
       for (final e in objectives.entries)
         {'objective_key': e.key, 'studied_at': e.value?.toUtc().toIso8601String()},

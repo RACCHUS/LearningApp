@@ -4,7 +4,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(27);
+select plan(30);
 
 insert into auth.users (id, email) values
   ('ce000000-0000-4000-8000-000000000001', 'lr-a@example.invalid'),
@@ -84,6 +84,16 @@ select throws_ok(
 select lives_ok(
   $$ select public.save_learner_external_resource('ce000000-0000-4000-8000-000000000010', 'A printed book', 'book') $$,
   'a resource needs no link');
+select lives_ok(
+  $$ select public.save_learner_external_resource('ce000000-0000-4000-8000-000000000010', 'From the catalog', 'book',
+       'https://example.org/catalog-book', 'free_no_login', 'openstax-college-algebra') $$,
+  'a resource added from the catalog keeps the catalog id (EX-5 "Use this")');
+select is((select catalog_resource_id from public.learner_external_resources where title = 'From the catalog'),
+  'openstax-college-algebra', 'the catalog id is stored');
+select throws_ok(
+  $$ select public.save_learner_external_resource('ce000000-0000-4000-8000-000000000010', 'Bad id', 'book',
+       null, null, 'Not A Slug!') $$,
+  '23514', null, 'a catalog id must be a plain slug');
 
 select is(
   (select public.set_learner_resource_objectives(

@@ -99,7 +99,9 @@ class WaysToStudyCard extends ConsumerWidget {
                   way: w,
                   bestFree: i == 0 && w.free,
                   alreadyAdded: mine.any(
-                    (r) => r.url != null && r.url == w.resource.url,
+                    (r) =>
+                        r.catalogId == w.resource.id ||
+                        (r.url != null && r.url == w.resource.url),
                   ),
                   canSave: canSave,
                   goal: goal,
@@ -158,6 +160,7 @@ class _WayTile extends ConsumerWidget {
         kind: r.kind,
         url: r.url,
         access: r.access,
+        catalogId: r.id,
       );
       if (ordered.isNotEmpty) {
         await store.setSections(id, [
