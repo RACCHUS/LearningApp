@@ -404,11 +404,29 @@ void main() {
         expect(saved.sections.first.objectiveKeys, {'1.1', '1.2'});
         expect(saved.objectives.keys.toSet(), {'1.1', '1.2'});
         expect(saved.studiedCount, 0);
+        expect(saved.catalogId, 'free', reason: 'remembers the catalog entry');
         expect(
           find.text('Book free (Pub free)'),
           findsOneWidget,
           reason: 'its resource screen opens',
         );
+      },
+    );
+
+    testWidgets(
+      'a resource added from the catalog shows as in your list even after its link was edited',
+      (tester) async {
+        await LocalLearnerResourceStore().save(
+          targetId: 't1',
+          title: 'My copy',
+          kind: LearnerResourceKind.book,
+          url: 'https://example.org/somewhere-else',
+          catalogId: 'free',
+        );
+        await pump(tester);
+        expect(find.byKey(const Key('way_added_free')), findsOneWidget);
+        expect(find.byKey(const Key('way_use_free')), findsNothing);
+        expect(find.byKey(const Key('way_use_pricey')), findsOneWidget);
       },
     );
 

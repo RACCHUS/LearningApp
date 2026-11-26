@@ -275,6 +275,7 @@ class _LearnerResourceDialogState extends ConsumerState<_LearnerResourceDialog> 
         kind: _kind,
         url: link.url,
         access: _access,
+        catalogId: widget.existing?.catalogId,
       );
       ref.invalidate(learnerResourcesProvider(widget.targetId));
       if (mounted) Navigator.of(context).pop(id);
