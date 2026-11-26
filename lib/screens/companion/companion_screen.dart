@@ -8,6 +8,7 @@ import 'package:learning_pwa/providers/learning_support_controller_provider.dart
 import 'package:learning_pwa/providers/learning_target_provider.dart';
 import 'package:learning_pwa/providers/target_readiness_provider.dart';
 import 'package:learning_pwa/screens/companion/goal_gaps_screen.dart';
+import 'package:learning_pwa/services/companion/floating_companion.dart';
 import 'package:learning_pwa/screens/companion/resource_outline_screen.dart';
 import 'package:learning_pwa/theme/design_tokens.dart';
 import 'package:learning_pwa/models/companion/video_embed.dart';
@@ -124,6 +125,59 @@ class CompanionScreen extends ConsumerWidget {
     final next = resource.nextSectionIndex;
     final store = ref.read(learnerResourceStoreProvider);
     final videoId = embeddableVideoId(ref, resource);
+    final floating = ref.watch(floatingWindowProvider);
+    final floatingContent = FloatingContent.of(resource, labelByKey);
+    if (floating.isOpen) {
+      // Keep an open floating window on the same part as this screen.
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => floating.update(floatingContent),
+      );
+    }
+
+    Future<void> openFloating() async {
+      final container = ProviderScope.containerOf(context, listen: false);
+      final messenger = ScaffoldMessenger.of(context);
+      final targetId = goal.targetId, id = resource.id;
+      // The window can outlive this screen, so its button works from the
+      // app's own state, not from this widget.
+      Future<void> done() async {
+        try {
+          final list = await container.read(
+            learnerResourcesProvider(targetId).future,
+          );
+          final current = list.where((r) => r.id == id).firstOrNull;
+          final next = current?.nextSectionIndex;
+          if (current == null || next == null) return;
+          await container
+              .read(learnerResourceStoreProvider)
+              .setSectionStudied(id, next, true);
+          container.invalidate(learnerResourcesProvider(targetId));
+          final fresh = (await container.read(
+            learnerResourcesProvider(targetId).future,
+          )).where((r) => r.id == id).firstOrNull;
+          if (fresh != null) {
+            floating.update(FloatingContent.of(fresh, labelByKey));
+          }
+        } catch (_) {
+          // The main screen shows the save error; the window keeps its part.
+        }
+      }
+
+      // Called straight from the tap: the browser only opens the window
+      // inside the learner's own click.
+      final opened = await floating.open(
+        floatingContent,
+        onDone: done,
+        onClosed: () {},
+      );
+      if (!opened) {
+        messenger.showSnackBar(
+          const SnackBar(
+            content: Text("Couldn't open the floating window in this browser."),
+          ),
+        );
+      }
+    }
 
     Future<void> mark(int index, bool studied) async {
       final messenger = ScaffoldMessenger.of(context);
@@ -187,6 +241,13 @@ class CompanionScreen extends ConsumerWidget {
       appBar: AppBar(
         title: Text(resource.title),
         actions: [
+          if (floating.supported && sections.isNotEmpty)
+            IconButton(
+              key: const Key('companion_float'),
+              tooltip: 'Float a small window beside what you are studying',
+              icon: const Icon(Icons.picture_in_picture_alt),
+              onPressed: openFloating,
+            ),
           if (sections.isNotEmpty)
             IconButton(
               key: const Key('companion_edit_outline'),
