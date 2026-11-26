@@ -8,6 +8,7 @@ import 'package:learning_pwa/providers/learning_context_provider.dart';
 import 'package:learning_pwa/providers/learning_target_provider.dart';
 import 'package:learning_pwa/providers/site_feature_provider.dart';
 import 'package:learning_pwa/providers/target_coverage_provider.dart';
+import 'package:learning_pwa/services/companion/floating_companion.dart';
 import 'package:learning_pwa/services/companion/learner_resource_store.dart';
 import 'package:learning_pwa/services/governance/site_feature_service.dart';
 
@@ -45,6 +46,14 @@ final companionEmbedsEnabledProvider = Provider<bool>((ref) {
         SiteFeatureKeys.contentCompanionEmbeds,
         runtimeReady: SiteFeatureRuntime.snapshotEnabled,
       );
+});
+
+/// The small floating window (companion plan v1.0, EX-8). One per app; on
+/// browsers without the feature it reports `supported == false`.
+final floatingWindowProvider = Provider<FloatingWindow>((ref) {
+  final window = createFloatingWindow();
+  ref.onDispose(window.close);
+  return window;
 });
 
 /// A goal the learner already has, to attach a captured resource to.
