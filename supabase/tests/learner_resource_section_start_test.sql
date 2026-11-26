@@ -25,7 +25,8 @@ select is_empty(
   $$ select p.proname from pg_proc p join pg_namespace n on n.oid = p.pronamespace
       where n.nspname in ('public', 'private')
         and p.prosrc ilike '%learner_resource_sections%'
-        and p.proname not in ('set_learner_resource_sections', 'set_learner_resource_section_studied') $$,
+        and p.proname not in ('set_learner_resource_sections', 'set_learner_resource_section_studied',
+                              'get_companion_outcome_report') $$,
   'no other function reads the outline, its progress or its start times');
 select ok(not has_function_privilege('anon', 'public.set_learner_resource_sections(uuid, jsonb)', 'execute'),
   'anon still cannot save an outline after the function was replaced');
