@@ -72,6 +72,7 @@ flutter:
     - assets/lexicons/NOTICE.txt
     - assets/lessons/
     - assets/open_content/
+    - assets/companion/resource_catalog.json
     - content/bridges/fraction_decimal.bridge.json
     - content/bridges/percent_change.bridge.json
     - content/bridges/percent_of_number.bridge.json

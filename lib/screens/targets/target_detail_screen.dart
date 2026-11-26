@@ -14,6 +14,7 @@ import '../../theme/design_tokens.dart';
 import '../../widgets/governance/target_version_migration_dialog.dart';
 import '../../widgets/targets/target_readiness_card.dart';
 import '../../widgets/companion/learner_resources_card.dart';
+import '../../widgets/companion/ways_to_study_card.dart';
 import '../../widgets/targets/objective_readiness_card.dart';
 import '../../widgets/targets/target_coverage_card.dart';
 import '../../widgets/targets/exam_preparation_overview_card.dart';
@@ -392,6 +393,13 @@ class TargetDetailScreen extends ConsumerWidget {
                           targetId: target.id,
                           targetVersionId: ver.id,
                           targetSlug: target.slug,
+                        ),
+                        WaysToStudyCard(
+                          goal: (
+                            targetId: target.id,
+                            targetVersionId: ver.id,
+                            targetSlug: target.slug,
+                          ),
                         ),
                         if (ver.isPublished) ...[
                           TargetCoverageCard(
