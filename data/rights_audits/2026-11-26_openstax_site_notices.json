@@ -1,0 +1,42 @@
+{
+  "about": "Rights review of the OpenStax 1st editions that LearningApp adapts and republishes, after the publisher's pages were found to carry conflicting license wording and an AI notice (2026-11-26). Maintainers' reading of published terms, not legal advice.",
+  "audited_on": "2026-11-26",
+  "audited_by": "AI (Claude Opus 5.5) under the owner's delegation of plan decisions (2026-11-24); asked for by the owner in chat on 2026-11-26",
+  "trigger": "The independent review of data/external_resources/openstax-college-algebra.yaml found that the book's citation panel describes noncommercial, share-alike terms, while data/content_sources.json records the 1st edition as CC BY 4.0 with adapt, redistribute and ai_transform allowed.",
+  "sources": ["openstax-college-algebra-1e", "openstax-prealgebra-1e", "openstax-psychology-1e"],
+  "evidence": [
+    {
+      "what": "License declared by each pinned archive version (the exact versions LearningApp imports)",
+      "url": "https://openstax.org/apps/archive/20260604.144757/contents/",
+      "checked_at": "2026-11-26",
+      "findings": {
+        "9b08c294-057f-4201-9f48-5d6ad992740d@ebc5beb (College Algebra)": "license.url http://creativecommons.org/licenses/by/4.0/, name 'Creative Commons Attribution License'",
+        "caa57dab-41c7-455e-bd6f-f443cda5519c@eb2e29d (Prealgebra)": "license.url http://creativecommons.org/licenses/by/4.0/, name 'Creative Commons Attribution License'",
+        "4abf04bf-93a0-45c3-9cbc-2cefd46e68cc@8993bfc (Psychology)": "license.url http://creativecommons.org/licenses/by/4.0/, name 'Creative Commons Attribution License'"
+      }
+    },
+    {
+      "what": "Book-specific license statement in the preface",
+      "url": "https://openstax.org/books/college-algebra/pages/preface",
+      "checked_at": "2026-11-26",
+      "finding": "The Customization section says the book is licensed under CC BY 4.0. The same statement appears in the Prealgebra 1e preface (https://openstax.org/books/prealgebra/pages/preface)."
+    },
+    {
+      "what": "Citation panel and footer on the reading pages",
+      "url": "https://openstax.org/books/college-algebra/pages/1-introduction-to-prerequisites",
+      "checked_at": "2026-11-26",
+      "finding": "The panel says the book uses 'the Creative Commons Attribution License' but describes reuse only for noncommercial purposes with share-alike; says the book may not be used to train, or be ingested into, large language models or generative AI offerings without OpenStax's prior written permission; and asks anyone incorporating the content into AI offerings to request permission. The footer licenses the site's textbooks under CC BY-NC-SA 4.0 'except where otherwise noted'. Identical wording appears on Prealgebra 1e, whose preface also says CC BY 4.0, so the panel is a sitewide template rather than a statement about this edition."
+    },
+    {
+      "what": "Earlier check",
+      "checked_at": "2026-11-20",
+      "finding": "data/content_sources.json noted on 2026-11-20 that the AI statement could not be found on OpenStax pages. It is present now, so it was added or moved after that date."
+    }
+  ],
+  "decision": {
+    "license": "Kept as CC BY 4.0 for the pinned versions. The archive metadata for each exact version LearningApp imports names the CC BY 4.0 license URL, and each preface says CC BY 4.0. The noncommercial wording is a sitewide template that contradicts the book-specific statements; where a page says 'except where otherwise noted', the book's own notice is the one that applies. A CC BY 4.0 grant cannot be withdrawn for copies already obtained under it (CC BY 4.0 legal code, section 2(a)(1): irrevocable). No change to adapt, redistribute or quote, and no change to the published lessons.",
+    "ai_transform": "Withdrawn for all three 1st editions. Whatever the license allows, the publisher now asks that its books not be put into AI tools without its permission, and LearningApp does not need to: nothing declared ai_transform (the imports are deterministic, tool/import_open_textbook.py; the bridges are written in our own words with uses_ai false; the CLEP courses are declared reference). Respecting the request costs nothing. Re-adding it needs OpenStax's written permission, recorded here.",
+    "not_changed": "The 2nd editions stay link and reference only (CC BY-NC-SA 4.0). The catalog record data/external_resources/openstax-college-algebra.yaml stays link-only.",
+    "open_question_for_owner": "AI agents (including the ones building LearningApp) read OpenStax pages and lesson text to check imports, write reviews and align original items. That reads the text but produces nothing from it and trains nothing; this review treats it as reading, not ai_transform. If the owner wants to go further, the conservative step is to stop giving OpenStax lesson text to AI reviewers and check imports mechanically only."
+  }
+}

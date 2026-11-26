@@ -68,14 +68,14 @@
       "license": "cc_by_4",
       "license_evidence": {
         "url": "https://openstax.org/books/prealgebra/pages/preface",
-        "checked_at": "2026-11-20",
+        "checked_at": "2026-11-26",
         "statement": "Prealgebra is licensed under a Creative Commons Attribution 4.0 International (CC BY) license"
       },
-      "allowed_uses": ["link", "reference", "quote", "adapt", "redistribute", "ai_transform"],
+      "allowed_uses": ["link", "reference", "quote", "adapt", "redistribute"],
       "attribution": "Adapted from {title}, OpenStax, Rice University, {section_url}, licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/). Changes: {changes}.",
       "status": "approved",
-      "decided_by": "owner 2026-11-20 (approved adapting the CC BY 1st editions); owner 2026-11-24 (D-7: approved redistribute, since imported reading blocks stay close to the book text)",
-      "notes": "Best adaptable source for prerequisite numeracy Bridges. Do not use OpenStax names or logos (trademarks are outside the CC license)."
+      "decided_by": "owner 2026-11-20 (approved adapting the CC BY 1st editions); owner 2026-11-24 (D-7: approved redistribute, since imported reading blocks stay close to the book text); AI 2026-11-26 under the owner's delegation: ai_transform withdrawn after the publisher's AI notice, license kept (data/rights_audits/2026-11-26_openstax_site_notices.json)",
+      "notes": "Best adaptable source for prerequisite numeracy Bridges. Do not use OpenStax names or logos (trademarks are outside the CC license). The pinned archive version declares http://creativecommons.org/licenses/by/4.0/. The site's citation panel now describes noncommercial terms and an AI-training restriction on every book; see the audit."
     },
     {
       "id": "openstax-prealgebra-2e",
@@ -92,7 +92,7 @@
       "attribution": "{title}, OpenStax, Rice University, {section_url}, CC BY-NC-SA 4.0.",
       "status": "approved",
       "decided_by": "existing use: link-only in Bridges",
-      "notes": "Bridge files also say OpenStax prohibits use for training large language models. That statement could not be found on OpenStax pages on 2026-11-20; kept as a conservative reason not to paste this text into AI tools."
+      "notes": "Bridge files also say OpenStax prohibits use for training large language models. That statement was not found on 2026-11-20; on 2026-11-26 it appears in the citation panel on OpenStax book pages (see data/rights_audits/2026-11-26_openstax_site_notices.json)."
     },
     {
       "id": "openstax-college-algebra-1e",
@@ -102,14 +102,14 @@
       "license": "cc_by_4",
       "license_evidence": {
         "url": "https://openstax.org/books/college-algebra/pages/preface",
-        "checked_at": "2026-11-20",
+        "checked_at": "2026-11-26",
         "statement": "College Algebra is licensed under a Creative Commons Attribution 4.0 International (CC BY) license"
       },
-      "allowed_uses": ["link", "reference", "quote", "adapt", "redistribute", "ai_transform"],
+      "allowed_uses": ["link", "reference", "quote", "adapt", "redistribute"],
       "attribution": "Adapted from {title}, OpenStax, Rice University, {section_url}, licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/). Changes: {changes}.",
       "status": "approved",
-      "decided_by": "owner 2026-11-20 (approved adapting the CC BY 1st editions); owner 2026-11-24 (D-7: approved redistribute, since imported reading blocks stay close to the book text)",
-      "notes": "Cited by content/clep_college_algebra.yaml. Prefer this edition over 2e for adapted content."
+      "decided_by": "owner 2026-11-20 (approved adapting the CC BY 1st editions); owner 2026-11-24 (D-7: approved redistribute, since imported reading blocks stay close to the book text); AI 2026-11-26 under the owner's delegation: ai_transform withdrawn after the publisher's AI notice, license kept (data/rights_audits/2026-11-26_openstax_site_notices.json)",
+      "notes": "Cited by content/clep_college_algebra.yaml. Prefer this edition over 2e for adapted content. The pinned archive version declares http://creativecommons.org/licenses/by/4.0/. The site's citation panel now describes noncommercial terms and an AI-training restriction on every book; see the audit."
     },
     {
       "id": "openstax-college-algebra-2e",
@@ -156,11 +156,11 @@
         "checked_at": "2026-11-20",
         "statement": "Psychology is licensed under a Creative Commons Attribution 4.0 International (CC BY) license"
       },
-      "allowed_uses": ["link", "reference", "quote", "adapt", "redistribute", "ai_transform"],
+      "allowed_uses": ["link", "reference", "quote", "adapt", "redistribute"],
       "attribution": "Adapted from {title}, OpenStax, Rice University, {section_url}, licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/). Changes: {changes}.",
       "status": "approved",
-      "decided_by": "owner 2026-11-20 (approved adapting the CC BY 1st editions); owner 2026-11-24 (D-7: approved redistribute, since imported reading blocks stay close to the book text)",
-      "notes": "CC BY alternative for the CLEP Introductory Psychology program."
+      "decided_by": "owner 2026-11-20 (approved adapting the CC BY 1st editions); owner 2026-11-24 (D-7: approved redistribute, since imported reading blocks stay close to the book text); AI 2026-11-26 under the owner's delegation: ai_transform withdrawn after the publisher's AI notice, license kept (data/rights_audits/2026-11-26_openstax_site_notices.json)",
+      "notes": "CC BY alternative for the CLEP Introductory Psychology program. The pinned archive version declares http://creativecommons.org/licenses/by/4.0/. The site's citation panel now describes noncommercial terms and an AI-training restriction on every book; see the audit."
     },
     {
       "id": "openstax-psychology-2e",

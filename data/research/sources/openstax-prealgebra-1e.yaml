@@ -9,7 +9,7 @@ locale: en-US
 subjects:
 - mathematics
 - numeracy
-metadata_checked_at: '2026-11-20'
+metadata_checked_at: '2026-11-26'
 license_claim: CC BY 4.0
 license_evidence_locator: https://openstax.org/books/prealgebra/pages/preface
 rights_review_state: verified
@@ -20,9 +20,8 @@ permitted_actions:
 - quote
 - adapt
 - redistribute
-- ai_transform
 format: web book; archive JSON (CNXML/XHTML)
 acquisition_method: tool/import_open_textbook.py
 recommendation: register
-decision_reason: Registered and approved; in use for the Prealgebra pilot
+decision_reason: Registered and approved (ai_transform withdrawn 2026-11-26 after the publisher's AI notice, data/rights_audits/2026-11-26_openstax_site_notices.json); in use for the Prealgebra pilot
 registry_source_id: openstax-prealgebra-1e
