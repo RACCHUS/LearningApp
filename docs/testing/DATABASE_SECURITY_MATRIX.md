@@ -12,7 +12,7 @@ Columns are **static text signals**, not proof. Read a test before relying on it
 - **RLS checks**: assertions that row-level security is enabled (`relrowsecurity`).
 - A file has a **security signal** if it has any denial, privilege or RLS check, or at least two identity switches (cross-user tests often assert that another learner's rows count as zero).
 
-**Totals:** 113 test files, 2358 planned assertions, plus 4 files using `no_plan()` (counted only when run; pg_prove reports the full total in the database job).
+**Totals:** 114 test files, 2363 planned assertions, plus 4 files using `no_plan()` (counted only when run; pg_prove reports the full total in the database job).
 
 ## By area
 
@@ -27,7 +27,7 @@ Columns are **static text signals**, not proof. Read a test before relying on it
 | Catalog, taxonomy & versioning | 15 | 270 | 5 | 4 | 77 | 41 | 12 |
 | Feature controls & cost | 2 | 54 | 2 | 1 | 18 | 0 | 0 |
 | Schema integrity | 1 | 8 | 0 | 0 | 0 | 0 | 0 |
-| Other | 35 | 562 | 10 | 21 | 189 | 42 | 4 |
+| Other | 36 | 567 | 10 | 21 | 189 | 42 | 4 |
 
 ## Files with no security signal
 
@@ -43,6 +43,7 @@ No denial, privilege or RLS check and fewer than two identity switches. These ma
 - `library_search_performance_test.sql` (Content, lessons & import, 3 assertions)
 - `question_scratchpad_flag_test.sql` (Other, 3 assertions)
 - `reinforcement_suggestions_flag_test.sql` (Other, 3 assertions)
+- `resource_recommendations_activation_test.sql` (Other, 5 assertions)
 - `schema_drift_backfill_test.sql` (Schema integrity, 8 assertions)
 
 ## By file
@@ -159,6 +160,7 @@ No denial, privilege or RLS check and fewer than two identity switches. These ma
 | `readiness_projection_test.sql` | Other | 12 | anon | 2 | 1 | 0 | 0 |
 | `reinforcement_suggestions_flag_test.sql` | Other | 3 | — | 0 | 0 | 0 | 0 |
 | `rescue_candidate_search_test.sql` | Other | 9 | anon, authenticated | 2 | 0 | 0 | 0 |
+| `resource_recommendations_activation_test.sql` | Other | 5 | — | 0 | 0 | 0 | 0 |
 | `study_reminders_web_push_test.sql` | Other | 37 | anon, authenticated, service_role | 5 | 15 | 0 | 0 |
 | `version_decision_evidence_test.sql` | Other | 10 | authenticated | 2 | 3 | 0 | 0 |
 | `wanted_priority_score_test.sql` | Other | 11 | authenticated | 2 | 2 | 1 | 0 |
