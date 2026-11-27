@@ -64,6 +64,10 @@ If you are using the Service on behalf of an institution, organization, or famil
 3. **Respect for Third-Party Rights**:
    - You represent and warrant that your User Content does not infringe the copyright, trademark, or intellectual property rights of any third party.
    - Unauthorized reproduction of proprietary textbooks, commercial question banks, or copyrighted curriculum materials is strictly prohibited.
+4. **Outside Resources & Embedded Players** (owner decision 2026-11-26: wording chosen by the AI building the app at the owner's request; pending legal review like the rest of these Terms):
+   - You may list courses, videos, books and websites you study outside LearningApp. They belong to their providers, under their own terms. LearningApp does not host them, is not affiliated with their providers, and is not responsible for their content or availability. Resources LearningApp suggests are not paid placements.
+   - Marking an outside resource as studied is your own note. Only LearningApp's own checks count toward readiness.
+   - Some study resources can be played inside LearningApp using YouTube's embedded player. By playing a video this way you agree to be bound by the YouTube Terms of Service (https://www.youtube.com/t/terms).
 
 ---
 

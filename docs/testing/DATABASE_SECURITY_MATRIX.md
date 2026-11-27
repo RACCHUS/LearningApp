@@ -12,13 +12,13 @@ Columns are **static text signals**, not proof. Read a test before relying on it
 - **RLS checks**: assertions that row-level security is enabled (`relrowsecurity`).
 - A file has a **security signal** if it has any denial, privilege or RLS check, or at least two identity switches (cross-user tests often assert that another learner's rows count as zero).
 
-**Totals:** 115 test files, 2371 planned assertions, plus 4 files using `no_plan()` (counted only when run; pg_prove reports the full total in the database job).
+**Totals:** 115 test files, 2372 planned assertions, plus 4 files using `no_plan()` (counted only when run; pg_prove reports the full total in the database job).
 
 ## By area
 
 | Area | Files | Planned assertions | Files testing `anon` | Files with ≥2 identity switches | Denial checks | Privilege checks | RLS checks |
 |---|---|---|---|---|---|---|---|
-| Analytics, privacy & retention | 4 | 78 | 1 | 3 | 27 | 13 | 0 |
+| Analytics, privacy & retention | 4 | 79 | 1 | 3 | 27 | 13 | 0 |
 | Learner progress & events | 10 | 254 | 8 | 8 | 87 | 28 | 0 |
 | Assessment, grading & simulation | 21 | 547 | 5 | 13 | 211 | 71 | 5 |
 | Excel / software-learning uploads & storage | 4 | 0 + 4 no_plan | 1 | 4 | 20 | 17 | 2 |
@@ -53,7 +53,7 @@ No denial, privilege or RLS check and fewer than two identity switches. These ma
 |---|---|---|---|---|---|---|---|
 | `ana_102_product_event_security_test.sql` | Analytics, privacy & retention | 28 | anon, authenticated | 7 | 15 | 6 | 0 |
 | `ana_103_product_privacy_controls_test.sql` | Analytics, privacy & retention | 30 | authenticated | 5 | 7 | 4 | 0 |
-| `ana_103_product_release_latch_test.sql` | Analytics, privacy & retention | 11 | authenticated | 3 | 2 | 0 | 0 |
+| `ana_103_product_release_latch_test.sql` | Analytics, privacy & retention | 12 | authenticated | 3 | 2 | 0 | 0 |
 | `ana_103_retention_rate_security_test.sql` | Analytics, privacy & retention | 9 | — | 0 | 3 | 3 | 0 |
 | `ana_001a_legacy_progress_repro_test.sql` | Learner progress & events | 7 | — | 0 | 7 | 0 | 0 |
 | `ana_001a_progress_contract_red_test.sql` | Learner progress & events | 8 | — | 0 | 1 | 2 | 0 |

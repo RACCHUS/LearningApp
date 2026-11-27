@@ -76,8 +76,9 @@ class _AnalyticsOptInCardState extends ConsumerState<AnalyticsOptInCard> {
               'If you opt in, we record which main screens you open and '
               'which lessons you start, linked to your account. We never '
               'record your answers, what you type, AI replies or lesson '
-              'content. You can withdraw at any time, which deletes what '
-              'was recorded.',
+              'content, or the names or links of what you study outside '
+              'LearningApp. You can withdraw at any time, which deletes '
+              'what was recorded.',
             ),
             Wrap(
               spacing: 8,
