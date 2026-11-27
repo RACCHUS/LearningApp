@@ -8,7 +8,7 @@ Everything the Chrome Web Store, Edge Add-ons and Firefox Add-ons forms ask for,
    - Chrome Web Store: US$5 one-time registration fee (approved by the owner on 2026-11-26).
    - Edge Add-ons (Microsoft Partner Center): free.
    - Firefox Add-ons (addons.mozilla.org): free.
-2. **Publish a privacy policy that covers the extension, and paste its address into each form.** Every store asks for one, because the extension handles a page address. `docs/legal/PRIVACY_POLICY.md` is still marked as a draft pending legal review and does not mention the extension. Suggested wording is in [Privacy policy wording](#privacy-policy-wording-suggested-for-the-owner) below; adopting it is the owner's decision.
+2. **Paste the privacy policy address into each form:** `https://learningapp-2ed8a.web.app/extension-privacy.html`. Every store asks for one, because the extension handles a page address. The page (`web/extension-privacy.html`, published with each web release) covers only the extension; the wording was chosen on the owner's instruction on 2026-11-26 and the same text is §2.5 of `docs/legal/PRIVACY_POLICY.md`, which as a whole is still a draft pending legal review.
 3. **Upload and submit.** Build the packages first:
 
    ```
@@ -88,9 +88,9 @@ The icon is the app's own icon (`web/icons/icon-512.png`), so the extension matc
 >
 > The extension uses activeTab only and makes no network requests itself.
 
-## Privacy policy wording (suggested, for the owner)
+## Privacy policy wording (adopted 2026-11-26)
 
-A section the owner may add to the privacy policy before submitting:
+Chosen on the owner's instruction and published at `/extension-privacy.html`; also in `docs/legal/PRIVACY_POLICY.md` §2.5:
 
 > **Browser extension.** The LearningApp companion extension for Chrome, Edge and Firefox has one permission, activeTab. When you click its button, your browser lets it read the address and title of the tab you are on. It passes them to LearningApp in the part of the address after the "#", which browsers do not send to servers, so our servers do not receive them unless you choose to save the page as one of your resources. The extension does not read page content, other tabs or your browsing history, does not store anything, and makes no network requests of its own. If you save a page, its name and link are kept with your account (or on your device as a guest) and can be deleted at any time.
 

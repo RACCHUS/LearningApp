@@ -6,7 +6,7 @@
 
 **Status:** Draft / Pending Operational & Legal Verification  
 **Effective Date:** Pending Public Launch  
-**Last Revised:** October 2026  
+**Last Revised:** November 2026 (§2.4 outside-study counts, new §2.5 outside study, browser extension and embedded YouTube player)  
 **Application:** LearningApp (`RACCHUS/LearningApp`)  
 
 ---
@@ -45,7 +45,19 @@ Our core privacy principles:
 
 - **Product analytics (opt-in)**: if you opt in from Settings → Privacy, we record which main screens you open, when the app starts and which lesson you open, linked to your account. Never your answers, anything you type, AI replies or lesson content.
 - **Prompt-quality sharing (separate opt-in)**: if you also turn this on in the lesson generator, each AI reply you check there shares only which AI you picked, whether the reply passed, error codes and counts. For AI lessons you add to a goal topic, how your later checks on that topic go is also counted, only in groups of five or more people and from progress the app already keeps. Never your prompts, replies or answers. If you opted in before this was included, it is not counted for you unless you opt in again.
+- **Outside-study counts (part of product analytics)**: if you opt in to product analytics, we may also count, in grouped totals of five or more people only, whether learners use the outside-study companion and whether they take a LearningApp check after marking something studied. These counts come from records the app already keeps; we never record the names or links of what you study outside LearningApp.
 - Both are off unless you turn them on, are available only to reviewed adult accounts, are kept for up to 90 days, and can be exported or turned off at any time in Settings → Privacy. Turning either off deletes what it recorded.
+
+### 2.5 Studying With Outside Resources
+> Owner decision 2026-11-26: the owner asked the AI building the app to choose this wording, and it is accepted for now. Like the rest of this policy it still awaits qualified legal review before public launch.
+
+- **Your outside resources**: when you add a course, video or book you study elsewhere, we keep its name, kind, optional link, cost, the outline you paste, which topics you tick and which parts you mark studied. Signed in, only you can read them; they are deleted when you delete the resource or your account. As a guest they stay on your device. We never visit or fetch your links, and what you mark studied never counts toward readiness: only LearningApp's own checks do.
+- **Adding a page from a link or bookmark**: the page's address and title travel in the part of LearningApp's address after the "#", which browsers do not send to servers. Nothing reaches our servers until you press Add.
+- **Your own AI chat**: the "second opinion" prompt is text you copy into an AI service of your choice. LearningApp sends it nowhere; that service's own privacy policy applies to what you paste there.
+- **Floating window and reminders**: the small study window and its timer keep nothing. If your browser already allows LearningApp to show notifications, it shows one when your planned time is up; LearningApp never asks for that permission for this.
+- **Browser extension**: the LearningApp companion extension for Chrome, Edge and Firefox has one permission, activeTab. When you click its button, your browser lets it read the address and title of the tab you are on. It passes them to LearningApp after the "#" in the address, so our servers do not receive them unless you choose to save the page as one of your resources. The extension does not read page content, other tabs or your browsing history, stores nothing, and makes no network requests of its own. The same text is published at https://learningapp-2ed8a.web.app/extension-privacy.html.
+- **Embedded YouTube player**: LearningApp uses YouTube API Services to show YouTube's embedded player when you choose to play a video inside the app. Nothing is requested from YouTube until you press play. LearningApp does not record what you watch. YouTube receives the request from your browser, may store data on your device, and handles it under the Google Privacy Policy (https://www.google.com/policies/privacy).
+- **Recommended resources**: the list of other ways to study a goal is built into the app, so viewing it sends nothing. Links to providers are not paid placements, and we are not affiliated with them.
 
 ---
 

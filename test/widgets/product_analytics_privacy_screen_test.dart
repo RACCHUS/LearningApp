@@ -49,6 +49,11 @@ void main() {
 
   Future<void> show(WidgetTester tester, _PrivacyStub service,
       {Future<int> Function()? clear}) async {
+    // Tall enough that the controls below the notice are built and tappable
+    // (a result message then shows in the list and in the snack bar).
+    tester.view.physicalSize = const Size(800, 1600);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
     await tester.pumpWidget(ProviderScope(
       overrides: [
         promptQualityStatusProvider
@@ -76,6 +81,31 @@ void main() {
         findsOneWidget);
   });
 
+  testWidgets('the screen and the opt-in dialog both name outside-study counts',
+      (tester) async {
+    // Version basic-2026-11-26 (migration 20261126050000) was approved with
+    // this sentence; consent must never be asked without it.
+    const ready = ProductAnalyticsPrivacyStatus(
+        eligible: true,consented: false,isAnonymous: false,
+        collectionActive: true,policyReady: true);
+    await show(tester, _PrivacyStub(ready));
+    expect(find.textContaining(outsideStudyCountsNotice), findsOneWidget);
+    expect(outsideStudyCountsNotice,
+        contains('never record the names or links'));
+    final optIn = find.widgetWithText(
+        FilledButton, 'Opt in to optional analytics');
+    await tester.scrollUntilVisible(optIn, 200);
+    await tester.tap(optIn);
+    await tester.pumpAndSettle();
+    expect(find.byType(AlertDialog), findsOneWidget);
+    expect(
+        find.descendant(of: find.byType(AlertDialog),
+            matching: find.textContaining(outsideStudyCountsNotice)),
+        findsOneWidget);
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+  });
+
   testWidgets('explicit withdrawal erases local queue before server action',
       (tester) async {
     var cleared = false;
@@ -91,7 +121,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(cleared, isTrue);
     expect(stub.withdrawalCalls, 1);
-    expect(find.textContaining('Consent withdrawn'), findsOneWidget);
+    expect(find.textContaining('Consent withdrawn'), findsWidgets);
     expect(stub.value.consented, isFalse);
   });
 
@@ -117,6 +147,6 @@ void main() {
     await tester.tap(find.text('Erase queued events on this device'));
     await tester.pumpAndSettle();
     expect(count, 1);
-    expect(find.textContaining('Cleared 1 queued'), findsOneWidget);
+    expect(find.textContaining('Cleared 1 queued'), findsWidgets);
   });
 }

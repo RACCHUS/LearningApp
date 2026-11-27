@@ -3,7 +3,7 @@
 BEGIN;
 CREATE EXTENSION IF NOT EXISTS pgtap WITH SCHEMA extensions;
 SET LOCAL search_path = public, extensions;
-SELECT plan(11);
+SELECT plan(12);
 
 INSERT INTO auth.users(id,email,is_anonymous,raw_app_meta_data)
 VALUES ('a1032000-0000-4000-8000-000000000001',
@@ -12,8 +12,11 @@ VALUES ('a1032000-0000-4000-8000-000000000001',
 ON CONFLICT(id) DO NOTHING;
 
 SELECT is((SELECT approved_policy_version FROM analytics.product_release_gate
- WHERE id=1),'basic-2026-11-19',
- 'The owner-approved basic release (20261119040000) is recorded');
+ WHERE id=1),'basic-2026-11-26',
+ 'The notice with the outside-study sentence (20261126050000) is the approved version');
+SELECT is((SELECT collection_enabled FROM analytics.product_release_gate
+ WHERE id=1),true,
+ 'Approving the new notice leaves the owner-approved release (20261119040000) on');
 -- Keep the default-off coverage: put the latch back to its unreleased state
 -- inside this rolled-back test.
 UPDATE analytics.product_release_gate SET collection_enabled=false,

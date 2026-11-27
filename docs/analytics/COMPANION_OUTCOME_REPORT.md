@@ -10,7 +10,7 @@ A descriptive count, for one goal, of how learners who study outside LearningApp
 
 ## Who is counted
 
-Only accounts with an active product-analytics opt-in (`analytics.product_consents`). On 2026-11-26 production had no opted-in account and no outside resource stored in any account, so every figure is withheld until both exist. The opt-in notice itself is still a draft (`ANA_103_DRAFT_OPTIONAL_PRODUCT_ANALYTICS_NOTICE.md`).
+Only accounts with an active product-analytics opt-in (`analytics.product_consents`). On 2026-11-26 production had no opted-in account and no outside resource stored in any account, so every figure is withheld until both exist. Since 2026-11-26 the in-app notice names this counting (see [The opt-in notice](#the-opt-in-notice)).
 
 Guests are never counted: their outside resources stay on the device.
 
@@ -48,13 +48,13 @@ Guests are never counted: their outside resources stay on the device.
 | Readiness with and without outside resources | Not defined yet; if added it stays descriptive, side by side, with no causal claim |
 | Dead links | LearningApp never fetches a learner's link, so there is nothing to count. Catalog links have their own weekly check |
 
-## For the owner: the opt-in notice
+## The opt-in notice
 
-The draft notice says opted-in learners agree to limited information about "which feature type you use". Counting whether an opted-in learner used the outside-study companion fits that description, but the draft does not mention it by name, and it says learning progress uses "separate records". Before the notice is approved, consider adding one sentence, for example:
+**Adopted 2026-11-26** (the owner asked the AI to choose the wording). The in-app opt-in dialog and the privacy screen now say, as `outsideStudyCountsNotice` in `lib/screens/settings/product_analytics_privacy_screen.dart`:
 
-> We may also count, in grouped totals only, whether opted-in learners use the outside-study companion and whether they take a LearningApp check after marking something studied. We never record the names or links of what you study outside LearningApp.
+> If you opt in, we may also count, in groups of five or more people only, whether learners use the outside-study companion and whether they take a LearningApp check after marking something studied. We never record the names or links of what you study outside LearningApp.
 
-The draft notice was not changed.
+The opt-in card adds that it never records "the names or links of what you study outside LearningApp", and `docs/legal/PRIVACY_POLICY.md` §2.4 has the same sentence. Migration `20261126050000` approves the notice as policy version `basic-2026-11-26`; the existing trigger withdraws consent given under the old version, so nobody is counted under wording they did not see. Production had no opted-in account when it was written.
 
 ## Reading it
 

@@ -8,6 +8,14 @@ import 'package:learning_pwa/services/analytics/product_event_rpc_sink.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:learning_pwa/widgets/analytics/prompt_quality_privacy_section.dart';
 
+/// Part of the notice approved as policy version `basic-2026-11-26`
+/// (migration 20261126050000). Changing it means approving a new version.
+const outsideStudyCountsNotice =
+    'If you opt in, we may also count, in groups of five or more people '
+    'only, whether learners use the outside-study companion and whether they '
+    'take a LearningApp check after marking something studied. We never '
+    'record the names or links of what you study outside LearningApp.';
+
 /// Optional telemetry controls. No event emitter is mounted here. Client
 /// collection remains off until trusted server policy and release gates pass.
 class ProductAnalyticsPrivacyScreen extends StatefulWidget {
@@ -161,7 +169,8 @@ class _ProductAnalyticsPrivacyScreenState
           'account. It never records your answers, anything you type, AI '
           'replies, lesson content, search text or payment data. You can '
           'withdraw at any time, which deletes what was recorded. This is '
-          'separate from saving your learning progress.',
+          'separate from saving your learning progress.\n\n'
+          '$outsideStudyCountsNotice',
         ),
         actions: [
           TextButton(
@@ -262,6 +271,8 @@ class _ProductAnalyticsPrivacyScreenState
                       'replies, lesson content, search text or payment '
                       'information. Withdrawing deletes what was recorded.',
                     ),
+                    const SizedBox(height: 12),
+                    const Text(outsideStudyCountsNotice),
                     const SizedBox(height: 12),
                     if (_error case final error?)
                       Card(

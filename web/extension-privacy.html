@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LearningApp companion extension: privacy</title>
+  <meta name="description" content="What the LearningApp companion browser extension reads, and what it does not.">
+  <style>
+    body { font: 16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; max-width: 42rem; margin: 0 auto; padding: 2rem 1.25rem 4rem; color: #1b1b1f; background: #fff; }
+    h1 { font-size: 1.6rem; line-height: 1.25; }
+    h2 { font-size: 1.15rem; margin-top: 2rem; }
+    a { color: #2b55c2; }
+    .meta { color: #55565c; font-size: 0.9rem; }
+    @media (prefers-color-scheme: dark) {
+      body { color: #e6e6ea; background: #121215; }
+      a { color: #9db6ff; }
+      .meta { color: #a3a4ab; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>LearningApp companion extension: privacy</h1>
+    <p class="meta">For the extension in the Chrome Web Store, Microsoft Edge Add-ons and Firefox Add-ons. Last updated 26 November 2026.</p>
+
+    <h2>What it reads</h2>
+    <p>The extension has one permission, <code>activeTab</code>. Only when you click its button does your browser let it read the address and title of the tab you are on. It reads nothing at any other time.</p>
+
+    <h2>What it does with them</h2>
+    <p>It opens LearningApp beside that tab and passes the address and title in the part of LearningApp's address after the "#". Browsers do not send that part to servers, so LearningApp's servers do not receive the address or title unless you choose to save the page as one of your study resources.</p>
+
+    <h2>What it does not do</h2>
+    <ul>
+      <li>It does not read the content of pages, your other tabs or your browsing history.</li>
+      <li>It stores nothing and makes no network requests of its own.</li>
+      <li>It does not sell, share or transfer data to anyone, and does not use it for anything except opening your LearningApp companion.</li>
+    </ul>
+
+    <h2>If you save a page</h2>
+    <p>Its name and link are kept with your LearningApp account, where only you can read them, or on your device if you use LearningApp as a guest. You can delete a saved resource at any time, and deleting your account deletes them all. LearningApp never visits or fetches your saved links.</p>
+
+    <h2>Questions</h2>
+    <p>Open an issue at <a href="https://github.com/RACCHUS/LearningApp/issues">github.com/RACCHUS/LearningApp/issues</a>. The extension's source code is in the same repository, in the <code>extension</code> folder.</p>
+
+    <p><a href="/">Open LearningApp</a></p>
+  </main>
+</body>
+</html>
