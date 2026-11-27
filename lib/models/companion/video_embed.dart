@@ -9,6 +9,15 @@ class VideoEmbed {
   static const googlePrivacyUrl = 'https://www.google.com/policies/privacy';
   static const embedHost = 'www.youtube-nocookie.com';
 
+  /// LearningApp's own published privacy and terms for outside study and
+  /// this player (`web/outside-study-privacy.html`), which YouTube's API
+  /// Services policies require before the player is offered.
+  static const appPrivacyPath = '/outside-study-privacy.html';
+
+  /// [appPrivacyPath] on the site the app was loaded from.
+  static Uri appPrivacyUri([Uri? base]) =>
+      (base ?? Uri.base).resolve(appPrivacyPath);
+
   static final _id = RegExp(r'^[A-Za-z0-9_-]{11}$');
   static const _watchHosts = {
     'youtube.com',

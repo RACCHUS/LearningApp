@@ -234,6 +234,18 @@ void main() {
       expect(notice, contains("you agree to YouTube's Terms of Service"));
       expect(find.byKey(const Key('companion_player_terms')), findsOneWidget);
       expect(find.byKey(const Key('companion_player_privacy')), findsOneWidget);
+      // YouTube's API Services policies need LearningApp's own published
+      // privacy policy for the player, reachable from the offer.
+      expect(
+        find.byKey(const Key('companion_player_app_privacy')),
+        findsOneWidget,
+      );
+      expect(
+        VideoEmbed.appPrivacyUri(
+          Uri.parse('https://learningapp-2ed8a.web.app/#/target/t/companion/r'),
+        ).toString(),
+        'https://learningapp-2ed8a.web.app/outside-study-privacy.html',
+      );
 
       await tester.tap(find.byKey(const Key('companion_play_here')));
       await tester.pumpAndSettle();
