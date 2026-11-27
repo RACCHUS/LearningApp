@@ -77,6 +77,11 @@ class CompanionPlayerOffer extends ConsumerWidget {
             spacing: DesignTokens.space2,
             children: [
               TextButton(
+                key: const Key('companion_player_app_privacy'),
+                onPressed: () => open(VideoEmbed.appPrivacyUri().toString()),
+                child: const Text('LearningApp privacy and terms for this player'),
+              ),
+              TextButton(
                 key: const Key('companion_player_terms'),
                 onPressed: () => open(VideoEmbed.youTubeTermsUrl),
                 child: const Text(
